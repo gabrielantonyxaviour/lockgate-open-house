@@ -6,7 +6,7 @@ Stage 3 fee yield is gross exit fees divided by average equity. That equity is 5
 
 # PROGRESS
 
-- 2026-10-02: `npm test` (14 tests) and `npm run sim` from this directory. The runner throws if the accounting identity, repay-first order, fee band, or Lockgate sweep check fails, so a finished `RESULTS.md` is the check.
+- 2026-10-02: `npm test` from this directory, 20 tests passed. The new tests cover pricing refusals, a 400-draw seeded fee sweep, `canDraw` reasons, coded failures from `fail()`, and a loss that exhausts senior without moving the residual. `npm run sim` was not re-run: the model is unchanged, so `RESULTS.md` and the charts stay as published. The runner throws if the accounting identity, repay-first order, fee band, or Lockgate sweep check fails.
 
 # Run
 
