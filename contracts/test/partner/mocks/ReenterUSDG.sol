@@ -4,13 +4,16 @@ pragma solidity ^0.8.24;
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 /// @notice 6-decimal USDG stand-in. `hook` is called when tokens arrive there, so tests can reenter.
+///         This file is not named MockUSDG.sol. Forge writes `out/<filename>/<contract>.json`, and
+///         `src/core/MockUSDG.sol` uses that same filename. A second copy replaces the token the
+///         Anvil flows deploy.
 contract MockUSDG is ERC20 {
     address public hook;
     bool private _busy;
 
     constructor() ERC20("Test USDG", "USDG") {}
 
-    function decimals() public view override returns (uint8) {
+    function decimals() public pure override returns (uint8) {
         return 6;
     }
 

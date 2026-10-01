@@ -6,7 +6,7 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 import {AdvanceProposal} from "../../src/interfaces/IAdvanceProposal.sol";
 import {PartnerVault} from "../../src/partner/PartnerVault.sol";
 import {PartnerVaultAdmin} from "../../src/partner/PartnerVaultAdmin.sol";
-import {MockUSDG} from "./mocks/MockUSDG.sol";
+import {MockUSDG} from "./mocks/ReenterUSDG.sol";
 
 contract VaultFixture is Test {
     uint256 internal constant UNIT = 1e6;

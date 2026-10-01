@@ -130,6 +130,16 @@ Door 2 is in this tree. The surfaces are `IOpenCreditVault` and `ILockgateExitPo
 
 Measured with `FOUNDRY_PROFILE=core forge inspect` after the green compile on 2026-10-02 (solc 0.8.28, optimizer 200, via IR). Factory creation code is 5539 bytes. Seven address arguments add 224 bytes, so init code is 5763. Deployed runtime is 4729. Platform creation code, before constructor arguments: weekly 19928, epoch 19930, quarterly 19956. Deployed runtime: 14197, 14199, 14225. All of those sit under both caps. The old embedded factory was 49873 init and 49258 deployed.
 
+## 2026-10-02 · G6 · factory call and the one-second boundary
+
+The four-argument sentence in the section above is out of date. `engine/test/anvil/deploy.ts` now deploys a zero-token `WeeklyCyclePlatform`, `EpochQueuePlatform`, and `QuarterlyWindowPlatform`, then calls `FundFactory` with `owner`, `adapter`, `creditLine`, `reserve`, `weeklyImpl`, `epochImpl`, `quarterImpl`. G6 did not edit `engine/`. On 2026-10-02 `npx vitest run test/anvil/flows.test.ts` passed stages 1–3 on a private Anvil, port 8546 or higher, chain 31337. The shared Anvil on 8545 (pid 53114) was not stopped.
+
+`PricingMath` is unchanged. A direct `feeBps(600, 0, false, 0, 0)` is 99. `feeBps(599)` and `feeBps(596)` are 98. `feeBps(606)` is 100. Anvil 1.7.1 (commit `4072e487`, measured 2026-10-02) keeps one timestamp for transactions mined in the same unix second, then sets the next block to wall clock. `eth_call` reads the last mined block. The next `draw` can be a later second, so it prices a shorter wait.
+
+On the shared chain that showed up as a draw at timestamp 1790884988 with `dueAt` 1790885584: 596 seconds, fee `98000000`, principal `9902000000`, nav `10000000000`. The view taken on the refresh block had quoted 99 bps. Those two results are the same curve. G6 will not flatten it so a stale view matches a later block. The stage-1 flow checks the credit-line quote against the seconds on the block it reads, and checks the draw against `dueAt - drawnAt`.
+
+Forge names an artifact `out/<source filename>/<contract>.json`. `test/partner/mocks/MockUSDG.sol` was a second contract with that filename and no constructor arguments. A default `forge build` replaced `out/MockUSDG.sol/MockUSDG.json`, so the Anvil deploy of `MockUSDG(owner)` failed in viem: arguments were passed and the ABI constructor had no inputs. The reentering test token is now `test/partner/mocks/ReenterUSDG.sol`. The contract name is still `MockUSDG`. `src/core/MockUSDG.sol` is the only `MockUSDG.sol` in the tree.
+
 ## 2026-10-02 · G10 · factory and door 2
 
 The ask above, to replace the oversized `FundFactory`, is closed by the clone factory in this tree. The harness CREATE2-deploys the three locked implementations and the 7-argument factory. It calls `setRegistrar(factory, true)` before any platform is created. On the mock path the factory and `OpenCreditVault` are minters. `mintYield` is false when the asset is the external token.

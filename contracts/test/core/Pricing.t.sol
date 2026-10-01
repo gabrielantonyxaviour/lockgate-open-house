@@ -16,6 +16,15 @@ contract PricingTest is CoreFixture {
         assertTrue(ok);
         assertEq(why, "");
         assertEq(bps, 99);
+        (bps, ok,) = pricing.feeBps(599, 0, false, 0, 0);
+        assertTrue(ok);
+        assertEq(bps, 98, "599s");
+        (bps, ok,) = pricing.feeBps(596, 0, false, 0, 0);
+        assertTrue(ok);
+        assertEq(bps, 98, "596s");
+        (bps, ok,) = pricing.feeBps(606, 0, false, 0, 0);
+        assertTrue(ok);
+        assertEq(bps, 100, "606s");
         (bps, ok,) = pricing.feeBps(0, 0, false, 0, 0);
         assertTrue(ok);
         assertEq(bps, 25);

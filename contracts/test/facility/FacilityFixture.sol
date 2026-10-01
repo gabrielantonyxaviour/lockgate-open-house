@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {CreditFacility} from "../../src/facility/CreditFacility.sol";
 import {FacilityStore} from "../../src/facility/FacilityStore.sol";
-import {MockUSDG} from "../partner/mocks/MockUSDG.sol";
+import {MockUSDG} from "../partner/mocks/ReenterUSDG.sol";
 import {MockBook} from "./mocks/MockBook.sol";
 
 contract FacilityFixture is Test {

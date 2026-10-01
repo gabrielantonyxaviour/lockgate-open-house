@@ -8,7 +8,7 @@ import {PartnerRouter} from "../../src/partner/PartnerRouter.sol";
 import {PartnerVault} from "../../src/partner/PartnerVault.sol";
 import {PartnerVaultAdmin} from "../../src/partner/PartnerVaultAdmin.sol";
 import {Advance} from "../../src/partner/Types.sol";
-import {MockUSDG} from "./mocks/MockUSDG.sol";
+import {MockUSDG} from "./mocks/ReenterUSDG.sol";
 import {Test} from "forge-std/Test.sol";
 
 contract RouterFailuresTest is Test {

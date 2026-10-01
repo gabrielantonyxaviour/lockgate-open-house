@@ -7,7 +7,7 @@ import {AdvanceProposal} from "../../src/interfaces/IAdvanceProposal.sol";
 import {AdvanceStatus} from "../../src/partner/Types.sol";
 import {PartnerVault} from "../../src/partner/PartnerVault.sol";
 import {PartnerVaultAdmin} from "../../src/partner/PartnerVaultAdmin.sol";
-import {MockUSDG} from "./mocks/MockUSDG.sol";
+import {MockUSDG} from "./mocks/ReenterUSDG.sol";
 
 contract VaultHandler is Test {
     uint256 internal constant UNIT = 1e6;

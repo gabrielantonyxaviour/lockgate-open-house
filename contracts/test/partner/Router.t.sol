@@ -8,7 +8,7 @@ import {IPartnerRouter} from "../../src/partner/interfaces/IPartnerRouter.sol";
 import {PartnerRouter} from "../../src/partner/PartnerRouter.sol";
 import {PartnerVault} from "../../src/partner/PartnerVault.sol";
 import {PartnerVaultAdmin} from "../../src/partner/PartnerVaultAdmin.sol";
-import {MockUSDG} from "./mocks/MockUSDG.sol";
+import {MockUSDG} from "./mocks/ReenterUSDG.sol";
 
 contract RouterTest is Test {
     uint256 internal constant UNIT = 1e6;
