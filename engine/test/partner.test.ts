@@ -7,17 +7,21 @@ import {
   parseAbiParameters,
   recoverTypedDataAddress,
   toBytes,
+  type Address,
   type Hex,
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { DEFAULT_PARAMS } from "../src/pricing/defaults.js";
 import { monthEpoch } from "../src/examples.js";
 import { buildProposal } from "../src/proposal/build.js";
-import { PARTNER_TYPE, filePartnerProposal, partnerTypes } from "../src/proposal/partner.js";
-import { signPartnerFiling } from "../src/proposal/sign.js";
+import { filePartnerProposal, submitProposalAbi } from "../src/proposal/partner.js";
+import { signBuiltProposal, signPartnerFiling } from "../src/proposal/sign.js";
+import { advanceTypes, type AdvanceMessage } from "../src/proposal/typed.js";
 import { EngineError } from "../src/errors.js";
 
 const ANVIL = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" as const;
+const LIVE_TYPE =
+  "AdvanceProposal(address platform,address recipient,uint256 requestId,uint256 navValue,uint256 fee,uint256 payout,uint16 feeBps,uint64 dueAt,uint64 expiresAt,uint256 nonce,bytes32 quoteId)";
 const now = 1_700_000_000;
 const platform = getAddress("0x00000000000000000000000000000000000000b1");
 const recipient = getAddress("0x00000000000000000000000000000000000000b2");
@@ -45,56 +49,63 @@ function built(requestId = 11n) {
   });
 }
 
-function manualDigest(message: ReturnType<typeof built>["partner"]["message"], chainId: number): Hex {
+function manualDigest(message: AdvanceMessage, chainId: number, verifyingContract: Address): Hex {
   const domainType = keccak256(toBytes(
     "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
   ));
   const domainSeparator = keccak256(encodeAbiParameters(
     parseAbiParameters("bytes32, bytes32, bytes32, uint256, address"),
-    [domainType, keccak256(toBytes("LockgatePartnerVault")), keccak256(toBytes("1")), BigInt(chainId), message.vault],
+    [domainType, keccak256(toBytes("LockgateAdvance")), keccak256(toBytes("1")), BigInt(chainId), verifyingContract],
   ));
   const structHash = keccak256(encodeAbiParameters(
-    parseAbiParameters("bytes32, address, address, address, uint256, uint256, uint64, bytes32, uint256, uint64"),
+    parseAbiParameters("bytes32, address, address, uint256, uint256, uint256, uint256, uint16, uint64, uint64, uint256, bytes32"),
     [
-      keccak256(toBytes(PARTNER_TYPE)),
-      message.vault,
+      keccak256(toBytes(LIVE_TYPE)),
       message.platform,
       message.recipient,
+      message.requestId,
       message.navValue,
       message.fee,
+      message.payout,
+      message.feeBps,
       message.dueAt,
-      message.exitRef,
+      message.expiresAt,
       message.nonce,
-      message.deadline,
+      message.quoteId,
     ],
   ));
   return keccak256(concat(["0x1901", domainSeparator, structHash]));
 }
 
 describe("partner filing", () => {
-  it("matches the G7 typehash and stays distinct from the G6 digest", () => {
+  it("files the live AdvanceProposal digest, not a second struct", () => {
     const proposal = built();
+    expect(submitProposalAbi.map((item) => item.name)).toEqual(["submitProposal"]);
     expect(proposal.submittable).toBe(true);
-    expect(proposal.partner.digest).toBe(manualDigest(proposal.partner.message, 31337));
-    expect(proposal.partner.digest).not.toBe(proposal.digest);
-    expect(built(12n).partner.message.exitRef).not.toBe(proposal.partner.message.exitRef);
+    expect(proposal.partner.digest).toBe(manualDigest(proposal.partner.message, 31337, vault));
+    expect(proposal.partner.digest).toBe(proposal.digest);
+    expect(proposal.partner.submitCalldata).toBe(proposal.calldata);
+    expect(proposal.partner.domain.name).toBe("LockgateAdvance");
+    expect(built(12n).partner.digest).not.toBe(proposal.partner.digest);
   });
 
-  it("signs the partner digest and files only submit", async () => {
+  it("signs the same digest as the G6 proposal and files only submitProposal", async () => {
     const proposal = built();
     const signature = await signPartnerFiling(proposal.partner, proposal.submittable, ANVIL);
+    const g6 = await signBuiltProposal(proposal, ANVIL);
     const recovered = await recoverTypedDataAddress({
       domain: proposal.partner.domain,
-      types: partnerTypes,
+      types: advanceTypes,
       primaryType: "AdvanceProposal",
       message: proposal.partner.message,
       signature,
     });
     expect(recovered).toBe(privateKeyToAccount(ANVIL).address);
+    expect(g6).toBe(signature);
     const sent: Hex[] = [];
     await filePartnerProposal(proposal.partner, true, signature, 31337, async (tx) => {
       expect(tx.to).toBe(vault);
-      expect(tx.data.slice(0, 10)).toBe(proposal.partner.submitCalldata.slice(0, 10));
+      expect(tx.data.slice(0, 10)).toBe(proposal.calldata.slice(0, 10));
       expect(tx.data).not.toBe(proposal.calldata);
       sent.push(tx.data);
       return "0x11";

@@ -11,37 +11,8 @@ import {
 } from "../domain.js";
 import { applyMandateFloor, quoteExit, type Quote } from "../quote.js";
 import { mandateBlocks } from "./mandate.js";
-import { buildPartnerFiling, type PartnerFiling } from "./partner.js";
+import { buildPartnerFiling, submitProposalAbi, type PartnerFiling } from "./partner.js";
 import { advanceTypes, domainFor, makeQuoteId, type AdvanceMessage } from "./typed.js";
-
-export const submitProposalAbi = [
-  {
-    type: "function",
-    name: "submitProposal",
-    stateMutability: "nonpayable",
-    inputs: [
-      {
-        name: "proposal",
-        type: "tuple",
-        components: [
-          { name: "platform", type: "address" },
-          { name: "recipient", type: "address" },
-          { name: "requestId", type: "uint256" },
-          { name: "navValue", type: "uint256" },
-          { name: "fee", type: "uint256" },
-          { name: "payout", type: "uint256" },
-          { name: "feeBps", type: "uint16" },
-          { name: "dueAt", type: "uint64" },
-          { name: "expiresAt", type: "uint64" },
-          { name: "nonce", type: "uint256" },
-          { name: "quoteId", type: "bytes32" },
-        ],
-      },
-      { name: "proposerSignature", type: "bytes" },
-    ],
-    outputs: [],
-  },
-] as const;
 
 export type BuiltProposal = {
   quote: Quote;
@@ -117,19 +88,7 @@ export function buildProposal(args: {
     functionName: "submitProposal",
     args: [message, "0x"],
   });
-  const partner = buildPartnerFiling({
-    vault: mandate.vault,
-    platform,
-    recipient,
-    navValue: quote.navValue,
-    fee: quote.fee,
-    dueAt: quote.dueAt,
-    requestId,
-    quoteId: message.quoteId,
-    nonce: args.nonce,
-    deadline: expiresAt,
-    chainId: args.chainId,
-  });
+  const partner = buildPartnerFiling({ vault: mandate.vault, chainId: args.chainId, message });
   return {
     quote,
     input,

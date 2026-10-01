@@ -24,6 +24,6 @@ Chainlink's TypeScript workflow is a `workflow.yaml` plus a `config.json`, and t
 
 Mainnet chain ids throw `mainnet-forbidden` before any proposal is built. The example refuses chain 1 and chain 42161. A gated request on 31337 produces zero proposals and skip code `gated`.
 
-Each built proposal also carries the G7 `submit` payload (`partner.submitCalldata`). Filing it is `filePartnerProposal`, which encodes `submit` and calls a sender the caller passes in. The tick does not call that sender. There is no `execute` encoder in this package.
+Each built proposal also carries `partner.submitCalldata`. That calldata is `submitProposal` for the same `AdvanceProposal` the vault hashes. `partner.digest` equals the proposal digest. Filing it is `filePartnerProposal`, which encodes that call and uses a sender the caller passes in. The tick does not call that sender. There is no `execute` or `approve` encoder in this package.
 
 To run it: `npx vite-node src/cli.ts cre-tick --file cre/config.json` from `engine/`.

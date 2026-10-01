@@ -1,7 +1,6 @@
 import { hashTypedData, type Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { EngineError } from "../errors.js";
-import { partnerTypes } from "./partner.js";
 import type { PartnerFiling } from "./partner.js";
 import { advanceTypes, type AdvanceMessage } from "./typed.js";
 import type { BuiltProposal } from "./build.js";
@@ -22,7 +21,7 @@ export async function signPartnerFiling(filing: PartnerFiling, submittable: bool
   const account = privateKeyToAccount(privateKey);
   return account.signTypedData({
     domain: filing.domain,
-    types: partnerTypes,
+    types: advanceTypes,
     primaryType: "AdvanceProposal",
     message: filing.message,
   });

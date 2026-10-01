@@ -105,7 +105,7 @@ Domain name `LockgateAdvance`, version `1`, `chainId`, `verifyingContract` = the
 
 `quoteId = keccak256(abi.encode(address, uint256, uint256, uint64, uint16, uint16, uint64, uint8))` of platform, nav, fee, dueAt, risk bps, utilization bps, navUpdatedAt, kind. Kind codes: weekly 1, epoch 2, quarterly 3, fifo 4. The investor address is not in the struct. `requestId` binds the queue item and must be non-zero to submit. `expiresAt = min(now + 600, mandate.expiresAt)`. `dueAt` is a unix timestamp. Calldata is `submitProposal(tuple, bytes)`. The signature is `0x` until signed. Signing reads a hex key from an environment variable name. The key is never written to JSON. Logs redact fields whose names match `key`, `secret`, `private`, or `signature`. The engine refuses to sign a proposal that is not submittable, and refuses to build one for a forbidden chain (1, 10, 50, 56, 137, 8453, 42161, 43114, 98866). Local 31337, Arbitrum Sepolia 421614, and Ethereum Sepolia 11155111 are allowed. Reading public contracts on a forbidden chain is allowed. Building a digest is not a broadcast.
 
-The partner vault in `contracts/src/partner/libraries/AdvanceHash.sol` hashes a different type (`LockgatePartnerVault`, extra `vault`, `exitRef`, `deadline`, no `requestId` / `payout` / `feeBps` / `quoteId`). Those digests do not match. See `contracts/INTERFACE-REQUESTS.md`. Until G6 picks one schema, this engine signs the G6 struct only.
+`AdvanceHash.digest` calls `AdvanceProposalLib.digest(proposal, block.chainid, address(this))`. `PartnerVault.submitProposal` and `hashTypedProposal` use that digest. `filePartnerProposal` encodes `submitProposal(AdvanceProposal, bytes)` only. It does not encode `execute` or `approve`. The partner's own transaction is what pays the platform.
 
 Router policies: `lowest-fee` (mandate `minFeeBps`, then idle), `most-capacity` (idle), `round-robin` (cursor). A vault is eligible when the mandate is unexpired, its min fee is within the protocol max, idle covers `navValue`, and the platform is approved.
 
@@ -129,9 +129,9 @@ A quote may carry a peg snapshot: `priceE8` (1e8 = $1, the unit in `IPegOracle`)
 
 `assessFacility` mirrors `FacilityMath` and `FacilityStore` in this repo. Interest is `floor(floor(principal * apr / 10_000) * dt / 31_536_000)`, the same floor as OpenZeppelin `mulDiv`, and the year is 365 days. A repayment pays senior interest, senior principal, senior deficit, then the junior legs, then residual. A loss hits junior principal first. Draws stop in recovery, when the receivables book cannot be read, when the late share, advance rate, or junior thickness fails, or when the peg fails. `availableDraw` is the tighter of idle cash and `borrowingBase − drawn`. `canFund` is that room against a payout. The function does not draw.
 
-## Two digests
+## One digest
 
-`buildProposal` still signs the G6 `LockgateAdvance` struct. It also builds the G7 `LockgatePartnerVault` struct that `PartnerVault.submit` records. `exitRef` is `keccak256(abi.encode(uint256 requestId, bytes32 quoteId))`, so the one bytes32 G7 has carries both ids. `filePartnerProposal` will send only `submit`, and only on an allowed chain, and only through a caller-supplied sender. It has no `execute` path. The two digests are not interchangeable. See `contracts/INTERFACE-REQUESTS.md`.
+`buildProposal` signs `LockgateAdvance`. `partner.digest` is that same digest, and `partner.submitCalldata` is `submitProposal` with an empty signature. `filePartnerProposal` fills the signature and sends only that call, on an allowed chain, through a caller-supplied sender. There is no `execute` or `approve` encoder. `exitRef` is not a signed field. `PartnerVault._fund` stores `quoteId` in the advance field that is still named `exitRef`, and the `AdvanceFunded` event uses that same value. See `contracts/INTERFACE-REQUESTS.md`.
 
 ## Non-goals
 

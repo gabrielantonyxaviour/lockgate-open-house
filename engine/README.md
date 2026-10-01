@@ -2,12 +2,13 @@
 
 ## SUMMARY
 
-Off-chain pricing, risk, and EIP-712 advance proposals for Lockgate. The engine reads queue state, scores the platform, prices the wait, checks an optional USDG peg, sizes the stage-3 facility, and builds both the G6 digest and the G7 `submit` payload. It does not sign with a partner key, does not send `execute`, and does not deploy. The model is in `MODEL.md`.
+Off-chain pricing, risk, and EIP-712 advance proposals for Lockgate. The engine reads queue state, scores the platform, prices the wait, checks an optional USDG peg, sizes the stage-3 facility, and files the same `AdvanceProposal` the partner vault verifies. It does not sign with a partner key, does not send `execute`, and does not deploy. The model is in `MODEL.md`.
 
 ## PROGRESS
 
 - 2026-10-01. Pricing curve, risk score, four queue wait models, read-only Kasu / Maple / USD.AI adapters, proposal builder, mandate router, sweeper planner, in-process alerts, backtest, CRE-equivalent tick, CLI. `npx vitest run` and `npx tsc -p tsconfig.json --noEmit` green before the engine commit. G7's partner digest does not match G6's `AdvanceProposal`; the difference is in `contracts/INTERFACE-REQUESTS.md`. No Anvil was started by this work. No mainnet transaction.
 - 2026-10-02. Peg hard stop, stage-3 facility capacity and waterfall, G7 `submit` filing (no `execute`), zod on the sweeper input, and deeper fuzz, invariant, and failure-path tests. Still no Anvil and no mainnet send.
+- 2026-10-02. Partner filing uses the live `AdvanceProposal` digest. `submitProposal` records it. The partner account, not the engine, approves the payout. Stage 1 draw/repay and stage 3 draw/repay run on an Anvil this package starts at port 8546 or higher. The shared Anvil on 8545 is left alone. No mainnet send.
 
 ## Run
 
@@ -31,7 +32,7 @@ Commands: `example` (`--name` weekly, epoch, quarterly, fifo, demo), `quote`, `s
 
 ## Layout
 
-`src/quote.ts` prices. `src/pricing/` is the curve, the peg check, and defaults. `src/risk/score.ts` scores. `src/adapters/` waits and reads. `src/proposal/` builds the G6 digest, the G7 `submit` payload, the router, and the signer. `src/facility/` sizes the stage-3 book. `src/sweep/` plans repayment. `src/backtest/` replays named scenarios. `src/cre/tick.ts` is the cron stand-in. `src/alert/` records alerts.
+`src/quote.ts` prices. `src/pricing/` is the curve, the peg check, and defaults. `src/risk/score.ts` scores. `src/adapters/` waits and reads. `src/proposal/` builds the advance digest, the `submitProposal` payload, the router, and the signer. `src/facility/` sizes the stage-3 book. `src/sweep/` plans repayment. `src/backtest/` replays named scenarios. `src/cre/tick.ts` is the cron stand-in. `src/alert/` records alerts. `test/anvil/` deploys the current contracts and runs the three stage flows. It loads bytecode with `forge inspect` on a source path, because `MockUSDG.sol` is also the name of a test mock. It does not write Solidity.
 
 ## Boundaries
 

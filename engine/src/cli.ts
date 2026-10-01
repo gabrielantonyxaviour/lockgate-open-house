@@ -97,7 +97,6 @@ export async function run(argv: string[]): Promise<unknown> {
         calldata: built.calldata,
         partner: {
           digest: built.partner.digest,
-          exitRef: built.partner.message.exitRef,
           submitCalldata: built.partner.submitCalldata,
         },
         signature,
