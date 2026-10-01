@@ -2,8 +2,17 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ARBITRUM_ONE, ARBITRUM_SEPOLIA, assertHarnessWrite, assertSepoliaBroadcast } from "../src/guards.js";
 import { feeFromBps, modelFeeBps } from "../src/model.js";
+import { usageText } from "../src/actions/catalog.js";
 import { formatUsdg, parseBps, parseUsdg } from "../src/units.js";
 import { HarnessError } from "../src/errors.js";
+
+test("help lists the flags a command accepts", () => {
+  const text = usageText();
+  assert.match(text, /stage1\.quote - /);
+  assert.match(text, /--navUsdg 1000/);
+  assert.match(text, /stage2\.repay - /);
+  assert.match(text, /--exitRef\n/);
+});
 
 test("USDG parsing keeps 6 decimals", () => {
   assert.equal(parseUsdg("1000"), 1_000_000_000n);

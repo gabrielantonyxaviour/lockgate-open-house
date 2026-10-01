@@ -1,5 +1,14 @@
 # Docs
 
-## SUMMARY
+Use these pages to see how Lockgate is built and how to run it. They are not an offer and not a legal opinion.
 
-`ARCHITECTURE.md` is the stage map and the deploy path. `THREAT-MODEL.md` is STRIDE plus the economic cases the harness asserts. `TESTING.md` is how to run the suites and what was not executed. None of these files is an offer or a legal opinion.
+| Page | Use it to |
+|---|---|
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Follow the three stages, the CREATE2 deploy, and the `LockgateAdvance` domain |
+| [TESTING.md](TESTING.md) | Run the harness, Foundry, and engine suites, and see what was not executed |
+| [THREAT-MODEL.md](THREAT-MODEL.md) | Read the STRIDE table and the economic cases the harness checks |
+| [SECURITY-NOTES-harness.md](SECURITY-NOTES-harness.md) | See the harness findings H-1 through H-7 |
+| [SECURITY-NOTES-engine.md](SECURITY-NOTES-engine.md) | See the engine findings |
+| [SECURITY-NOTES-partner.md](SECURITY-NOTES-partner.md) | See the vault and facility findings |
+
+Run and extend the local deploy from [../harness/README.md](../harness/README.md). The engine's own commands are in [../engine/README.md](../engine/README.md).

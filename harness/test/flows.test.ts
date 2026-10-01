@@ -1,9 +1,15 @@
 import assert from "node:assert/strict";
+import { readFileSync, writeFileSync } from "node:fs";
 import { test } from "node:test";
+import { createPublicClient, createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { foundry } from "viem/chains";
 import { demoAll } from "../src/actions/demo.js";
 import { loadCtx } from "../src/chain.js";
 import { deployProtocol } from "../src/deploy.js";
+import { HarnessError } from "../src/errors.js";
 import { readManifest } from "../src/manifest.js";
+import { ROLES } from "../src/roles.js";
 import { startServer } from "../src/server.js";
 import { withAnvil } from "./anvil.js";
 
@@ -21,6 +27,23 @@ test("two fresh Anvil chains deploy the same protocol addresses", { timeout: 180
   assert.equal(first.contracts.LockgateExitPool, second.contracts.LockgateExitPool);
   assert.notEqual(first.contracts.PartnerVaultA.toLowerCase(), first.roles.lockgate.toLowerCase());
   assert.notEqual(first.contracts.FundFactory.toLowerCase(), first.contracts.WeeklyImpl.toLowerCase());
+});
+
+test("a refused deploy leaves the manifest file untouched", { timeout: 60_000 }, async () => {
+  await withAnvil(async (rpc, manifestFile) => {
+    const account = privateKeyToAccount(ROLES.lockgate.key);
+    const wallet = createWalletClient({ account, chain: foundry, transport: http(rpc) });
+    const hash = await wallet.sendTransaction({ account, chain: foundry, to: account.address, value: 0n });
+    const publicClient = createPublicClient({ chain: foundry, transport: http(rpc) });
+    await publicClient.waitForTransactionReceipt({ hash });
+    const sentinel = "{\"sentinel\":true}\n";
+    writeFileSync(manifestFile, sentinel);
+    await assert.rejects(
+      () => deployProtocol(rpc, manifestFile),
+      (err: unknown) => err instanceof HarnessError && err.code === "NOT_FRESH",
+    );
+    assert.equal(readFileSync(manifestFile, "utf8"), sentinel);
+  });
 });
 
 test("demo flows and the test console run on local Anvil", { timeout: 300_000 }, async () => {

@@ -2,7 +2,7 @@
 
 ## SUMMARY
 
-Reviewed the harness, the local deploy scripts, and the loopback test console on 2026-10-02. The pass covered access control, reentrancy, rounding, oracle staleness, signature replay, denial of service, griefing, and economic attacks. Six findings were fixed under `harness/` and `scripts/start-anvil.ts`. Regressions are in `harness/test/security.test.ts`, with the Anvil nonce and cross-vault checks in `harness/test/failures.test.ts`. This is not a pentest and not a legal opinion. The console moves Anvil test funds only.
+Reviewed the harness, the local deploy scripts, and the loopback test console on 2026-10-02. The pass covered access control, reentrancy, rounding, oracle staleness, signature replay, denial of service, griefing, and economic attacks. Seven findings were fixed under `harness/` and `scripts/start-anvil.ts`. Regressions are in `harness/test/security.test.ts` and `harness/test/flows.test.ts`, with the Anvil nonce and cross-vault checks in `harness/test/failures.test.ts`. This is not a pentest and not a legal opinion. The console moves Anvil test funds only.
 
 ## Findings
 
@@ -14,6 +14,7 @@ Reviewed the harness, the local deploy scripts, and the loopback test console on
 | H-4 | Replay | `draftProposal` signed from the router slice. The router's probe uses nonce 0, request id 0, and `expiresAt` equal to the block timestamp, so a slice can exist for a proposal the vault will reject. `submitProposal` stores that digest and the nonce stays occupied until the owner cancels it. | Before return, the draft checks the mandate payout, `nonceUsed`, and `proposalHashOf`. `preview` of the exact struct must be `None`. A used nonce is `REPLAY`. The failure test still submits a rejected proposal directly, so the contract's pin-then-reject path stays covered. |
 | H-5 | Access | `signProposal` signed any `chainId` the caller passed. A 42161 or 421614 signature could be produced from the helper. | `assertHarnessWrite` runs before `signTypedData`. Chain 42161 is `MAINNET_REFUSED`. Every other chain is `CHAIN_REFUSED`. A fee that leaves no payout, or a payout other than nav minus fee, is `VALIDATION`. |
 | H-6 | DoS | Two `POST /api/act` calls could overlap and interleave nonce and cash. | The act route runs through `inOrder`. A failed action does not block the next one. The lock is not inside `send`, so `demoAll` cannot deadlock on its own calls. |
+| H-7 | Access | `deployProtocol` wrote the manifest before the nonce check and the seed mint. A refused deploy left predicted addresses on disk, and the next command treated them as live. | The file is written after the seed mint. `NOT_FRESH` leaves the previous bytes in place. |
 
 ## Reviewed, no code change
 

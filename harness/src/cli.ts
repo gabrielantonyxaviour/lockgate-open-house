@@ -1,5 +1,5 @@
 import { existsSync } from "node:fs";
-import { findAction } from "./actions/catalog.js";
+import { findAction, usageText } from "./actions/catalog.js";
 import { loadCtx } from "./chain.js";
 import { HarnessError } from "./errors.js";
 import { parseFlags } from "./input.js";
@@ -22,8 +22,7 @@ function flags(argv: string[]): Record<string, string> {
 async function main(): Promise<void> {
   const [id, ...rest] = process.argv.slice(2);
   if (!id || id === "help") {
-    const { ACTIONS } = await import("./actions/catalog.js");
-    process.stdout.write(`${ACTIONS.map((action) => action.id).join("\n")}\n`);
+    process.stdout.write(`${usageText()}\n`);
     return;
   }
   const action = findAction(id);

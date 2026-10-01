@@ -2,7 +2,7 @@
 
 ## SUMMARY
 
-The harness clicks through stage 1, door 2, stage 2, and stage 3 on a fresh local Anvil and checks the test console over HTTP. On 2 Oct 2026 the harness was run again after the security review: 24 passed, 0 failed. The last full Foundry run recorded here is 181 passed, 0 failed (41 suites). The last engine vitest run is 65 passed, 0 failed (17 files). This pass did not re-run those two suites, and it did not edit `contracts/src` or `engine/`. No Sepolia deploy was broadcast. Arbitrum One was not touched.
+The harness clicks through stage 1, door 2, stage 2, and stage 3 on a fresh local Anvil and checks the test console over HTTP. On 2 Oct 2026 the harness was run again after the developer-doc pass: 26 passed, 0 failed. The last full Foundry run recorded here is 181 passed, 0 failed (41 suites). The last engine vitest run is 65 passed, 0 failed (17 files). This pass did not re-run those two suites, and it did not edit `contracts/src` or `engine/`. No Sepolia deploy was broadcast. Arbitrum One was not touched.
 
 ## How to run
 
@@ -41,12 +41,12 @@ npm test
 
 ## What this session ran
 
-- `harness/test/units.test.ts`: 6-decimal parsing, the 99 bps demo window, chain 31337 allowed, chain 42161 refused, Sepolia blocked without the flag.
+- `harness/test/units.test.ts`: 6-decimal parsing, the 99 bps demo window, chain 31337 allowed, chain 42161 refused, Sepolia blocked without the flag. `help` lists `stage1.quote` with `--navUsdg 1000` and lists `--exitRef` with no default.
 - `harness/test/fuzz.test.ts`: 256 draws keep the fee on the ceiling, monotone in bps, and equal to the floor or one unit above it. The stage-1 curve matches the constructor formula, stays monotone, and is above 1500 bps at 86400 seconds. USDG text round-trips and rejects empty, negative, and over-precise input.
 - `harness/test/failures.test.ts`: invalid JSON, a missing action, and a nested input return 400 `VALIDATION` before any chain call. An unknown action returns 422. On one Anvil: `WindowClosed`, `OwnableUnauthorizedAccount`, `FaucetCap`, a stranger `draw` as `Unauthorized`, a flipped engine signature as `BadEngineSig`. A second draft of a used nonce returns `REPLAY` before a transaction. A direct resubmit reverts `NonceUsed`. A signature for vault A submitted to vault B reverts `BadEngineSig` and leaves vault B's proposal hash empty. Vault tokens equal idle plus reserve, and the router balance is unchanged across `relayRepay`. A low peg is preview reason 11 and a stale update is reason 12. `approve` then reverts `MandateRejected`.
 - `harness/test/security.test.ts`: loopback RPCs pass, port 8545 and the text `08545` are `PORT_RESERVED`, a public host is `CHAIN_REFUSED`. Signatures for chain 42161 and 421614 are refused before `signTypedData`. A fee equal to nav, and a payout off by one unit, are `VALIDATION`. `feeFromBps(1, 1)` is 1. A numeric JSON nav and a body over 8 KiB return 400 `VALIDATION`. Overlapping acts run one at a time.
 - `harness/test/invariant.test.ts`: eligible + late = total exposure before a draw, after it, and after `markLate`. `markLate` before grace reverts `TooEarly`. Facility `solvent()` holds, and the token balance matches `accounting.cash`. The borrower cannot `approveLender`. The governor cannot `draw`. Mandate preview rejects a low fee (7), a past deadline (16), a tenor one second over the max (8), and a 1 bp concentration cap (6). Equality on the deadline and on the max tenor is allowed.
-- `harness/test/flows.test.ts`: two fresh Anvils produce the same CREATE2 addresses, including `FundFactory`, `OpenCreditVault`, and `LockgateExitPool`. One Anvil runs `demoAll`, including door 2, `submitProposal` then partner `approve`, the factory-cloned epoch, and the HTTP console. The console GET checks the title and the not-an-offer line. The surface includes `door2.cycle`. `POST /api/act` with `token.faucet` returns 200. An unknown action returns 422.
+- `harness/test/flows.test.ts`: two fresh Anvils produce the same CREATE2 addresses, including `FundFactory`, `OpenCreditVault`, and `LockgateExitPool`. A deploy against an Anvil whose Lockgate nonce is not 0 returns `NOT_FRESH` and leaves the manifest file bytes unchanged. One Anvil runs `demoAll`, including door 2, `submitProposal` then partner `approve`, the factory-cloned epoch, and the HTTP console. The console GET checks the title and the not-an-offer line. The surface includes `door2.cycle`. `POST /api/act` with `token.faucet` returns 200. An unknown action returns 422.
 - `harness/test/sepolia.test.ts`: no flag means no RPC call. A local node reporting chain 42161 reverts `MAINNET_REFUSED` before a deploy. A local node reporting 421614, with the published Anvil key and the allow flag, deploys the protocol and records the governor as partner A. A governor equal to the deployer returns `VALIDATION` before a contract is deployed. That test does not call the public endpoint.
 - `engine`: `vitest run`, 17 files, 65 tests, all passed.
 - `forge test` in `contracts/`: 41 suites, 181 tests, 0 failed, 0 skipped. That includes `PartnerKeys` and `test/fork/UsdgFork.t.sol`.
@@ -61,7 +61,7 @@ The first 1100 shares are minted in the platform constructor without a matching 
 
 - `scripts/deploy-sepolia.ts` against public Arbitrum Sepolia. `USE_PAXOS_USDG=1` was not broadcast. That path would point `UsdgAdapter` at `0xFFC95faa3d63Cde504a05B567C600B78C0b41892` and would not mint. https://docs.paxos.com/guides/stablecoin/usdg/testnet
 - Any transaction on Arbitrum One.
-- Browser rendering. No browser tool was connected. The console was checked with `fetch` inside `flows.test.ts`.
+- Browser rendering. No browser tool was connected. The console was checked with `fetch` inside `flows.test.ts`. This pass also fetched `http://127.0.0.1:18910/` and `/api/surface` after `deploy:local` on `127.0.0.1:8546`. The title is "Lockgate test console" and the surface lists 40 actions.
 - A production peg oracle. The harness oracle is the zero address.
 
 `forge test` did read `https://sepolia-rollup.arbitrum.io/rpc` inside `UsdgFork`. That file is a `vm.createSelectFork` with no broadcast. The harness Sepolia script was not pointed at that URL.

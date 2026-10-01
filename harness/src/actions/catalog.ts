@@ -76,6 +76,17 @@ export function findAction(id: string): Action | undefined {
   return ACTIONS.find((action) => action.id === id);
 }
 
+/** One block the CLI prints for `help`. Defaults match the console fields. */
+export function usageText(actions: readonly Action[] = ACTIONS): string {
+  return actions.map((action) => {
+    const flags = action.fields.map((field) => {
+      const value = field.default === undefined ? "" : ` ${field.default}`;
+      return `  --${field.name}${value}`;
+    });
+    return [`${action.id} - ${action.summary}`, ...flags].join("\n");
+  }).join("\n");
+}
+
 export function surface(): Array<{ id: string; summary: string; fields: Field[] }> {
   return ACTIONS.map(({ id, summary, fields }) => ({ id, summary, fields }));
 }

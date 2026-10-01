@@ -59,7 +59,6 @@ export async function deployProtocol(rpc: string, manifestFile?: string): Promis
     roles: Object.fromEntries(Object.entries(ROLES).map(([name, role]) => [name, role.address])),
   };
   const file = manifestFile ?? manifestPath(ANVIL_CHAIN_ID);
-  writeManifest(manifest, file);
   const ctx = await loadCtx(manifest, file);
   assertHarnessWrite(ctx.chainId);
   const nonce = await ctx.publicClient.getTransactionCount({ address: ROLES.lockgate.address });
@@ -90,6 +89,7 @@ export async function deployProtocol(rpc: string, manifestFile?: string): Promis
   for (const [role, amount] of Object.entries(SEED) as Array<[RoleName, bigint]>) {
     await send(ctx, "lockgate", "MockUSDG", "mint", [ROLES[role].address, amount]);
   }
+  writeManifest(manifest, file);
   return manifest;
 }
 
