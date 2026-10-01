@@ -36,6 +36,8 @@ const SOURCE: Record<string, string> = {
   PlatformReserve: "src/core/PlatformReserve.sol:PlatformReserve",
   LockgateCreditLine: "src/core/LockgateCreditLine.sol:LockgateCreditLine",
   FundFactory: "src/core/FundFactory.sol:FundFactory",
+  EpochQueuePlatform: "src/core/EpochQueuePlatform.sol:EpochQueuePlatform",
+  QuarterlyWindowPlatform: "src/core/QuarterlyWindowPlatform.sol:QuarterlyWindowPlatform",
   PartnerVault: "src/partner/PartnerVault.sol:PartnerVault",
   CreditFacility: "src/facility/CreditFacility.sol:CreditFacility",
   WeeklyCyclePlatform: "src/core/WeeklyCyclePlatform.sol:WeeklyCyclePlatform",

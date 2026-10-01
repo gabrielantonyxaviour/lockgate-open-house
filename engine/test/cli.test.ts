@@ -47,6 +47,9 @@ describe("cli", () => {
         maxTenorSeconds: 4_000_000,
         concentrationCapBps: 5000,
         expiresAt: 1_700_000_000 + 86_400,
+        payoutTo: "0x00000000000000000000000000000000000000b2",
+        idle: "50000000000",
+        totalAssets: "100000000000",
       },
     };
     writeFileSync(file, encodeJson(body));

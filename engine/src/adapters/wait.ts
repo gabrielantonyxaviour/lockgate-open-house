@@ -13,6 +13,9 @@ export type WaitResult = {
 };
 
 function finiteWait(now: number, dueAt: number, rollovers: number, assumption?: string): WaitResult {
+  if (!Number.isSafeInteger(now) || !Number.isSafeInteger(dueAt)) {
+    throw new EngineError("param", "queue clock does not fit a safe integer");
+  }
   return {
     secondsToClear: Math.max(0, dueAt - now),
     dueAt,

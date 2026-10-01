@@ -120,7 +120,7 @@ describe.sequential("anvil stages 1-3", () => {
     expect(due[0]?.kind).toBe("repay");
     expect(due[0]?.sendable).toBe(true);
     await stamp(node, dueAt);
-    await broadcastOwnBook(due, 31337, (tx) => raw(node, 0, tx.to, tx.data!));
+    await broadcastOwnBook(due, 31337, world.line, (tx) => raw(node, 0, tx.to, tx.data!));
     expect(await read<bigint>(node, world.line, world.lineAbi, "remainingOf", [1n])).toBe(0n);
     await send(node, 1, fund, fundAbi, "processWindow", []);
     expect(Number(await read<bigint>(node, fund, fundAbi, "nextWindow"))).toBeGreaterThan(dueAt);
@@ -150,6 +150,8 @@ describe.sequential("anvil stages 1-3", () => {
         maxTenorSeconds: 40 * DAY,
         concentrationCapBps: 5_000,
         expiresAt: now + 40 * DAY,
+        idle: 20_000n * U,
+        totalAssets: 20_000n * U,
       },
       platform,
       recipient: platform,
@@ -162,7 +164,14 @@ describe.sequential("anvil stages 1-3", () => {
     expect(reason, `preview ${reason}`).toBe(0);
     expect(await read<string>(node, world.vault, world.vaultAbi, "hashTypedProposal", [built.message])).toBe(built.digest);
     const signature = await signBuiltProposal(built, KEYS[0]);
-    await filePartnerProposal(built.partner, true, signature, 31337, (tx) => raw(node, 0, tx.to, tx.data));
+    await filePartnerProposal(
+      built.partner,
+      true,
+      signature,
+      31337,
+      node.account(0).address,
+      (tx) => raw(node, 0, tx.to, tx.data),
+    );
     expect(await read<string>(node, world.vault, world.vaultAbi, "proposalHashOf", [4n])).toBe(built.digest);
     expect(await read<boolean>(node, world.vault, world.vaultAbi, "nonceUsed", [4n])).toBe(false);
     const before = await balance(world, platform);
@@ -175,8 +184,8 @@ describe.sequential("anvil stages 1-3", () => {
   it("sizes a stage-3 facility, then the borrower draws and repays", async () => {
     const eligible = 1_000_000n * U;
     await send(node, 0, world.book, world.bookAbi, "set", [eligible, 0n]);
-    await send(node, 0, world.facility, world.facilityAbi, "approveLender", [node.account(3).address, true]);
-    await send(node, 0, world.facility, world.facilityAbi, "approveLender", [node.account(4).address, true]);
+    await send(node, 1, world.facility, world.facilityAbi, "approveLender", [node.account(3).address, true]);
+    await send(node, 1, world.facility, world.facilityAbi, "approveLender", [node.account(4).address, true]);
     await approve(world, 3, world.facility, 500_000n * U);
     await approve(world, 4, world.facility, 500_000n * U);
     await send(node, 3, world.facility, world.facilityAbi, "deposit", [0, 500_000n * U]);

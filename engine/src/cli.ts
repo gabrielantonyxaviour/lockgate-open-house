@@ -8,7 +8,7 @@ import { runCreTick } from "./cre/tick.js";
 import { paramsSchema, parseOrThrow, quoteInputSchema, zAmount } from "./domain.js";
 import { EngineError, asApiError } from "./errors.js";
 import { exampleBundle } from "./examples.js";
-import { encodeJson } from "./json.js";
+import { encodeJson, parseJson } from "./json.js";
 import { logEvent } from "./log.js";
 import { DEFAULT_PARAMS } from "./pricing/defaults.js";
 import { buildProposal } from "./proposal/build.js";
@@ -39,7 +39,7 @@ export function parseArgs(argv: string[]): { command: string | undefined; flags:
 
 function readInput(flags: Flags): unknown {
   if (typeof flags.file !== "string") throw new EngineError("usage", "pass --file");
-  return JSON.parse(readFileSync(flags.file, "utf8"));
+  return parseJson(readFileSync(flags.file, "utf8"));
 }
 
 const proposeSchema = z.object({

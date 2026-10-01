@@ -33,12 +33,19 @@ export function lerpBps(start: number, end: number, numerator: number, denominat
   return Number(next);
 }
 
-/** Scale a token amount into 6-decimal USDG units. */
-export function toUsdg6(amount: bigint, decimals: number): bigint {
+/**
+ * Scale a token amount into 6-decimal USDG units.
+ * Cash and collateral use floor. A queue in front of an exit uses ceil.
+ */
+export function toUsdg6(amount: bigint, decimals: number, rounding: "floor" | "ceil" = "floor"): bigint {
   if (!Number.isInteger(decimals) || decimals < 0 || decimals > 36) {
     throw new Error("decimals");
   }
+  if (amount < 0n) throw new Error("negative money");
   if (decimals === 6) return amount;
-  if (decimals > 6) return mulDivRoundHalfUp(amount, 1n, 10n ** BigInt(decimals - 6));
+  if (decimals > 6) {
+    const scale = 10n ** BigInt(decimals - 6);
+    return rounding === "ceil" ? mulDivCeil(amount, 1n, scale) : amount / scale;
+  }
   return amount * 10n ** BigInt(6 - decimals);
 }

@@ -5,7 +5,9 @@ import { EngineError } from "./errors.js";
 export const zAmount = z.union([
   z.bigint().nonnegative(),
   z.string().regex(/^[0-9]+$/).transform((value) => BigInt(value)),
-  z.number().int().nonnegative().transform((value) => BigInt(value)),
+  z.number().int().nonnegative().refine((value) => Number.isSafeInteger(value), {
+    message: "amount exceeds the safe integer range; pass a decimal string",
+  }).transform((value) => BigInt(value)),
 ]);
 
 export const zAddress = z.string().refine(isAddress, "address").transform((value) => getAddress(value));
@@ -118,6 +120,10 @@ export const mandateSchema = z.object({
   maxTenorSeconds: z.number().int().positive(),
   concentrationCapBps: z.number().int().min(1).max(10_000),
   expiresAt: z.number().int().positive(),
+  payoutTo: zAddress.optional(),
+  paused: z.boolean().optional(),
+  idle: zAmount.optional(),
+  totalAssets: zAmount.optional(),
 });
 
 export type Mandate = z.infer<typeof mandateSchema>;

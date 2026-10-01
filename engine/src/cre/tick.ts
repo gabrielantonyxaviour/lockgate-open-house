@@ -16,13 +16,13 @@ export const creConfigSchema = z.object({
     mandate: mandateSchema,
     idle: zAmount,
     cursor: z.number().int().nonnegative(),
-  })).min(1),
+  })).min(1).max(32),
   requests: z.array(z.object({
     input: quoteInputSchema,
     platform: zAddress,
     recipient: zAddress,
     nonce: zAmount,
-  })).min(1),
+  })).min(1).max(32),
 });
 
 export type CreTick = {

@@ -55,14 +55,14 @@ describe("sweeper", () => {
       advances: [advance({ vaultKind: "partner" })],
     });
     const calls: Hex[] = [];
-    const sent = await broadcastOwnBook(partner, 31337, async (tx) => {
+    const sent = await broadcastOwnBook(partner, 31337, vault, async (tx) => {
       calls.push(tx.data);
       return "0x11" as Hex;
     });
     expect(sent).toEqual([]);
     expect(calls).toEqual([]);
     const forced = { ...partner[0]!, sendable: true };
-    await expect(broadcastOwnBook([forced], 31337, async () => "0x11")).rejects.toBeInstanceOf(EngineError);
+    await expect(broadcastOwnBook([forced], 31337, vault, async () => "0x11")).rejects.toBeInstanceOf(EngineError);
     expect(alertsForSweep("northwind", partner).some((alert) => alert.code === "partner-repay")).toBe(true);
   });
 });

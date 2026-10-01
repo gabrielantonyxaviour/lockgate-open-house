@@ -30,6 +30,9 @@ function config(chainId = 31337, gated = false) {
         maxTenorSeconds: 40 * 86_400,
         concentrationCapBps: 5000,
         expiresAt: now + 86_400,
+        payoutTo: recipient,
+        idle: "50000000000",
+        totalAssets: "100000000000",
       },
     }],
     requests: [{

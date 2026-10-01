@@ -1,3 +1,16 @@
+import { EngineError } from "./errors.js";
+
+/** Reject numbers JSON.parse has already rounded. Amounts above 2^53 must be decimal strings. */
+export function parseJson(text: string): unknown {
+  return JSON.parse(text, (key, value) => {
+    if (typeof value === "number" && !Number.isSafeInteger(value)) {
+      const where = key || "value";
+      throw new EngineError("param", `${where}: number is outside the safe integer range; pass a decimal string`);
+    }
+    return value;
+  });
+}
+
 export function encodeJson(value: unknown): string {
   return JSON.stringify(toJsonValue(value), null, 2);
 }

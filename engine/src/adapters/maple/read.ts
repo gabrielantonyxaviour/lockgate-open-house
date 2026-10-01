@@ -1,6 +1,6 @@
 import { toUsdg6 } from "../../money.js";
 import type { Address } from "../../domain.js";
-import { asAddress, asBigint, named, type ContractReader } from "../reader.js";
+import { asAddress, asBigint, named, scanBound, type ContractReader } from "../reader.js";
 import { erc20Abi, maplePoolAbi, mapleQueueAbi } from "./abi.js";
 
 export type MapleRead = {
@@ -25,7 +25,7 @@ export async function readMaple(
   reader: ContractReader,
   cfg: { pool: Address; withdrawalManager: Address; asset: Address; maxScan?: number },
 ): Promise<MapleRead> {
-  const maxScan = cfg.maxScan ?? 100;
+  const maxScan = scanBound(cfg.maxScan);
   const head = await reader.readContract({
     address: cfg.withdrawalManager,
     abi: mapleQueueAbi,
@@ -92,5 +92,5 @@ async function exitAssets(reader: ContractReader, pool: Address, shares: bigint,
     functionName: "convertToExitAssets",
     args: [shares],
   }), "exit");
-  return toUsdg6(assets, decimals);
+  return toUsdg6(assets, decimals, "ceil");
 }

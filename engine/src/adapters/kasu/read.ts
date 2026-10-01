@@ -1,7 +1,7 @@
 import { EngineError } from "../../errors.js";
 import { toUsdg6 } from "../../money.js";
 import type { Address } from "../../domain.js";
-import { asAddress, asBigint, named, type ContractReader } from "../reader.js";
+import { asAddress, asBigint, named, scanBound, type ContractReader } from "../reader.js";
 import { erc4626Abi, kasuPendingAbi, kasuSystemAbi } from "./abi.js";
 import { isDepositNft } from "./ids.js";
 
@@ -22,7 +22,7 @@ export async function readKasu(
   reader: ContractReader,
   cfg: { systemVariables: Address; pendingPool: Address; assetDecimals: number; maxScan?: number },
 ): Promise<KasuRead> {
-  const maxScan = cfg.maxScan ?? 100;
+  const maxScan = scanBound(cfg.maxScan);
   const system = cfg.systemVariables;
   const epochNumber = asBigint(await read(reader, system, kasuSystemAbi, "currentEpochNumber"), "epoch");
   const epochSeconds = Number(asBigint(await read(reader, system, kasuSystemAbi, "epochDuration"), "duration"));
@@ -55,7 +55,7 @@ export async function readKasu(
   for (const [tranche, shares] of sharesByTranche) {
     try {
       const assets = asBigint(await read(reader, tranche, erc4626Abi, "convertToAssets", [shares]), "assets");
-      queuedValue = (queuedValue ?? 0n) + toUsdg6(assets, cfg.assetDecimals);
+      queuedValue = (queuedValue ?? 0n) + toUsdg6(assets, cfg.assetDecimals, "ceil");
     } catch {
       queuedValue = null;
       notes.push(`unpriced-tranche:${tranche}`);

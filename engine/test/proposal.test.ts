@@ -33,6 +33,9 @@ function mandate(vault: `0x${string}`, minFeeBps: number, idle = 20_000n * U): {
       maxTenorSeconds: 40 * 86_400,
       concentrationCapBps: 5_000,
       expiresAt: now + 86_400,
+      payoutTo: recipient,
+      idle: 50_000n * U,
+      totalAssets: 100_000n * U,
     },
   };
 }

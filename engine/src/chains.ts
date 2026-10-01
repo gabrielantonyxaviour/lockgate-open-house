@@ -19,11 +19,18 @@ export const LOCAL_ANVIL = 31337;
 export const ARBITRUM_SEPOLIA = 421614;
 export const ETHEREUM_SEPOLIA = 11155111;
 
+/** Signing and broadcasting are allowlisted. A denylist would still sign on an unnamed mainnet. */
+export const ALLOWED_CHAIN_IDS: ReadonlySet<number> = new Set([
+  LOCAL_ANVIL,
+  ARBITRUM_SEPOLIA,
+  ETHEREUM_SEPOLIA,
+]);
+
 export function assertTransactableChain(chainId: number): void {
   if (!Number.isInteger(chainId) || chainId <= 0) {
     throw new EngineError("param", "chain id must be a positive integer");
   }
-  if (FORBIDDEN_CHAIN_IDS.has(chainId)) {
+  if (!ALLOWED_CHAIN_IDS.has(chainId) || FORBIDDEN_CHAIN_IDS.has(chainId)) {
     throw new EngineError("mainnet-forbidden", `refusing to transact on chain ${chainId}`);
   }
 }

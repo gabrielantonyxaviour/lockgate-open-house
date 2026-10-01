@@ -41,6 +41,9 @@ function built(requestId = 11n) {
       maxTenorSeconds: 40 * 86_400,
       concentrationCapBps: 5_000,
       expiresAt: now + 86_400,
+      payoutTo: recipient,
+      idle: 50_000_000_000n,
+      totalAssets: 100_000_000_000n,
     },
     platform,
     recipient,
@@ -103,7 +106,8 @@ describe("partner filing", () => {
     expect(recovered).toBe(privateKeyToAccount(ANVIL).address);
     expect(g6).toBe(signature);
     const sent: Hex[] = [];
-    await filePartnerProposal(proposal.partner, true, signature, 31337, async (tx) => {
+    const proposer = privateKeyToAccount(ANVIL).address;
+    await filePartnerProposal(proposal.partner, true, signature, 31337, proposer, async (tx) => {
       expect(tx.to).toBe(vault);
       expect(tx.data.slice(0, 10)).toBe(proposal.calldata.slice(0, 10));
       expect(tx.data).not.toBe(proposal.calldata);
@@ -120,9 +124,10 @@ describe("partner filing", () => {
       calls += 1;
       return "0x11";
     };
-    await expect(filePartnerProposal(proposal.partner, false, "0x", 31337, sender)).rejects.toThrow(EngineError);
-    await expect(filePartnerProposal(proposal.partner, true, "0x", 1, sender)).rejects.toThrow(EngineError);
-    await expect(filePartnerProposal(proposal.partner, true, "0x", 42161, sender)).rejects.toThrow(EngineError);
+    const proposer = privateKeyToAccount(ANVIL).address;
+    await expect(filePartnerProposal(proposal.partner, false, "0x", 31337, proposer, sender)).rejects.toThrow(EngineError);
+    await expect(filePartnerProposal(proposal.partner, true, "0x", 1, proposer, sender)).rejects.toThrow(EngineError);
+    await expect(filePartnerProposal(proposal.partner, true, "0x", 42161, proposer, sender)).rejects.toThrow(EngineError);
     expect(calls).toBe(0);
     await expect(signPartnerFiling(proposal.partner, false, ANVIL)).rejects.toThrow(EngineError);
   });

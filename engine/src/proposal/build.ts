@@ -50,7 +50,7 @@ export function buildProposal(args: {
   const mandate = parseOrThrow(mandateSchema, args.mandate);
   const priced = quoteExit(input, params);
   const quote = priced.available ? applyMandateFloor(priced, mandate.minFeeBps, params.maxFeeBps) : priced;
-  const blocks = [...quote.blocks, ...mandateBlocks(quote, input, mandate, platform)];
+  const blocks = [...quote.blocks, ...mandateBlocks(quote, input, mandate, platform, recipient)];
   const requestId = input.requestId ?? 0n;
   if (quote.available && blocks.length === quote.blocks.length && requestId === 0n) {
     blocks.push({ code: "request", reason: "a proposal must name a non-zero queue request" });

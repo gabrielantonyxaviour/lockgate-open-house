@@ -1,4 +1,4 @@
-import { encodeFunctionData, hashTypedData, type Address, type Hex } from "viem";
+import { encodeFunctionData, getAddress, hashTypedData, recoverTypedDataAddress, type Address, type Hex } from "viem";
 import { assertTransactableChain } from "../chains.js";
 import { EngineError } from "../errors.js";
 import { advanceTypes, domainFor, type AdvanceMessage } from "./typed.js";
@@ -73,11 +73,28 @@ export async function filePartnerProposal(
   submittable: boolean,
   signature: Hex,
   chainId: number,
+  proposer: Address,
   sender: (tx: { to: Address; data: Hex }) => Promise<Hex>,
 ): Promise<Hex> {
   assertTransactableChain(chainId);
   if (filing.domain.chainId !== chainId) throw new EngineError("param", "chain id does not match the filing");
   if (!submittable) throw new EngineError("refused", "refusing to file a proposal that fails its checks");
+  let recovered: Address;
+  try {
+    recovered = await recoverTypedDataAddress({
+      domain: filing.domain,
+      types: advanceTypes,
+      primaryType: "AdvanceProposal",
+      message: filing.message,
+      signature,
+    });
+  } catch (err) {
+    if (err instanceof EngineError) throw err;
+    throw new EngineError("param", "signature does not recover for this filing");
+  }
+  if (getAddress(recovered) !== getAddress(proposer)) {
+    throw new EngineError("param", "signature is not from the proposer");
+  }
   const data = encodeFunctionData({
     abi: submitProposalAbi,
     functionName: "submitProposal",

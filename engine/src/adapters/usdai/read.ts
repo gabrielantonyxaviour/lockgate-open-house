@@ -1,5 +1,5 @@
 import { EngineError } from "../../errors.js";
-import { mulDivRoundHalfUp, toUsdg6 } from "../../money.js";
+import { mulDivCeil, toUsdg6 } from "../../money.js";
 import { QUEUE } from "../../pricing/defaults.js";
 import type { Address } from "../../domain.js";
 import { asBigint, named, type ContractReader } from "../reader.js";
@@ -53,7 +53,7 @@ export async function readUsdai(
     const steps = Math.floor((now - stamp) / epochSeconds) + 1;
     nextWindowAt = stamp + steps * epochSeconds;
   }
-  const queuedAssets = mulDivRoundHalfUp(pendingShares, sharePrice, WAD);
+  const queuedAssets = mulDivCeil(pendingShares, sharePrice, WAD);
   const notes = [
     "Loans are not called to pay exits. Cash is the redemption balance only.",
     "Day-29 cutoff is applied by the simulated epoch clock, not by this read.",
@@ -64,9 +64,9 @@ export async function readUsdai(
     nextWindowAt,
     epochSeconds,
     pendingShares,
-    queuedValue: toUsdg6(queuedAssets, decimals),
-    cashAvailable: toUsdg6(balance, decimals),
-    nav: toUsdg6(rawNav, decimals),
+    queuedValue: toUsdg6(queuedAssets, decimals, "ceil"),
+    cashAvailable: toUsdg6(balance, decimals, "floor"),
+    nav: toUsdg6(rawNav, decimals, "floor"),
     sharePrice,
     assetDecimals: decimals,
     timestampWasPast,

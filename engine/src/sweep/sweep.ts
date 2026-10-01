@@ -1,4 +1,4 @@
-import { encodeFunctionData, type Address, type Hex } from "viem";
+import { encodeFunctionData, getAddress, type Address, type Hex } from "viem";
 import { z } from "zod";
 import { assertTransactableChain } from "../chains.js";
 import { parseOrThrow, zAddress, zAmount } from "../domain.js";
@@ -17,7 +17,7 @@ export const sweepInputSchema = z.object({
     status: z.enum(["active", "repaid", "late"]),
     cash: z.union([zAmount, z.null()]),
     vaultKind: z.enum(["own-book", "partner"]),
-  })),
+  })).max(64),
 });
 
 export const creditLineAbi = [
@@ -99,19 +99,46 @@ export function planSweep(raw: unknown): SweepAction[] {
   return args.advances.map((advance) => classifyAdvance(advance, args.now, args.graceSeconds));
 }
 
+let sweeping = false;
+
+function ownBookCalldata(action: SweepAction): Hex | null {
+  if (action.kind !== "repay" && action.kind !== "mark-late") return null;
+  const name = action.kind === "repay" ? "repay" : "markLate";
+  return encodeFunctionData({ abi: creditLineAbi, functionName: name, args: [action.advanceId] });
+}
+
 export async function broadcastOwnBook(
   actions: SweepAction[],
   chainId: number,
+  creditLine: Address,
   sender: (tx: { to: Address; data: Hex }) => Promise<Hex>,
 ): Promise<Hex[]> {
   assertTransactableChain(chainId);
-  const hashes: Hex[] = [];
-  for (const action of actions) {
-    if (!action.sendable || !action.calldata) continue;
-    if (action.vaultKind !== "own-book") {
-      throw new EngineError("partner-key", "refusing to sign a transaction for a partner vault");
-    }
-    hashes.push(await sender({ to: action.vault, data: action.calldata }));
+  const line = getAddress(creditLine);
+  const sendable = actions.filter((action) => action.sendable);
+  const ids = sendable.map((action) => action.advanceId.toString());
+  if (new Set(ids).size !== ids.length) {
+    throw new EngineError("replay", "duplicate advance in one sweep");
   }
-  return hashes;
+  if (sweeping) throw new EngineError("replay", "sweep broadcast is already in progress");
+  sweeping = true;
+  try {
+    const hashes: Hex[] = [];
+    for (const action of sendable) {
+      if (action.vaultKind !== "own-book") {
+        throw new EngineError("partner-key", "refusing to sign a transaction for a partner vault");
+      }
+      if (getAddress(action.vault) !== line) {
+        throw new EngineError("partner-key", "refusing to send outside the own-book credit line");
+      }
+      const data = ownBookCalldata(action);
+      if (!data || action.calldata?.toLowerCase() !== data.toLowerCase()) {
+        throw new EngineError("param", "sweep calldata is not repay or markLate for this advance");
+      }
+      hashes.push(await sender({ to: line, data }));
+    }
+    return hashes;
+  } finally {
+    sweeping = false;
+  }
 }

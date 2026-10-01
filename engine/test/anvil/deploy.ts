@@ -31,7 +31,21 @@ export async function deployWorld(node: Anvil): Promise<World> {
   const reserveAbi = artifact("PlatformReserve").abi;
   await send(node, 0, reserve, reserveAbi, "setCreditLine", [line]);
   await send(node, 0, reserve, reserveAbi, "setSlasher", [line, true]);
-  const factory = await deploy(node, 0, "FundFactory", [lockgate, adapter, line, reserve]);
+  const blank = {
+    token: zeroAddress,
+    creditLine: zeroAddress,
+    reserve: zeroAddress,
+    issuer: zeroAddress,
+    name: "",
+    nav: 0n,
+    interval: 0n,
+    initialHolder: zeroAddress,
+    initialShares: 0n,
+  };
+  const weekly = await deploy(node, 0, "WeeklyCyclePlatform", [blank]);
+  const epoch = await deploy(node, 0, "EpochQueuePlatform", [blank]);
+  const quarter = await deploy(node, 0, "QuarterlyWindowPlatform", [blank]);
+  const factory = await deploy(node, 0, "FundFactory", [lockgate, adapter, line, reserve, weekly, epoch, quarter]);
   const lineAbi = artifact("LockgateCreditLine").abi;
   await send(node, 0, line, lineAbi, "setRegistrar", [factory, true]);
 
@@ -46,7 +60,7 @@ export async function deployWorld(node: Anvil): Promise<World> {
 
   const book = await deploy(node, 0, "MockBook", []);
   const facility = await deploy(node, 0, "CreditFacility", [{
-    governor: lockgate,
+    governor: node.account(1).address,
     borrower: lockgate,
     asset: usdg,
     book,
