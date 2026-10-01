@@ -20,7 +20,7 @@ Foundry 1.7.1 has no `--profile` flag. Set `FOUNDRY_PROFILE`. `via_ir` is on bec
 
 `ARBITRUM_SEPOLIA_USDG` is `0xFFC95faa3d63Cde504a05B567C600B78C0b41892`. On 2026-10-02 the Arbitrum Sepolia token page names that proxy Global Dollar (USDG), 6 decimals, ERC-1967: <https://sepolia.arbiscan.io/token/0xFFC95faa3d63Cde504a05B567C600B78C0b41892>. `isMock = true` on that address reverts `CanonicalCannotBeMock`. Any other 6-decimal token is allowed. `MockUSDG` is named `test USDG`, symbol `USDG`, 6 decimals. `faucet` caps each call at `10_000e6`. The owner is a minter.
 
-`UsdgTransfers.pull` reverts `FeeOnTransfer(expected, received)` unless the recipient balance rises by `amount`. `push` does not measure the recipient.
+`UsdgTransfers.pull` and `push` revert `FeeOnTransfer(expected, received)` unless the recipient balance rises by `amount`. A recipient that forwards the tokens inside that transfer cannot be paid.
 
 Sepolia path: deploy a second adapter on the canonical token with `isMock = false`. `FundFactory.createDemoFund` reverts `DemoRequiresMock` on that adapter.
 
@@ -34,7 +34,7 @@ Sepolia path: deploy a second adapter on the canonical token with `isMock = fals
 
 `repay(id)` pulls the full remainder from the source. Anyone may call it, including while paused. `Active` becomes `Repaid`. `Late` stays `Late`.
 
-`markLate(id)` is anyone, once `block.timestamp >= dueAt + grace` (default grace 1 day). It slashes `min(reserve, remaining)` into the credit line, then sets `Late` even when the slash covers the advance. One second early reverts `TooEarly`.
+`markLate(id)` is anyone, once `block.timestamp >= dueAt + graceOf(id)`. `graceOf(id)` is stored at draw. `grace()` is what the next draw stores. The default is 1 day. `setGrace` does not shorten an open advance. It slashes `min(reserve, remaining)` into the credit line, then sets `Late` even when the slash covers the advance. One second early reverts `TooEarly`. A registrar cannot call `registerSource` again on a source that is already registered. The owner still can. Utilization and concentration round up.
 
 `quote` returns `(0, 0, false, reason)` on every refusal, including `"fee above max"`. `PricingEngine.feeBps` is different: a fee above the max returns `(maxFeeBps, false, "fee above max")` and does not clamp. `feeCode` returns `(maxFeeBps, 15)` in that case.
 

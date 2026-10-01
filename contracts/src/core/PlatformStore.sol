@@ -32,8 +32,14 @@ abstract contract PlatformStore is ReentrancyGuard, IIssuerFund, IQueueAdapter {
     uint256 public override(IIssuerFund, IQueueAdapter) queueLength;
     uint256 public override(IIssuerFund, IQueueAdapter) queuedValue;
     uint256 public requestCount;
+    /// @notice Queued plus advanced requests. Settlement walks this list, not settled history.
+    uint256 public constant MAX_OPEN = 128;
+    uint256 public openCount;
+    uint256 public firstOpen;
+    uint256 internal lastOpen;
 
     mapping(uint256 => Request) internal _requests;
+    mapping(uint256 => uint256) public nextOpen;
     mapping(uint256 => uint256) public requestCycle;
     mapping(address => uint256[]) internal _owned;
 
@@ -47,6 +53,7 @@ abstract contract PlatformStore is ReentrancyGuard, IIssuerFund, IQueueAdapter {
     error Slippage();
     error NotAvailable(string reason);
     error BadConfig();
+    error QueueFull();
 
     event NavUpdated(uint256 nav);
     event GateSet(bool gated);
@@ -104,6 +111,30 @@ abstract contract PlatformStore is ReentrancyGuard, IIssuerFund, IQueueAdapter {
             shareToken.mint(cfg.initialHolder, cfg.initialShares);
         }
         if (cfg.reserve != address(0)) IPlatformReserve(cfg.reserve).setAdmin(address(this), cfg.issuer);
+    }
+
+    function _pushOpen(uint256 id) internal {
+        if (openCount == MAX_OPEN) revert QueueFull();
+        if (firstOpen == 0) firstOpen = id;
+        else nextOpen[lastOpen] = id;
+        lastOpen = id;
+        openCount += 1;
+    }
+
+    function _removeOpen(uint256 id) internal {
+        uint256 prev;
+        uint256 cur = firstOpen;
+        while (cur != 0 && cur != id) {
+            prev = cur;
+            cur = nextOpen[cur];
+        }
+        if (cur == 0) return;
+        uint256 nxt = nextOpen[cur];
+        if (prev == 0) firstOpen = nxt;
+        else nextOpen[prev] = nxt;
+        if (lastOpen == id) lastOpen = prev;
+        nextOpen[id] = 0;
+        openCount -= 1;
     }
 
     function name() public view returns (string memory) {

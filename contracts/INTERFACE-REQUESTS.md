@@ -149,3 +149,7 @@ The epoch platform in the stage-3 demo is `createPlatform`, sent by the platform
 Door 2 is in the local Anvil demo, after stage 1 and before stage 2. The pool is registered at reserve bps 0. A gated sell reverts `Gated`. `settle` before `readyAt` reverts `NotReady`. After the 5-minute cooldown, settle repays the stage-1 advance. Partner idle is unchanged. The cooldown quote is 49 bps. `PricingMath` was not changed.
 
 `engine/test/anvil/deploy.ts` in this tree already passes the seven constructor arguments and `setRegistrar`. G10 did not edit `engine/`. No new Solidity ask. The harness pretest no longer skips `LockgateExitPool`. CI's `forge test` job was already skip-free.
+
+## 2026-10-02 · G6 · grace, caps, and the open queue
+
+`ILockgateCreditLine.graceOf(uint256)` is new. `getAdvance` is unchanged. `markLate` waits until `dueAt + graceOf(id)`. `grace()` is only the value the next `draw` stores. A registrar that calls `registerSource` on a source that is already registered gets `AlreadyRegistered`. The owner can still re-register. Utilization and concentration use ceiling division, so a ratio even one unit over the cap is refused. `PlatformStore.MAX_OPEN` is 128. The 129th queued or advanced request reverts `QueueFull`. `processWindow` walks that open list, not settled history. `UsdgTransfers.push` now reverts `FeeOnTransfer` unless the recipient balance rises by the full amount. No other session has to change a call to keep the current demo working.

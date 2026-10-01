@@ -116,6 +116,18 @@ contract QueueInvariantTest is StdInvariant, CoreFixture {
         assertEq(platform.queueLength(), queued);
         assertEq(platform.queuedValue(), value);
         assertEq(IERC20(platform.share()).balanceOf(address(platform)), escrow);
+        uint256 seen;
+        uint256 cursor = platform.firstOpen();
+        while (cursor != 0 && seen <= platform.MAX_OPEN()) {
+            IIssuerFund.Request memory open = platform.getRequest(cursor);
+            bool live = open.status == IIssuerFund.RequestStatus.Queued
+                || (open.status == IIssuerFund.RequestStatus.Advanced && open.shares != 0);
+            assertTrue(live);
+            cursor = platform.nextOpen(cursor);
+            seen += 1;
+        }
+        assertEq(cursor, 0);
+        assertEq(seen, platform.openCount());
         assertEq(line.accountedAssets(), line.accountedEquity());
         assertEq(line.eligibleOutstanding() + line.lateOutstanding(), line.totalExposure());
     }

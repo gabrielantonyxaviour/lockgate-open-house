@@ -30,6 +30,7 @@ contract LockgateCreditLine is CreditLineAdmin {
         fee = priced;
         uint256 principal = navValue - fee;
         advanceId = ++advanceCount;
+        _graceOf[advanceId] = grace;
         _advances[advanceId] = Advance({
             source: msg.sender,
             to: to,
@@ -66,7 +67,7 @@ contract LockgateCreditLine is CreditLineAdmin {
         Advance storage advance = _advances[advanceId];
         if (advance.source == address(0)) revert UnknownAdvance();
         if (advance.status != AdvanceStatus.Active) revert BadStatus();
-        if (block.timestamp < uint256(advance.dueAt) + grace) revert TooEarly();
+        if (block.timestamp < uint256(advance.dueAt) + _graceOf[advanceId]) revert TooEarly();
         uint256 remaining = _remaining(advanceId);
         uint256 slashed = reserveVault.slash(advance.source, remaining);
         if (slashed > 0) _applyRecovery(advanceId, slashed);
@@ -117,7 +118,7 @@ contract LockgateCreditLine is CreditLineAdmin {
         view
         returns (uint8 code, uint256 fee, uint16 bps)
     {
-        uint256 conc = (_exposure[source] + navValue) * BPS / (totalExposure + navValue);
+        uint256 conc = Math.mulDiv(_exposure[source] + navValue, BPS, totalExposure + navValue, Math.Rounding.Ceil);
         if (conc > maxConcentrationBps) return (8, 0, 0);
         (bps, code) = _priced(source, dueAt, uint16(conc));
         if (code != 0) return (code, 0, 0);
@@ -125,7 +126,8 @@ contract LockgateCreditLine is CreditLineAdmin {
         if (fee >= navValue) return (12, 0, 0);
         uint256 principal = navValue - fee;
         if (capital() < principal) return (11, 0, 0);
-        if ((outstanding + principal) * BPS / (capital() + outstanding) > maxUtilizationBps) return (9, 0, 0);
+        uint256 denom = capital() + outstanding;
+        if (Math.mulDiv(outstanding + principal, BPS, denom, Math.Rounding.Ceil) > maxUtilizationBps) return (9, 0, 0);
         uint256 required_ = Math.mulDiv(_exposure[source] + navValue, reserveBpsOf[source], BPS, Math.Rounding.Ceil);
         if (reserveVault.balanceOf(source) < required_) return (10, 0, 0);
         return (0, fee, bps);

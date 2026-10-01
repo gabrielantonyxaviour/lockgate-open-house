@@ -39,7 +39,7 @@ contract FailurePathsTest is CoreFixture {
         StubSource stub = _stub(1_000_000e6, 0);
         vm.prank(owner);
         line.setCaps(0, 10_000);
-        // A 1e6 draw on 500_000e6 capital floors to 0 bps. 51_000e6 is the first size that floors above 0.
+        // A 0 cap rejects any principal. Rounding is up, so the old 1 bp floor no longer lets a draw through.
         vm.expectRevert(CreditLineAdmin.UtilizationCap.selector);
         stub.draw(51_000e6, investor, type(uint256).max);
         vm.prank(owner);
@@ -63,9 +63,9 @@ contract FailurePathsTest is CoreFixture {
         vm.prank(owner);
         line.setCaps(10_000, 5_000);
         second.poke();
-        // 100e6 + 1 floors to exactly 5000 bps. 100_040_009 is the first face that floors above the cap.
+        // Exactly 100e6 is 5000 bps. One unit over rounds up and crosses the cap.
         vm.expectRevert(CreditLineAdmin.ConcentrationCap.selector);
-        second.draw(100_040_009, investor, type(uint256).max);
+        second.draw(100e6 + 1, investor, type(uint256).max);
         second.draw(100e6, investor, type(uint256).max);
         assertLe(line.exposure(address(second)) * 10_000 / line.totalExposure(), 5_000);
     }

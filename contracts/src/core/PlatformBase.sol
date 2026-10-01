@@ -69,6 +69,7 @@ contract PlatformBase is PlatformStore {
         request.status = RequestStatus.Cancelled;
         queuedValue -= request.navValue;
         queueLength -= 1;
+        _removeOpen(requestId);
         shareToken.pull(address(this), request.owner, request.shares);
         emit RequestCancelled(requestId);
     }
@@ -104,13 +105,15 @@ contract PlatformBase is PlatformStore {
     }
 
     function lockgateOwed() public view returns (uint256 owed) {
-        uint256[] memory ids = line.advancesOf(address(this));
-        for (uint256 i; i < ids.length; ++i) owed += line.remainingOf(ids[i]);
+        for (uint256 id = firstOpen; id != 0; id = nextOpen[id]) {
+            uint256 advanceId = _requests[id].advanceId;
+            if (advanceId != 0) owed += line.remainingOf(advanceId);
+        }
     }
 
     function headRequestId() external view returns (uint256) {
-        for (uint256 i = 1; i <= requestCount; ++i) {
-            if (_requests[i].status == RequestStatus.Queued) return i;
+        for (uint256 id = firstOpen; id != 0; id = nextOpen[id]) {
+            if (_requests[id].status == RequestStatus.Queued) return id;
         }
         return 0;
     }
@@ -164,6 +167,7 @@ contract PlatformBase is PlatformStore {
         _owned[owner_].push(id);
         queuedValue += navValue;
         queueLength += 1;
+        _pushOpen(id);
         shareToken.pull(owner_, address(this), shares_);
         emit RedeemRequested(id, owner_, shares_, navValue);
     }
@@ -198,32 +202,44 @@ contract PlatformBase is PlatformStore {
     }
 
     function _repayFirst() internal returns (bool) {
-        uint256[] memory ids = line.advancesOf(address(this));
-        for (uint256 i; i < ids.length; ++i) {
-            uint256 remaining = line.remainingOf(ids[i]);
+        for (uint256 id = firstOpen; id != 0; id = nextOpen[id]) {
+            uint256 advanceId = _requests[id].advanceId;
+            if (advanceId == 0) continue;
+            uint256 remaining = line.remainingOf(advanceId);
             if (remaining == 0) continue;
             if (cash() < remaining) return false;
-            line.repay(ids[i]);
+            line.repay(advanceId);
         }
         return true;
     }
 
     function _closeAdvances() internal {
-        for (uint256 i = 1; i <= requestCount; ++i) {
-            Request storage request = _requests[i];
-            if (request.status != RequestStatus.Advanced || request.shares == 0) continue;
-            if (line.remainingOf(request.advanceId) != 0) continue;
-            shareToken.burn(address(this), request.shares);
-            request.shares = 0;
-            emit AdvanceClosed(i, request.advanceId);
+        uint256 id = firstOpen;
+        while (id != 0) {
+            uint256 nxt = nextOpen[id];
+            Request storage request = _requests[id];
+            if (
+                request.status == RequestStatus.Advanced && request.shares != 0
+                    && line.remainingOf(request.advanceId) == 0
+            ) {
+                shareToken.burn(address(this), request.shares);
+                request.shares = 0;
+                emit AdvanceClosed(id, request.advanceId);
+                _removeOpen(id);
+            }
+            id = nxt;
         }
     }
 
     function _payFifo() internal {
-        for (uint256 i = 1; i <= requestCount; ++i) {
-            if (_requests[i].status != RequestStatus.Queued) continue;
-            if (cash() < _requests[i].navValue) break;
-            _payAmount(i, _requests[i].navValue);
+        uint256 id = firstOpen;
+        while (id != 0) {
+            uint256 nxt = nextOpen[id];
+            if (_requests[id].status == RequestStatus.Queued) {
+                if (cash() < _requests[id].navValue) return;
+                _payAmount(id, _requests[id].navValue);
+            }
+            id = nxt;
         }
     }
 
@@ -236,9 +252,13 @@ contract PlatformBase is PlatformStore {
             return;
         }
         if (bal == 0) return;
-        for (uint256 i = 1; i <= requestCount; ++i) {
-            if (_requests[i].status != RequestStatus.Queued) continue;
-            _payAmount(i, _requests[i].navValue * bal / total);
+        uint256 id = firstOpen;
+        while (id != 0) {
+            uint256 nxt = nextOpen[id];
+            if (_requests[id].status == RequestStatus.Queued) {
+                _payAmount(id, _requests[id].navValue * bal / total);
+            }
+            id = nxt;
         }
     }
 
@@ -260,6 +280,7 @@ contract PlatformBase is PlatformStore {
         if (request.navValue == 0) {
             queueLength -= 1;
             request.status = RequestStatus.Paid;
+            _removeOpen(id);
             emit RequestPaid(id, request.owner, amount);
         } else {
             emit RequestPartPaid(id, amount, request.navValue);
@@ -267,11 +288,11 @@ contract PlatformBase is PlatformStore {
     }
 
     function _fifoFit(uint256 room) internal view returns (uint256 pay) {
-        for (uint256 i = 1; i <= requestCount; ++i) {
-            if (_requests[i].status != RequestStatus.Queued) continue;
-            if (room < _requests[i].navValue) break;
-            pay += _requests[i].navValue;
-            room -= _requests[i].navValue;
+        for (uint256 id = firstOpen; id != 0; id = nextOpen[id]) {
+            if (_requests[id].status != RequestStatus.Queued) continue;
+            if (room < _requests[id].navValue) break;
+            pay += _requests[id].navValue;
+            room -= _requests[id].navValue;
         }
     }
 }

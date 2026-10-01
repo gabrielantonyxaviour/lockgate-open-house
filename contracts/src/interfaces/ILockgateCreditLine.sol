@@ -80,7 +80,7 @@ interface ILockgateCreditLine {
     /// @notice Anyone. Pulls the unpaid obligation from the source. Active becomes Repaid. Late stays Late.
     function repay(uint256 advanceId) external;
 
-    /// @notice Anyone, after `dueAt + grace`. Slashes the source reserve into this contract, up to the unpaid amount.
+    /// @notice Anyone, after `dueAt + graceOf(id)`. Slashes the source reserve into this contract, up to the unpaid amount.
     function markLate(uint256 advanceId) external;
 
     function capital() external view returns (uint256);
@@ -104,6 +104,9 @@ interface ILockgateCreditLine {
     function remainingOf(uint256 id) external view returns (uint256);
 
     function grace() external view returns (uint64);
+
+    /// @notice Grace stored when `id` was drawn. `grace()` is the value the next draw stores. Unknown ids return 0.
+    function graceOf(uint256 id) external view returns (uint64);
 
     function paused() external view returns (bool);
 

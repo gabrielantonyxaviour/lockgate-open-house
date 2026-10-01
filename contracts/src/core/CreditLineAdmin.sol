@@ -43,6 +43,7 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
     mapping(address => uint16) public riskOf;
     mapping(address => uint256) internal _exposure;
     mapping(uint256 => Advance) internal _advances;
+    mapping(uint256 => uint64) internal _graceOf;
     mapping(uint256 => uint256) public recoveredOf;
     mapping(address => uint256[]) internal _advanceIds;
     address[] internal _sources;
@@ -68,6 +69,7 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
     error BadStatus();
     error TooEarly();
     error AlreadySettled();
+    error AlreadyRegistered();
     error BadParam();
     error StillExposed();
 
@@ -89,6 +91,7 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
     /// @inheritdoc ILockgateCreditLine
     function registerSource(address source, uint256 limit, uint16 reserveBps_) external whenNotPaused {
         if (msg.sender != owner() && !registrars[msg.sender]) revert NotRegistrar();
+        if (registered[source] && msg.sender != owner()) revert AlreadyRegistered();
         _setTerms(source, limit, reserveBps_, riskOf[source], true);
     }
 
@@ -181,6 +184,9 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
     function advancesOf(address source) external view returns (uint256[] memory) { return _advanceIds[source]; }
 
     function remainingOf(uint256 id) external view returns (uint256) { return _remaining(id); }
+
+    /// @inheritdoc ILockgateCreditLine
+    function graceOf(uint256 id) external view returns (uint64) { return _graceOf[id]; }
 
     function accountedAssets() external view returns (uint256) { return capital() + outstanding; }
 

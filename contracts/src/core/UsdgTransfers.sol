@@ -20,6 +20,9 @@ library UsdgTransfers {
 
     function push(address token, address to, uint256 amount) internal {
         if (amount == 0) return;
+        uint256 beforeBal = IERC20(token).balanceOf(to);
         IERC20(token).safeTransfer(to, amount);
+        uint256 received = IERC20(token).balanceOf(to) - beforeBal;
+        if (received != amount) revert FeeOnTransfer(amount, received);
     }
 }
