@@ -1,17 +1,17 @@
 {
   "chainId": 31337,
-  "block": 380,
+  "block": 546,
   "stage1": {
-    "chainFeeBps": 99,
+    "chainFeeBps": 98,
     "engineFeeBps": 101,
-    "fee": "99000000",
-    "investorPaid": "9901000000",
+    "fee": "98000000",
+    "investorPaid": "9902000000",
     "outstanding": "0",
-    "earnedFees": "99000000",
-    "line": "0x7c8baafa542c57ff9b2b90612bf8ab9e86e22c09"
+    "earnedFees": "98000000",
+    "line": "0xd038a2ee73b64f30d65802ad188f27921656f28f"
   },
   "stage2": {
-    "source": "engine/src/cli.ts propose",
+    "source": "engine/src/cli.ts propose --rpc",
     "engineSignatureAccepted": true,
     "harbourFeeBps": 101,
     "keppelFeeBps": 101,

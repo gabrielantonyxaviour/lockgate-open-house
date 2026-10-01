@@ -73,40 +73,57 @@ export async function engineQuote(now: number, nav: bigint): Promise<z.infer<typ
   return quoteSchema.parse(await run(["quote", "--file", file]));
 }
 
+const ZERO = "0x0000000000000000000000000000000000000000";
+
+export type VaultMandate = {
+  partner: Address;
+  signer: Address;
+  minFeeBps: number;
+  maxTenorSeconds: number;
+  concentrationCapBps: number;
+  expiresAt: number;
+  idle: bigint;
+  totalAssets: bigint;
+  limit: bigint;
+  paused: boolean;
+  payoutTo: Address;
+};
+
 export async function enginePropose(args: {
   now: number;
   nav: bigint;
   vault: Address;
-  partner: Address;
-  signer: Address;
   platform: Address;
   nonce: bigint;
   signEnv: string;
-  idle: bigint;
-  totalAssets: bigint;
+  rpc: string;
+  mandate: VaultMandate;
 }): Promise<EngineProposal> {
+  const payout = args.mandate.payoutTo.toLowerCase() === ZERO ? undefined : args.mandate.payoutTo;
   const request = {
     ...body(args.now, args.nav, "northwind-invoice"),
     mandate: {
       vault: args.vault,
-      partner: args.partner,
-      signer: args.signer,
+      partner: args.mandate.partner,
+      signer: args.mandate.signer,
       approvedPlatforms: [args.platform],
-      platformLimits: { [args.platform]: "100000000000" },
-      minFeeBps: 25,
-      maxTenorSeconds: 30 * 86_400,
-      concentrationCapBps: 10_000,
-      expiresAt: args.now + 365 * 86_400,
-      idle: args.idle.toString(),
-      totalAssets: args.totalAssets.toString(),
+      platformLimits: { [args.platform]: args.mandate.limit.toString() },
+      minFeeBps: args.mandate.minFeeBps,
+      maxTenorSeconds: args.mandate.maxTenorSeconds,
+      concentrationCapBps: args.mandate.concentrationCapBps,
+      expiresAt: args.mandate.expiresAt,
+      idle: args.mandate.idle.toString(),
+      totalAssets: args.mandate.totalAssets.toString(),
+      paused: args.mandate.paused,
+      ...(payout ? { payoutTo: payout } : {}),
     },
     platform: args.platform,
-    recipient: args.platform,
+    recipient: payout ?? args.platform,
     chainId: 31_337,
     nonce: args.nonce.toString(),
   };
   const file = writeBody(`propose-${args.vault}-${args.nonce}.json`, request);
-  return proposalSchema.parse(await run(["propose", "--file", file, "--sign-env", args.signEnv]));
+  return proposalSchema.parse(await run(["propose", "--file", file, "--rpc", args.rpc, "--sign-env", args.signEnv]));
 }
 
 function writeBody(name: string, value: unknown): string {

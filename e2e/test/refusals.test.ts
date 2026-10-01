@@ -26,11 +26,12 @@ test("a gated quote is unavailable and the engine will not sign it", async () =>
   assert.equal(quote.available, false);
   assert.equal(quote.feeBps, 0);
   assert.ok(quote.blocks.some((block) => block.code === "gated"));
-  await assert.rejects(run(["propose", "--file", write("gated-propose", { gated: true }, true), "--sign-env", "LOCKGATE_PROPOSER_KEY"]), (err: unknown) => {
-    assert.ok(err instanceof EngineError);
-    assert.deepEqual(err.toJSON(), { error: "refusing to sign a proposal that fails its checks", code: "refused" });
-    return true;
-  });
+  const signed = proposalSchema.parse(
+    await run(["propose", "--file", write("gated-propose", { gated: true }, true), "--sign-env", "LOCKGATE_PROPOSER_KEY"]),
+  );
+  assert.equal(signed.submittable, false);
+  assert.equal(signed.signature, null);
+  assert.ok(signed.blocks.some((block) => block.code === "gated"));
 });
 
 test("a stale nav is refused and a future nav is a param error", async () => {

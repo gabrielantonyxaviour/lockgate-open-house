@@ -9,12 +9,14 @@ import {
   lockgate,
   platform,
   proposerKey,
+  publicClient,
   read,
   reverts,
+  RPC,
   send,
   usd,
 } from "./chain.js";
-import { enginePropose, type EngineProposal } from "./engine.js";
+import { enginePropose, type EngineProposal, type VaultMandate } from "./engine.js";
 
 const NAV = usd(10_000n);
 const DEPOSIT = usd(80_000n);
@@ -31,10 +33,17 @@ export async function runStage2(now: number) {
   const harbourIdle = await read<bigint>("PartnerVault", harbourVault, "idle");
   const keppelIdle = await read<bigint>("PartnerVault", keppelVault, "idle");
 
-  const first = await propose(now, harbourVault, harbour.address, 1n);
+  const first = await propose(harbourVault, 1n);
   await send("PartnerVault", harbourVault, "execute", [first.message, first.signature, "0x"], harbour);
-  const second = await propose(now, keppelVault, keppel.address, 1n);
-  await send("PartnerVault", keppelVault, "execute", [second.message, second.signature, "0x"], keppel);
+  const second = await propose(keppelVault, 1n);
+  await send("PartnerVault", keppelVault, "submitProposal", [second.message, second.signature], lockgate);
+  if (await read<bigint>("PartnerVault", keppelVault, "idle") !== keppelIdle) {
+    fail("mandate", "filing the engine signature moved partner cash");
+  }
+  if (!(await reverts("PartnerVault", keppelVault, "approve", [second.message], lockgate))) {
+    fail("keys", "lockgate approved a partner advance");
+  }
+  await send("PartnerVault", keppelVault, "approve", [second.message], keppel);
 
   const harbourAfter = await read<bigint>("PartnerVault", harbourVault, "idle");
   const keppelAfter = await read<bigint>("PartnerVault", keppelVault, "idle");
@@ -67,7 +76,7 @@ export async function runStage2(now: number) {
   }
 
   return {
-    source: "engine/src/cli.ts propose",
+    source: "engine/src/cli.ts propose --rpc",
     engineSignatureAccepted: true,
     harbourFeeBps: first.feeBps,
     keppelFeeBps: second.feeBps,
@@ -99,26 +108,48 @@ async function fund(token: Address, vault: Address, partner: typeof harbour, rou
   await send("PartnerRouter", router, "register", [vault], partner);
 }
 
-async function propose(now: number, vault: Address, partner: Address, nonce: bigint): Promise<EngineProposal> {
-  const idle = await read<bigint>("PartnerVault", vault, "idle");
-  const totalAssets = await read<bigint>("PartnerVault", vault, "totalAssets");
+async function propose(vault: Address, nonce: bigint): Promise<EngineProposal> {
+  const block = await publicClient.getBlock();
   const built = await enginePropose({
-    now,
+    now: Number(block.timestamp),
     nav: NAV,
     vault,
-    partner,
-    signer: partner,
     platform: platform.address,
     nonce,
     signEnv: "LOCKGATE_PROPOSER_KEY",
-    idle,
-    totalAssets,
+    rpc: RPC,
+    mandate: await vaultMandate(vault),
   });
   if (!built.submittable || !built.signature) {
-    fail("engine", `proposal blocked: ${built.blocks.map((item) => item.code).join(",")}`);
+    fail("engine", `proposal blocked: ${built.blocks.map((item) => `${item.code}: ${item.reason}`).join("; ")}`);
   }
   if (built.feeBps < 25 || built.feeBps > 1500) fail("fee", `engine fee ${built.feeBps} is outside 25-1500`);
   return built;
+}
+
+async function vaultMandate(vault: Address): Promise<VaultMandate> {
+  const mandate = await read<unknown>("PartnerVault", vault, "mandate");
+  const config = await read<unknown>("PartnerVault", vault, "platformConfig", [platform.address]);
+  const payoutTo = await read<Address>("PartnerVault", vault, "payoutTo", [platform.address]);
+  const paused = await read<boolean>("PartnerVault", vault, "paused");
+  return {
+    partner: cell<Address>(mandate, "partner", 0),
+    signer: cell<Address>(mandate, "signer", 1),
+    minFeeBps: Number(cell(mandate, "minFeeBps", 2)),
+    maxTenorSeconds: Number(cell(mandate, "maxTenor", 3)),
+    concentrationCapBps: Number(cell(mandate, "concentrationBps", 4)),
+    expiresAt: Number(cell(mandate, "expiry", 5)),
+    idle: await read<bigint>("PartnerVault", vault, "idle"),
+    totalAssets: await read<bigint>("PartnerVault", vault, "totalAssets"),
+    limit: BigInt(cell(config, "limit", 1)),
+    paused,
+    payoutTo,
+  };
+}
+
+function cell<T>(value: unknown, name: string, index: number): T {
+  if (Array.isArray(value)) return value[index] as T;
+  return (value as Record<string, T>)[name];
 }
 
 function flip(signature: Hex): Hex {
