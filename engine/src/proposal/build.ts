@@ -11,6 +11,7 @@ import {
 } from "../domain.js";
 import { applyMandateFloor, quoteExit, type Quote } from "../quote.js";
 import { mandateBlocks } from "./mandate.js";
+import { buildPartnerFiling, type PartnerFiling } from "./partner.js";
 import { advanceTypes, domainFor, makeQuoteId, type AdvanceMessage } from "./typed.js";
 
 export const submitProposalAbi = [
@@ -50,6 +51,7 @@ export type BuiltProposal = {
   domain: ReturnType<typeof domainFor>;
   digest: Hex;
   calldata: Hex;
+  partner: PartnerFiling;
   blocks: { code: string; reason: string }[];
   submittable: boolean;
 };
@@ -115,5 +117,29 @@ export function buildProposal(args: {
     functionName: "submitProposal",
     args: [message, "0x"],
   });
-  return { quote, input, mandate, message, domain, digest, calldata, blocks, submittable: blocks.length === 0 };
+  const partner = buildPartnerFiling({
+    vault: mandate.vault,
+    platform,
+    recipient,
+    navValue: quote.navValue,
+    fee: quote.fee,
+    dueAt: quote.dueAt,
+    requestId,
+    quoteId: message.quoteId,
+    nonce: args.nonce,
+    deadline: expiresAt,
+    chainId: args.chainId,
+  });
+  return {
+    quote,
+    input,
+    mandate,
+    message,
+    domain,
+    digest,
+    calldata,
+    partner,
+    blocks,
+    submittable: blocks.length === 0,
+  };
 }

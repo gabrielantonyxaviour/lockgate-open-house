@@ -121,6 +121,18 @@ The backtest threads repayment history across ticks only. Exposure, reserve, and
 
 `runCreTick` is the local stand-in for a Chainlink CRE cron. It does not import `@chainlink/cre-sdk` and does not broadcast. The cron shape it stands in for is `CronCapability.trigger({ schedule })`, minimum 30 seconds: https://docs.chain.link/cre/guides/workflow/using-triggers/cron-trigger-ts · https://docs.chain.link/cre/reference/project-configuration-ts. See `cre/CRE.md`.
 
+## Peg
+
+A quote may carry a peg snapshot: `priceE8` (1e8 = $1, the unit in `IPegOracle`), `minPriceE8`, `updatedAt`, and `maxOracleAge`. Omit it, or set `enabled` false, and the check is off. That matches a zero oracle in `PartnerVaultRead._oracleReason` and `FacilityStore._pegBad`. A price below the floor is `peg`. An update in the future, a max age of 0, or an age past the max is `stale-oracle` and is not also reported as a depeg. The engine does not fetch a price.
+
+## Stage 3 facility
+
+`assessFacility` mirrors `FacilityMath` and `FacilityStore` in this repo. Interest is `floor(floor(principal * apr / 10_000) * dt / 31_536_000)`, the same floor as OpenZeppelin `mulDiv`, and the year is 365 days. A repayment pays senior interest, senior principal, senior deficit, then the junior legs, then residual. A loss hits junior principal first. Draws stop in recovery, when the receivables book cannot be read, when the late share, advance rate, or junior thickness fails, or when the peg fails. `availableDraw` is the tighter of idle cash and `borrowingBase − drawn`. `canFund` is that room against a payout. The function does not draw.
+
+## Two digests
+
+`buildProposal` still signs the G6 `LockgateAdvance` struct. It also builds the G7 `LockgatePartnerVault` struct that `PartnerVault.submit` records. `exitRef` is `keccak256(abi.encode(uint256 requestId, bytes32 quoteId))`, so the one bytes32 G7 has carries both ids. `filePartnerProposal` will send only `submit`, and only on an allowed chain, and only through a caller-supplied sender. It has no `execute` path. The two digests are not interchangeable. See `contracts/INTERFACE-REQUESTS.md`.
+
 ## Non-goals
 
 No partner key. No mainnet send. No position transfer, pooled public deposit, or synthetic token. No per-deal technology fee inside this quote. No use of a live TVL figure as a parameter.

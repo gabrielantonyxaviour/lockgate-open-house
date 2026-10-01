@@ -1,5 +1,6 @@
 import { MAX_NAV, MIN_NAV, SECONDS_PER_YEAR, mulDivCeil, mulDivRoundHalfUp } from "./money.js";
 import { utilizationAprBps } from "./pricing/curve.js";
+import { pegFailure } from "./pricing/peg.js";
 import { scoreRisk, type RiskBreakdown } from "./risk/score.js";
 import { waitFor, type WaitResult } from "./adapters/wait.js";
 import { EngineError } from "./errors.js";
@@ -148,6 +149,9 @@ function collectBlocks(
     blocks.push(block("reserve-policy", "platform reserve ratio must be 5% to 10%"));
   }
   if (input.gated) blocks.push(block("gated", "platform withdrawals are gated"));
+  const peg = pegFailure(input.now, input.peg);
+  if (peg === "stale-oracle") blocks.push(block("stale-oracle", "USDG peg oracle is missing or stale"));
+  if (peg === "peg") blocks.push(block("peg", "USDG is below the peg floor"));
   if (navAge > params.maxNavAgeSeconds) blocks.push(block("stale-nav", "NAV is older than the platform maximum"));
   if (input.truncated && !input.allowPartialScan) {
     blocks.push(block("scan-truncated", "queue scan was partial, so the depth is a lower bound"));

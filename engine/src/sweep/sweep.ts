@@ -1,6 +1,24 @@
 import { encodeFunctionData, type Address, type Hex } from "viem";
+import { z } from "zod";
 import { assertTransactableChain } from "../chains.js";
+import { parseOrThrow, zAddress, zAmount } from "../domain.js";
 import { EngineError } from "../errors.js";
+
+export const sweepInputSchema = z.object({
+  chainId: z.number().int().positive(),
+  now: z.number().int().nonnegative(),
+  graceSeconds: z.number().int().nonnegative(),
+  advances: z.array(z.object({
+    id: zAmount,
+    vault: zAddress,
+    platform: zAddress,
+    navValue: zAmount,
+    dueAt: z.number().int().nonnegative(),
+    status: z.enum(["active", "repaid", "late"]),
+    cash: z.union([zAmount, z.null()]),
+    vaultKind: z.enum(["own-book", "partner"]),
+  })),
+});
 
 export const creditLineAbi = [
   {
@@ -75,9 +93,9 @@ export function classifyAdvance(advance: AdvanceView, now: number, graceSeconds:
   };
 }
 
-export function planSweep(args: { chainId: number; now: number; graceSeconds: number; advances: AdvanceView[] }): SweepAction[] {
+export function planSweep(raw: unknown): SweepAction[] {
+  const args = parseOrThrow(sweepInputSchema, raw);
   assertTransactableChain(args.chainId);
-  if (args.graceSeconds < 0) throw new EngineError("param", "grace cannot be negative");
   return args.advances.map((advance) => classifyAdvance(advance, args.now, args.graceSeconds));
 }
 

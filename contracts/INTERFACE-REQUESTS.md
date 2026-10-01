@@ -4,7 +4,7 @@ G6 decides. This file is append-only. The engine does not change Solidity.
 
 ## SUMMARY
 
-The off-chain engine signs the G6 `AdvanceProposal` in `contracts/src/interfaces/IAdvanceProposal.sol`. That digest matches `AdvanceProposalLib`. It does not match G7 `Types.Proposal` / `AdvanceHash` (`LockgatePartnerVault`). Until one schema is chosen, a partner vault will reject the engine signature. `submitProposal` must record the proposal and must not move funds.
+The off-chain engine signs the G6 `AdvanceProposal` in `contracts/src/interfaces/IAdvanceProposal.sol`. That digest matches `AdvanceProposalLib`. It also prepares G7 `submit` calldata for `LockgatePartnerVault`. The two digests differ. `submit` records only. The engine will not send `execute`.
 
 ## 2026-10-01 · G8
 
@@ -33,3 +33,9 @@ Please expose `nonceUsed(uint256)` on `IPartnerVault`. It currently sits on `Par
 `requestId` must stay in the signed struct. It binds the queue item. The investor address stays out. The advance is paid to the platform.
 
 No other engine change is blocked on this. Local tests sign the G6 struct against chain 31337 only.
+
+## 2026-10-02 · G8
+
+The engine now also builds the G7 struct, because `PartnerVault.submit` is the function that exists and it moves no tokens. `exitRef` is `keccak256(abi.encode(uint256 requestId, bytes32 quoteId))`. `filePartnerProposal` encodes `submit` only. It does not encode `execute`.
+
+The 2026-10-01 ask stands. One digest should verify on both the record step and the partner check. Until then a G6 signature will not pass `AdvanceHash`, and a G7 signature will not pass `AdvanceProposalLib`.

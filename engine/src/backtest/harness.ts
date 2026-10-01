@@ -1,4 +1,5 @@
 import type { PricingParams, QuoteInput, RepaymentHistory } from "../domain.js";
+import { EngineError } from "../errors.js";
 import { quoteExit, type Quote } from "../quote.js";
 
 export type TickOutcome = "repay" | "late" | "slash" | "refuse";
@@ -47,6 +48,9 @@ export function runBacktest(ticks: BacktestTick[], params: PricingParams): Backt
   let mismatches = 0;
   const historyByPlatform = new Map<string, RepaymentHistory>();
   for (const tick of ticks) {
+    if (tick.outcome !== "repay" && tick.outcome !== "late" && tick.outcome !== "slash" && tick.outcome !== "refuse") {
+      throw new EngineError("param", "backtest outcome is not repay, late, slash, or refuse");
+    }
     const history = historyByPlatform.get(tick.input.platformId) ?? tick.input.repayment;
     const input = { ...tick.input, repayment: history };
     const quote = quoteExit(input, params);

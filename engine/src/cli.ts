@@ -5,7 +5,7 @@ import { alertsForQuote } from "./alert/evaluate.js";
 import { runBacktest } from "./backtest/harness.js";
 import { SCENARIOS } from "./backtest/scenarios.js";
 import { runCreTick } from "./cre/tick.js";
-import { paramsSchema, parseOrThrow, quoteInputSchema, zAmount, zAddress } from "./domain.js";
+import { paramsSchema, parseOrThrow, quoteInputSchema, zAmount } from "./domain.js";
 import { EngineError, asApiError } from "./errors.js";
 import { exampleBundle } from "./examples.js";
 import { encodeJson } from "./json.js";
@@ -13,8 +13,9 @@ import { logEvent } from "./log.js";
 import { DEFAULT_PARAMS } from "./pricing/defaults.js";
 import { buildProposal } from "./proposal/build.js";
 import { signBuiltProposal } from "./proposal/sign.js";
+import { assessFacility } from "./facility/assess.js";
 import { quoteExit } from "./quote.js";
-import { planSweep } from "./sweep/sweep.js";
+import { planSweep, sweepInputSchema } from "./sweep/sweep.js";
 import { z } from "zod";
 
 type Flags = Record<string, string | boolean>;
@@ -40,22 +41,6 @@ function readInput(flags: Flags): unknown {
   if (typeof flags.file !== "string") throw new EngineError("usage", "pass --file");
   return JSON.parse(readFileSync(flags.file, "utf8"));
 }
-
-const sweepSchema = z.object({
-  chainId: z.number().int().positive(),
-  now: z.number().int().nonnegative(),
-  graceSeconds: z.number().int().nonnegative(),
-  advances: z.array(z.object({
-    id: zAmount,
-    vault: zAddress,
-    platform: zAddress,
-    navValue: zAmount,
-    dueAt: z.number().int().nonnegative(),
-    status: z.enum(["active", "repaid", "late"]),
-    cash: z.union([zAmount, z.null()]),
-    vaultKind: z.enum(["own-book", "partner"]),
-  })),
-});
 
 const proposeSchema = z.object({
   input: z.unknown(),
@@ -110,11 +95,18 @@ export async function run(argv: string[]): Promise<unknown> {
         message: built.message,
         domain: built.domain,
         calldata: built.calldata,
+        partner: {
+          digest: built.partner.digest,
+          exitRef: built.partner.message.exitRef,
+          submitCalldata: built.partner.submitCalldata,
+        },
         signature,
       };
     }
     case "sweep":
-      return planSweep(parseOrThrow(sweepSchema, readInput(flags)));
+      return planSweep(parseOrThrow(sweepInputSchema, readInput(flags)));
+    case "facility":
+      return assessFacility(readInput(flags));
     case "backtest": {
       const name = typeof flags.scenario === "string" ? flags.scenario : "epoch-repay";
       const scenario = SCENARIOS[name as keyof typeof SCENARIOS];
@@ -125,7 +117,7 @@ export async function run(argv: string[]): Promise<unknown> {
     case "cre-tick":
       return runCreTick(readInput(flags));
     default:
-      throw new EngineError("usage", "commands: example, quote, score, alerts, propose, sweep, backtest, cre-tick");
+      throw new EngineError("usage", "commands: example, quote, score, alerts, propose, sweep, facility, backtest, cre-tick");
   }
 }
 

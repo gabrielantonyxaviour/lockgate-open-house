@@ -33,7 +33,7 @@ describe("pricing properties", () => {
         expect(quote.feeBps).toBeGreaterThanOrEqual(DEFAULT_PARAMS.minFeeBps);
         expect(quote.feeBps).toBeLessThanOrEqual(DEFAULT_PARAMS.maxFeeBps);
       },
-    ), { numRuns: 60 });
+    ), { numRuns: 200 });
   });
 
   it("does not cut the fee when the wait or the utilization rises", () => {
@@ -60,7 +60,11 @@ describe("pricing properties", () => {
         }, DEFAULT_PARAMS);
         if (shorter.available && longer.available) expect(longer.feeBps).toBeGreaterThanOrEqual(shorter.feeBps);
         if (shorter.available && busier.available) expect(busier.feeBps).toBeGreaterThanOrEqual(shorter.feeBps);
+        if (!shorter.available) {
+          expect(shorter.fee).toBe(0n);
+          expect(shorter.payout).toBe(0n);
+        }
       },
-    ), { numRuns: 40 });
+    ), { numRuns: 120 });
   });
 });

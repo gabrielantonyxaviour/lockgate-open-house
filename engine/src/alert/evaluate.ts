@@ -17,7 +17,7 @@ export function alertsForQuote(input: QuoteInput, quote: Quote, params: PricingP
     alerts.push({ severity, code, platformId: input.platformId, message, evidence });
   };
   for (const item of quote.blocks) {
-    const critical = ["reserve", "stale-nav", "gated", "illiquid", "concentration", "limit"].includes(item.code);
+    const critical = ["reserve", "stale-nav", "gated", "illiquid", "concentration", "limit", "peg", "stale-oracle"].includes(item.code);
     push(critical ? "critical" : "warn", item.code, item.reason);
   }
   if (quote.available && input.utilizationBps >= 9_000) {

@@ -25,6 +25,17 @@ export const repaymentSchema = z.object({
 
 export type RepaymentHistory = z.infer<typeof repaymentSchema>;
 
+/** 1e8 = $1, the same unit as IPegOracle.latest. Omit it, or set enabled false, to skip the check. */
+export const pegSchema = z.object({
+  enabled: z.boolean(),
+  priceE8: zAmount,
+  updatedAt: z.number().int().nonnegative(),
+  minPriceE8: zAmount,
+  maxOracleAge: z.number().int().nonnegative(),
+});
+
+export type Peg = z.infer<typeof pegSchema>;
+
 export const paramsSchema = z.object({
   baseAprBps: z.number().int().min(0).max(10_000),
   kinkUtilBps: z.number().int().min(1).max(9_999),
@@ -92,6 +103,7 @@ export const quoteInputSchema = z.object({
   requestId: zAmount.optional(),
   truncated: z.boolean().optional(),
   allowPartialScan: z.boolean().optional(),
+  peg: pegSchema.optional(),
 });
 
 export type QuoteInput = z.infer<typeof quoteInputSchema>;
