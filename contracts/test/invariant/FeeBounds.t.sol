@@ -19,6 +19,7 @@ contract FeeBounds is Test {
         assertEq(pricing.feeFromBps(10_000e6, bps), 99e6);
     }
 
+    /// forge-config: default.fuzz.runs = 1024
     function testFuzz_availableQuotesStayInsideTheBand(
         uint256 secondsTo,
         uint256 navAge,

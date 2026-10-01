@@ -50,4 +50,20 @@ contract UsdgFork is Test {
         assertTrue(adapter.isCanonicalSepoliaUsdg());
         assertFalse(adapter.isMock());
     }
+
+    function test_transferAboveBalanceReverts() public {
+        address alice = makeAddr("alice");
+        address bob = makeAddr("bob");
+        deal(USDG, alice, 100e6);
+        vm.prank(alice);
+        vm.expectRevert();
+        IERC20(USDG).transfer(bob, 101e6);
+        assertEq(IERC20(USDG).balanceOf(alice), 100e6);
+        assertEq(IERC20(USDG).balanceOf(bob), 0);
+    }
+
+    function test_canonicalTokenCannotBeMarkedMock() public {
+        vm.expectRevert(UsdgAdapter.CanonicalCannotBeMock.selector);
+        new UsdgAdapter(USDG, true);
+    }
 }

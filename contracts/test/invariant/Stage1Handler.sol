@@ -24,6 +24,7 @@ contract Stage1Handler is Test {
     address public investorB;
     uint256 public paidA;
     uint256 public paidB;
+    uint256 public failures;
 
     constructor() {
         token = new MockUSDG(address(this));
@@ -57,9 +58,9 @@ contract Stage1Handler is Test {
         uint256 beforeBal = token.balanceOf(actor.investor());
         try actor.draw(navValue) returns (uint256, uint256 fee) {
             uint256 principal = navValue - fee;
+            if (token.balanceOf(actor.investor()) != beforeBal + principal) failures += 1;
             if (actor == alpha) paidA += principal;
             else paidB += principal;
-            assertEq(token.balanceOf(actor.investor()), beforeBal + principal);
         } catch {}
     }
 
@@ -74,7 +75,7 @@ contract Stage1Handler is Test {
         uint256 investorBefore = token.balanceOf(investor);
         token.mint(address(actor), remaining);
         try actor.repay(id) {
-            assertEq(token.balanceOf(investor), investorBefore);
+            if (token.balanceOf(investor) != investorBefore) failures += 1;
         } catch {}
     }
 
@@ -92,7 +93,7 @@ contract Stage1Handler is Test {
         uint256 beforeCount = line.advanceCount();
         alpha.setGated(true);
         try alpha.draw(bound(navSeed, 1_000 * U, 5_000 * U)) {
-            assertEq(line.advanceCount(), beforeCount);
+            if (line.advanceCount() != beforeCount) failures += 1;
         } catch {}
         alpha.setGated(false);
     }
@@ -102,7 +103,7 @@ contract Stage1Handler is Test {
         uint256 beforeCount = line.advanceCount();
         alpha.setNavUpdatedAt(uint64(block.timestamp - 8 days));
         try alpha.draw(bound(navSeed, 1_000 * U, 5_000 * U)) {
-            assertEq(line.advanceCount(), beforeCount);
+            if (line.advanceCount() != beforeCount) failures += 1;
         } catch {}
         alpha.refresh(600);
     }

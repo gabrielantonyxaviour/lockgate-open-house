@@ -16,6 +16,7 @@ contract FacilityWaterfall is Test {
     MockUSDG internal token;
     ReceivablesBook internal book;
     CreditFacility internal facility;
+    address internal borrower = makeAddr("borrower");
     address internal stranger = makeAddr("stranger");
 
     function setUp() public {
@@ -31,13 +32,21 @@ contract FacilityWaterfall is Test {
 
     function test_drawAboveTheBorrowingBaseReverts() public {
         book.set(0, 0);
+        vm.prank(borrower);
         vm.expectRevert(FacilityStore.Covenant.selector);
         facility.draw(1);
         book.set(1_000_000 * U, 0);
         uint256 room = facility.availableDraw();
         assertEq(room, 600_000 * U);
+        vm.prank(borrower);
         vm.expectRevert(FacilityStore.Covenant.selector);
         facility.draw(room + 1);
+    }
+
+    function test_governorCannotDraw() public {
+        book.set(1_000_000 * U, 0);
+        vm.expectRevert(FacilityStore.Unauthorized.selector);
+        facility.draw(1);
     }
 
     function test_strangerCannotDraw() public {
@@ -49,6 +58,7 @@ contract FacilityWaterfall is Test {
 
     function test_juniorIsExhaustedBeforeSeniorIsWrittenDown() public {
         book.set(1_000_000 * U, 0);
+        vm.prank(borrower);
         facility.draw(200_000 * U);
         book.set(0, 0);
         facility.poke();
@@ -74,6 +84,7 @@ contract FacilityWaterfall is Test {
         token.mint(address(this), 300_000 * U);
         facility.deposit(FacilityStore.Tranche.Junior, 300_000 * U);
         book.set(2_000_000 * U, 0);
+        vm.prank(borrower);
         facility.draw(200_000 * U);
         uint256 seniorBefore = facility.accounting().seniorPrincipal;
         book.set(0, 0);
@@ -90,7 +101,7 @@ contract FacilityWaterfall is Test {
     function _init(address book_) internal view returns (FacilityStore.Init memory init) {
         init = FacilityStore.Init({
             governor: address(this),
-            borrower: address(this),
+            borrower: borrower,
             asset: address(token),
             book: book_,
             oracle: address(0),

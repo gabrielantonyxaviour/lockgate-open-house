@@ -23,8 +23,11 @@ contract Stage1Invariant is Test {
         targetContract(address(handler));
     }
 
+    /// forge-config: default.invariant.runs = 64
+    /// forge-config: default.invariant.depth = 40
     function invariant_solvencyFeeBoundsAndRepayFirst() public view {
         LockgateCreditLine line = handler.line();
+        assertEq(handler.failures(), 0, "hidden handler failure");
         assertEq(line.accountedAssets(), line.accountedEquity(), "assets");
         assertEq(handler.reserve().tokenBalance(), handler.reserve().totalBalances(), "reserve");
         assertEq(IERC20(line.token()).balanceOf(handler.investorA()), handler.paidA(), "investor A");
