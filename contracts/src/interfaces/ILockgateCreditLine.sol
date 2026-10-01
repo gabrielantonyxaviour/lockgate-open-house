@@ -33,6 +33,7 @@ interface ILockgateCreditLine {
     event AdvanceMarkedLate(uint256 indexed advanceId, address indexed source, uint256 slashed, uint256 shortfall);
     event GraceSet(uint64 grace);
     event CapsSet(uint16 maxUtilizationBps, uint16 maxConcentrationBps);
+    event ReserveFloorSet(address indexed source, uint16 bps);
 
     function registerSource(address source, uint256 limit, uint16 reserveBps) external;
 
@@ -61,6 +62,9 @@ interface ILockgateCreditLine {
     function limitOf(address source) external view returns (uint256);
 
     function reserveBpsOf(address source) external view returns (uint16);
+
+    /// @notice Reserve bps the open exposure still requires. Falls to the live rate only when exposure is 0.
+    function reserveFloorBps(address source) external view returns (uint16);
 
     function riskOf(address source) external view returns (uint16);
 

@@ -40,6 +40,7 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
     mapping(address => bool) internal listed;
     mapping(address => uint256) public limitOf;
     mapping(address => uint16) public reserveBpsOf;
+    mapping(address => uint16) public reserveFloorBps;
     mapping(address => uint16) public riskOf;
     mapping(address => uint256) internal _exposure;
     mapping(uint256 => Advance) internal _advances;
@@ -164,8 +165,10 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
     function exposure(address source) external view returns (uint256) { return _exposure[source]; }
 
     function requiredReserve(address source) public view returns (uint256) {
-        if (_exposure[source] == 0 || reserveBpsOf[source] == 0) return 0;
-        return Math.mulDiv(_exposure[source], reserveBpsOf[source], BPS, Math.Rounding.Ceil);
+        if (_exposure[source] == 0) return 0;
+        uint16 bps = _activeReserveBps(source);
+        if (bps == 0) return 0;
+        return Math.mulDiv(_exposure[source], bps, BPS, Math.Rounding.Ceil);
     }
 
     function reserveOf(address source) external view returns (uint256) { return reserveVault.balanceOf(source); }
@@ -213,7 +216,21 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
         limitOf[source] = limit;
         reserveBpsOf[source] = reserveBps_;
         riskOf[source] = riskBps;
+        if (_exposure[source] == 0 || reserveBps_ > reserveFloorBps[source]) _setReserveFloor(source, reserveBps_);
         if (registering) emit SourceRegistered(source, limit, reserveBps_);
         emit SourceUpdated(source, limit, reserveBps_, riskBps);
+    }
+
+    /// @dev Live rate, unless an open advance was drawn at a higher rate.
+    function _activeReserveBps(address source) internal view returns (uint16) {
+        uint16 live = reserveBpsOf[source];
+        uint16 floor = reserveFloorBps[source];
+        return live > floor ? live : floor;
+    }
+
+    function _setReserveFloor(address source, uint16 bps) internal {
+        if (reserveFloorBps[source] == bps) return;
+        reserveFloorBps[source] = bps;
+        emit ReserveFloorSet(source, bps);
     }
 }

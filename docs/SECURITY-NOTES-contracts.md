@@ -32,7 +32,7 @@ Reviewed the stage-1 credit line, reserve, sandbox queues, factory, pricing guar
 
 - `createPlatform` is permissionless and, once the owner has called `setRegistrar(factory)`, registers the caller as issuer with the caller's limit and reserve bps, including 0. That issuer can `setNav` and `exitNow` up to the limit. The line does not compare the reported NAV with cash. Door 2 also registers at reserve bps 0, which is the open-token path. Do not leave capital on a line whose registrar is an open factory unless those issuers are trusted.
 - `graceOf` on an unknown id is 0. A draw made while `grace` is 0 also stores 0. Read `getAdvance` before treating 0 as "slash at `dueAt`".
-- `setParams`, `setSourceTerms`, `setNav`, and `setGrace` (for a later draw) apply on the next call. None of them waits.
+- `setSourceTerms` can raise the reserve rate immediately. It cannot lower `reserveFloorBps` while that source still has exposure. The floor follows the live rate again once exposure is 0. `setParams`, `setNav`, and `setGrace` (for a later draw) apply on the next call. None of them waits.
 - Slashers are not locked in the constructor. The owner has to call `lockSlasherSet` after the credit line is named. Until then the owner can add another slasher, and that address receives the slashed tokens.
 - A full open list blocks new redeems until some are cancelled or the window settles them. Filling it costs 128 real requests, not a gas bomb.
 - `push` refuses a recipient whose balance does not rise by the full amount. A contract that forwards the tokens during `transfer` cannot receive a draw, a withdrawal, or a slash.

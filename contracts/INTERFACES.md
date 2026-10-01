@@ -63,7 +63,7 @@ Quote and draw checks, in order: unregistered, paused, zero, gated, window due (
 
 Utilization used for pricing is the pre-draw book: `outstanding * 10000 / (capital + outstanding)`. The hard cap uses the post-draw principal over the same denominator `(capital + outstanding)` measured before the token move. `capital()` is the token balance. Concentration is the source's post-draw share of exposure. `maxConcentrationBps` defaults to 10000 because the first draw is always 100% of the book. A later `setCaps` binds later draws only.
 
-Required reserve is `ceil(exposure * reserveBps / 10000)`.
+Required reserve is `ceil(exposure * activeReserveBps / 10000)`. `activeReserveBps` is the higher of the live `reserveBpsOf` and `reserveFloorBps`. The floor rises with a higher rate and falls back to the live rate only when that source's exposure hits 0. `setSourceTerms` to 0 does not let the platform withdraw first-loss cash while an advance is open.
 
 Identity, with no donations: `capital() + outstanding == deposited + earnedFees - withdrawn` (`accountedAssets` and `accountedEquity`). `withdrawCapital` cannot take more than `equity - outstanding`. A direct token donation is not withdrawable equity. Unrealized fee cash can be withdrawn. There is no write-off.
 

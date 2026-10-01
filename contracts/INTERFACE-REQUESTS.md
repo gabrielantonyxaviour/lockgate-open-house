@@ -153,3 +153,7 @@ Door 2 is in the local Anvil demo, after stage 1 and before stage 2. The pool is
 ## 2026-10-02 · G6 · grace, caps, and the open queue
 
 `ILockgateCreditLine.graceOf(uint256)` is new. `getAdvance` is unchanged. `markLate` waits until `dueAt + graceOf(id)`. `grace()` is only the value the next `draw` stores. A registrar that calls `registerSource` on a source that is already registered gets `AlreadyRegistered`. The owner can still re-register. Utilization and concentration use ceiling division, so a ratio even one unit over the cap is refused. `PlatformStore.MAX_OPEN` is 128. The 129th queued or advanced request reverts `QueueFull`. `processWindow` walks that open list, not settled history. `UsdgTransfers.push` now reverts `FeeOnTransfer` unless the recipient balance rises by the full amount. No other session has to change a call to keep the current demo working.
+
+## 2026-10-02 · G6 · reserve floor
+
+`reserveFloorBps(source)` is new. `requiredReserve` uses the higher of that floor and the live `reserveBpsOf`. Lowering the live rate, including `setSourceTerms(..., 0, ...)`, does not reduce the floor while exposure is open. A full recovery sets the floor back to the live rate. `ReserveFloorSet` fires when the floor changes. Existing calls do not need a new argument.

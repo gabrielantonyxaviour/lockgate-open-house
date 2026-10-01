@@ -128,7 +128,7 @@ contract LockgateCreditLine is CreditLineAdmin {
         if (capital() < principal) return (11, 0, 0);
         uint256 denom = capital() + outstanding;
         if (Math.mulDiv(outstanding + principal, BPS, denom, Math.Rounding.Ceil) > maxUtilizationBps) return (9, 0, 0);
-        uint256 required_ = Math.mulDiv(_exposure[source] + navValue, reserveBpsOf[source], BPS, Math.Rounding.Ceil);
+        uint256 required_ = Math.mulDiv(_exposure[source] + navValue, _activeReserveBps(source), BPS, Math.Rounding.Ceil);
         if (reserveVault.balanceOf(source) < required_) return (10, 0, 0);
         return (0, fee, bps);
     }
@@ -156,6 +156,7 @@ contract LockgateCreditLine is CreditLineAdmin {
         uint256 newFee = newRec > advance.principal ? newRec - advance.principal : 0;
         earnedFees += newFee - oldFee;
         _exposure[advance.source] -= amount;
+        if (_exposure[advance.source] == 0) _setReserveFloor(advance.source, reserveBpsOf[advance.source]);
         totalExposure -= amount;
         if (advance.status == AdvanceStatus.Active) eligibleOutstanding -= amount;
         else lateOutstanding -= amount;

@@ -116,6 +116,32 @@ contract SecurityTest is CoreFixture {
         assertEq(taxLine.accountedEquity(), 10e6);
     }
 
+    function test_openExposureKeepsTheReserveFloor() public {
+        StubSource stub = _stub(1_000_000e6, 750);
+        vm.prank(address(stub));
+        reserve.setAdmin(address(stub), issuer);
+        _post(address(stub), 7_500_000);
+        (uint256 id,) = stub.draw(100e6, investor, type(uint256).max);
+        assertEq(line.requiredReserve(address(stub)), 7_500_000);
+        assertEq(line.reserveFloorBps(address(stub)), 750);
+        vm.prank(owner);
+        line.setSourceTerms(address(stub), 1_000_000e6, 0, 0);
+        assertEq(line.reserveBpsOf(address(stub)), 0);
+        assertEq(line.requiredReserve(address(stub)), 7_500_000);
+        vm.expectRevert(CreditLineAdmin.ReserveShort.selector);
+        stub.draw(1e6, investor, type(uint256).max);
+        vm.prank(issuer);
+        vm.expectRevert(abi.encodeWithSelector(PlatformReserve.ShortReserve.selector, 0, 7_500_000));
+        reserve.withdraw(address(stub), 7_500_000);
+        _mint(address(stub), 100e6);
+        line.repay(id);
+        assertEq(line.requiredReserve(address(stub)), 0);
+        assertEq(line.reserveFloorBps(address(stub)), 0);
+        vm.prank(issuer);
+        reserve.withdraw(address(stub), 7_500_000);
+        assertEq(reserve.balanceOf(address(stub)), 0);
+    }
+
     function test_openQueueCapsAndDropsSettledHistory() public {
         vm.prank(issuer);
         WeeklyCyclePlatform platform = WeeklyCyclePlatform(
