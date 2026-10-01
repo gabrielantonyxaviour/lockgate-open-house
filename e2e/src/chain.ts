@@ -1,4 +1,5 @@
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
@@ -46,6 +47,50 @@ export function fail(code: string, error: string): never {
   throw Object.assign(new Error(error), { error, code });
 }
 
+const PRIVATE_OUT = "/tmp/lockgate-g9/forge-out";
+const artifactFiles = new Map<string, string>();
+
+function contractsRoot(): string {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../contracts");
+}
+
+function findSource(dir: string, name: string): string | undefined {
+  for (const entry of readdirSync(dir)) {
+    const full = path.join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      const nested = findSource(full, name);
+      if (nested) return nested;
+    } else if (entry === `${name}.sol`) return full;
+  }
+  return undefined;
+}
+
+/** `out/<Name>.sol` collides when a test mock shares the file name. Read `src/` from a private build. */
+function srcArtifact(name: string): string | undefined {
+  const root = contractsRoot();
+  const source = findSource(path.join(root, "src"), name);
+  if (!source) return undefined;
+  const dest = path.join(PRIVATE_OUT, `${name}.sol`, `${name}.json`);
+  if (!existsSync(dest) || statSync(dest).mtimeMs < statSync(source).mtimeMs) {
+    execFileSync("forge", ["inspect", `${path.relative(root, source)}:${name}`, "abi", "--json"], {
+      cwd: root,
+      env: { ...process.env, FOUNDRY_OUT: PRIVATE_OUT },
+      stdio: "pipe",
+    });
+  }
+  return dest;
+}
+
+function artifactFile(name: string): string {
+  const cached = artifactFiles.get(name);
+  if (cached) return cached;
+  const src = srcArtifact(name);
+  const hit = src ?? findArtifact(path.join(contractsRoot(), "out"), name);
+  if (!hit) fail("artifact", `missing forge artifact ${name}`);
+  artifactFiles.set(name, hit);
+  return hit;
+}
+
 function collectArtifacts(dir: string, name: string, hits: string[]): void {
   for (const entry of readdirSync(dir)) {
     if (entry === "build-info" || entry === "mocks") continue;
@@ -63,17 +108,11 @@ function findArtifact(dir: string, name: string): string | undefined {
 }
 
 export function artifact(name: string): Abi {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../contracts/out");
-  const hit = findArtifact(root, name);
-  if (!hit) fail("artifact", `missing forge artifact ${name}`);
-  return JSON.parse(readFileSync(hit, "utf8")).abi as Abi;
+  return JSON.parse(readFileSync(artifactFile(name), "utf8")).abi as Abi;
 }
 
 export function bytecode(name: string): Hex {
-  const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../contracts/out");
-  const hit = findArtifact(root, name);
-  if (!hit) fail("artifact", `missing forge artifact ${name}`);
-  return JSON.parse(readFileSync(hit, "utf8")).bytecode.object as Hex;
+  return JSON.parse(readFileSync(artifactFile(name), "utf8")).bytecode.object as Hex;
 }
 
 export async function deploy(name: string, args: unknown[], account: PrivateKeyAccount = deployer): Promise<Address> {
