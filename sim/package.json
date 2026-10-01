@@ -1,0 +1,17 @@
+{
+  "name": "lockgate-sim",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "tsx --test test/*.test.ts",
+    "sim": "tsx src/run-sim.ts"
+  },
+  "dependencies": {
+    "viem": "^2.37.6",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
