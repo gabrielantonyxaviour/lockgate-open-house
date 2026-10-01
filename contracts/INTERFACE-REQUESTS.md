@@ -38,11 +38,9 @@ No other engine change is blocked on this. Local tests sign the G6 struct agains
 
 ### Digest
 
-Partner vaults verify `AdvanceHash` (`LockgatePartnerVault` / `1`), which is the struct in `engine/src/proposal/partner.ts`. The entry the engine files is `submit(Proposal,bytes) returns (bytes32)`. It stores the digest and does not transfer USDG. `execute` / `approve` are the paths that pay the platform. Cash sent is `navValue - fee`. `exitRef` is the router key: `keccak256(abi.encode(uint256 requestId, bytes32 quoteId))`. `proposal.vault` must equal the verifying contract. A viem vector for chain 31337 and verifying contract `0xBEEF` is pinned in `test/partner/Advance.t.sol` (`0xad8946202b300a113dee620cd26f4b79e904ea756b862ebf7a5a53809b2dbbdc`).
+Partner vaults verify `AdvanceProposalLib` (`LockgateAdvance` / `1`). `AdvanceHash.digest` delegates to that library. `submitProposal(AdvanceProposal,bytes)` is the entry `engine/src/proposal/partner.ts` encodes. It stores the digest and does not transfer USDG. `execute` / `approve` are the paths that pay the platform. `payout` must equal `navValue - fee`. The router records `quoteId` in the advance field `exitRef` and repays that vault. A viem vector for chain 31337 and verifying contract `0xBEEF` is pinned in `test/partner/Advance.t.sol`.
 
-This is not the stage-1 `LockgateAdvance` digest in `AdvanceProposalLib`. A G6 signature does not pass `AdvanceHash`. A G7 signature does not pass `AdvanceProposalLib`. `nonceUsed(uint256)` and `proposalHashOf(uint256)` are on `IPartnerVault`.
-
-`test/invariant/PartnerKeys.t.sol` still builds the stage-1 `AdvanceProposal` and calls `hashTypedProposal` / `relayRepay(quoteId)`. G7 did not edit that file. It will not compile against this vault until it uses `Proposal` and `exitRef`.
+`nonceUsed(uint256)` and `proposalHashOf(uint256)` are on `IPartnerVault`. The separate `LockgatePartnerVault` type string is not what this vault verifies.
 
 ### Book the engine should read
 
@@ -98,7 +96,7 @@ A local Anvil on chain 31337, on a port other than the shared 8545, runs three f
 
 ### Book
 
-`CreditLineBook.eligibleOutstanding()` and `lateOutstanding()` revert on the deployed stage-1 line. G7's ask stands. Stage-3 tests use `contracts/test/invariant/mocks/ReceivablesBook.sol`. Partner vaults were not the facility book.
+No new view. `eligibleOutstanding()` and `lateOutstanding()` are on the stage-1 line. `CreditLineBook` reads them. After one 10,000e6 draw, eligible is that nav, late is 0, and the sum equals `totalExposure`. Partner vaults were not the facility book.
 
 ### Not a request
 
