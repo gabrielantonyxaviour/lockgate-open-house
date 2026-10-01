@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {AdvanceProposal} from "../../src/interfaces/IAdvanceProposal.sol";
+import {AdvanceStatus} from "../../src/partner/Types.sol";
 import {PartnerVault} from "../../src/partner/PartnerVault.sol";
 import {PartnerVaultAdmin} from "../../src/partner/PartnerVaultAdmin.sol";
 import {MockUSDG} from "./mocks/MockUSDG.sol";
@@ -80,6 +81,48 @@ contract VaultHandler is Test {
         usdg.approve(address(vault), owed);
         try vault.repay(id) {} catch {}
         vm.stopPrank();
+    }
+
+    function markLate(uint256 idRaw) external {
+        uint256 n = vault.advanceCount();
+        if (n == 0) return;
+        uint256 id = bound(idRaw, 1, n);
+        if (vault.getAdvance(id).status != AdvanceStatus.Active) return;
+        uint256 when = uint256(vault.getAdvance(id).dueAt) + vault.grace();
+        if (block.timestamp < when) vm.warp(when);
+        try vault.markLate(id) {} catch {}
+    }
+
+    function writeOff(uint256 idRaw) external {
+        uint256 n = vault.advanceCount();
+        if (n == 0) return;
+        uint256 id = bound(idRaw, 1, n);
+        vm.prank(partner);
+        try vault.writeOff(id) {} catch {}
+    }
+
+    function skim(uint96 extra) external {
+        uint256 amt = bound(extra, 1, 1_000 * UNIT);
+        usdg.mint(address(vault), amt);
+        vm.prank(partner);
+        try vault.skim() {} catch {}
+    }
+
+    function postReserve(uint96 amount) external {
+        uint256 amt = bound(amount, 1, 10_000 * UNIT);
+        usdg.mint(platform, amt);
+        vm.startPrank(platform);
+        usdg.approve(address(vault), amt);
+        try vault.postReserve(platform, amt) {} catch {}
+        vm.stopPrank();
+    }
+
+    function withdrawReserve(uint96 amount) external {
+        uint256 posted = vault.reserveOf(platform);
+        if (posted == 0) return;
+        uint256 amt = bound(amount, 1, posted);
+        vm.prank(platform);
+        try vault.withdrawReserve(platform, amt, platform) {} catch {}
     }
 
     function lockgateTouches(uint96 navRaw) external {

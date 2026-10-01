@@ -84,8 +84,9 @@ contract CreditFacility is FacilityCash {
 
     function cancelTerms() external {
         _onlyGovernor();
+        if (!pendingTerms.active) revert BadParam();
         pendingTerms.active = false;
-        emit TermsExecuted();
+        emit TermsCancelled();
     }
 
     function scheduleBook(address book) external {

@@ -102,6 +102,10 @@ contract AutoApproveModule is ReentrancyGuard {
         minFeeBps = bounds_.minFeeBps;
         maxTenor = bounds_.maxTenor;
         enabled = bounds_.enabled;
+        if (allowlistEnabled != bounds_.allowlistEnabled) {
+            allowlistEnabled = bounds_.allowlistEnabled;
+            emit AllowlistSet(bounds_.allowlistEnabled);
+        }
         emit BoundsSet(bounds_.maxNavValue, bounds_.dailyLimit, bounds_.minFeeBps, bounds_.maxTenor, bounds_.enabled);
     }
 

@@ -69,7 +69,7 @@ abstract contract FacilityCash is FacilityStore {
     }
 
     /// @notice Anyone can put the facility into recovery when a covenant fails. Draws stop.
-    function poke() external {
+    function poke() external nonReentrant {
         _touch();
         if (acct.recovery || !_breached()) return;
         FacilityMath.enterRecovery(acct);
@@ -78,7 +78,7 @@ abstract contract FacilityCash is FacilityStore {
 
     /// @notice Crystallise the uncollateralised draw. Junior principal takes the loss first.
     ///         A later repayment restores senior before junior. The amount is not a caller input.
-    function recognizeLoss() external returns (uint256 loss) {
+    function recognizeLoss() external nonReentrant returns (uint256 loss) {
         _touch();
         if (!acct.recovery) revert NotRecovery();
         FacilityMath.subordinate(acct);

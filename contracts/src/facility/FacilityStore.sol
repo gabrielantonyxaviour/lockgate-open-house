@@ -99,10 +99,12 @@ abstract contract FacilityStore is ReentrancyGuard {
     event TermsTightened(uint16 advanceRateBps, uint16 maxLateBps, uint16 minJuniorBps);
     event TermsScheduled(uint64 eta);
     event TermsExecuted();
+    event TermsCancelled();
     event ResidualSwept(address indexed to, uint256 amount);
 
     function _init(Init memory init) internal {
         if (init.governor == address(0) || init.borrower == address(0) || init.asset == address(0)) revert BadParam();
+        if (init.governor == init.borrower) revert BadParam();
         if (init.advanceRateBps > BPS || init.maxLateBps > BPS || init.minJuniorBps > BPS) revert BadParam();
         if (init.seniorAprBps > BPS || init.juniorAprBps > BPS) revert BadParam();
         governor = init.governor;

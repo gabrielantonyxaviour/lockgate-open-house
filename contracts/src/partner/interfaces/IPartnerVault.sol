@@ -31,7 +31,9 @@ interface IPartnerVault {
     function proposalHashOf(uint256 nonce) external view returns (bytes32);
     function hashTypedProposal(AdvanceProposal calldata proposal) external view returns (bytes32);
 
-    function submitProposal(AdvanceProposal calldata proposal, bytes calldata proposerSignature) external;
+    function submitProposal(AdvanceProposal calldata proposal, bytes calldata proposerSignature)
+        external
+        returns (bytes32 digest);
 
     function execute(AdvanceProposal calldata proposal, bytes calldata engineSig, bytes calldata partnerSig)
         external

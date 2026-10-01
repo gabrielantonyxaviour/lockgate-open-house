@@ -2,11 +2,12 @@
 
 ## SUMMARY
 
-Stage 3 lends against Lockgate's own receivables, not a partner vault. Institutions deposit into a senior or junior tranche. Shares do not transfer. At most 50 approved lenders. The governor can tighten covenants immediately. Looser terms, a new book, or a new peg oracle wait two days. The governor cannot seize deposits.
+Stage 3 lends against Lockgate's own receivables, not a partner vault. Institutions deposit into a senior or junior tranche. Shares do not transfer. At most 50 approved lenders. The governor and the borrower are different addresses. The governor can tighten covenants immediately. Looser terms, a new book, or a new peg oracle wait two days. Cancelling a scheduled change emits `TermsCancelled`. The governor cannot seize deposits. `poke` and `recognizeLoss` are non-reentrant.
 
 ## PROGRESS
 
 - 2026-10-02: Senior/junior accounting, borrowing base, sticky recovery, derived loss, and the repayment waterfall are implemented. Tests cover the default path, interest order, the 51st lender, depeg, and the book timelock. A partner vault balance is unchanged by these flows.
+- 2026-10-02: Gap review. Construction reverts when the governor and the borrower are the same address. `cancelTerms` emits `TermsCancelled` and reverts when nothing is pending. `poke` and `recognizeLoss` use the reentrancy guard. New tests cover that guard's neighbours: loss before recovery, a residual sweep while senior is still drawn, a book that cannot be read, a revoked lender that does not free the 50-person cap, fee-on-transfer deposits, accrual fuzz, loss order, and a solvency invariant.
 
 ## Waterfall
 
