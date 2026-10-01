@@ -1,0 +1,16 @@
+{
+  "name": "lockgate-e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "e2e": "tsx src/run.ts"
+  },
+  "dependencies": {
+    "viem": "^2.37.6",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
