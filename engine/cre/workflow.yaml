@@ -1,0 +1,17 @@
+# Local stand-in. Not registered with Chainlink CRE and not a WASM workflow.
+# Shape follows https://docs.chain.link/cre/reference/project-configuration-ts
+# The handler is runCreTick (src/cre/tick.ts). It does not broadcast.
+# Cron this stands in for: "0 */10 * * * *" (every 10 minutes, 6-field).
+# https://docs.chain.link/cre/guides/workflow/using-triggers/cron-trigger-ts
+local-simulation:
+  user-workflow:
+    workflow-name: "lockgate-advance-local"
+  workflow-artifacts:
+    workflow-path: "../src/cre/tick.ts"
+    config-path: "./config.json"
+    secrets-path: ""
+  engine:
+    handler: "runCreTick"
+    broadcast: false
+    chain-id: 31337
+    schedule: "0 */10 * * * *"
