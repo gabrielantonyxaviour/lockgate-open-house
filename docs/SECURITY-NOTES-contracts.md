@@ -2,7 +2,7 @@
 
 ## SUMMARY
 
-Reviewed the stage-1 credit line, reserve, sandbox queues, factory, pricing guardrails, open vault, and exit pool on 2026-10-02. The pass covered access control, reentrancy, rounding, oracle staleness, signature replay, denial of service, griefing, and economic attacks. Five findings were fixed in `contracts/src/core` and `contracts/src/interfaces/ILockgateCreditLine.sol`. Regressions are in `contracts/test/core/Security.t.sol`. The queue invariant also checks the open-request list. This is not a pentest and not a legal opinion. `PricingMath` is unchanged: 600 seconds is still 99 bps.
+Reviewed the stage-1 credit line, reserve, sandbox queues, factory, pricing guardrails, open vault, and exit pool on 2026-10-02. The pass covered access control, reentrancy, rounding, oracle staleness, signature replay, denial of service, griefing, and economic attacks. Five findings were fixed in `contracts/src/core` and `contracts/src/interfaces/ILockgateCreditLine.sol`. Regressions are in `contracts/test/core/Security.t.sol`. The same day, Slither 0.11.6 on the core profile reported 121 results. Two were fixed. The other 116 are false positives or accepted timing checks, grouped below. The queue invariant also checks the open-request list. This is not a pentest and not a legal opinion. `PricingMath` is unchanged: 600 seconds is still 99 bps.
 
 ## Findings
 
@@ -13,6 +13,8 @@ Reviewed the stage-1 credit line, reserve, sandbox queues, factory, pricing guar
 | C-3 | Rounding | Utilization and concentration used integer division that rounds down. A cap of 0 still allowed a draw whose principal was just under 1 bp of capital. One unit over a concentration cap could floor back onto the cap and pass. | Both checks use OpenZeppelin `Math.mulDiv` with `Rounding.Ceil` (<https://docs.openzeppelin.com/contracts/5.x/api/utils#Math>). A ratio above the cap is refused. An exact cap still passes. |
 | C-4 | DoS | `processWindow`, `lockgateOwed`, and `headRequestId` looped every request ever opened, and `advancesOf` copied every advance. Anyone who can deposit is allowlisted and can queue. Enough requests make settlement run out of gas. The window then cannot repay, and `markLate` slashes the reserve. | Open requests sit on a list capped at `MAX_OPEN` (128). Settlement, the head, the owed view, and the FIFO preview walk that list. Settled history is unlinked. The 129th open request reverts `QueueFull`. |
 | C-5 | Economic | `UsdgTransfers.pull` rejected a short receipt. `push` did not. A fee-on-transfer token could pay the investor, the owner, or a slashed reserve less than the books recorded. | `push` reverts `FeeOnTransfer` unless the recipient balance rises by the full amount. |
+| C-6 | Validation | `FundFactory`'s constructor stored a zero credit line or reserve. A zero adapter failed later, inside `token()`, instead of `ZeroAddress`. | The constructor reverts `ZeroAddress` when the adapter, credit line, reserve, or any implementation is zero. |
+| C-7 | Token | `createDemoFund` ignored the bool from `approve`. A token that returns false, or that rejects a non-zero allowance overwrite, could get past that line. | Both demo approvals use OpenZeppelin `forceApprove` (<https://docs.openzeppelin.com/contracts/5.x/api/token/erc20#SafeERC20>). A false return reverts `SafeERC20FailedOperation`. |
 
 ## Reviewed, no code change
 
@@ -27,6 +29,32 @@ Reviewed the stage-1 credit line, reserve, sandbox queues, factory, pricing guar
 - Open-vault share price uses the accounted `assets`, not the raw token balance. A donation does not inflate the price. Withdrawals store `readyAt`. `claim` pays `item.owner`.
 - Deposits on a sandbox fund allowlist the caller. A gate blocks new exits and does not block deposits. That is the path `test_gateBlocksRedeemNotDeposit` locks. Share math rounds down, so dust stays in the fund.
 - The factory still clones and calls `initialize` in one transaction. The implementation is locked with a zero token. `registerSource` from that factory still runs for a new clone.
+
+## Static analysis
+
+Command, from `contracts/`, on 2026-10-02. Foundry compiles this profile with solc 0.8.28. Slither was 0.11.6. `--exclude-dependencies` keeps OpenZeppelin and forge-std out of the count. Detector notes: <https://github.com/crytic/slither/wiki/Detector-Documentation>.
+
+```bash
+FOUNDRY_PROFILE=core slither . --exclude-dependencies
+```
+
+C-6 and C-7 are the code changes. `test_constructorRejectsZeroAddresses` and `test_demoFundRejectsAFalseApprove` in `contracts/test/core/FactoryDemo.t.sol` cover them. The table is the rest of that run.
+
+| Detector | Results | Why it stays |
+| --- | --- | --- |
+| `arbitrary-send-erc20` | 1 | `UsdgTransfers.pull` takes `from` because `repay` and `postReserve` pull from the source, which already approved the line. Requiring `from == msg.sender` would break that. |
+| `incorrect-equality` | 46 | The comparisons are quote codes, request status, zero shares, or internal totals. `cash()` is checked with `<` or `>=`, except `bal == 0`, which skips an empty pro-rata. A 1-unit donation falls through to the dust path. |
+| `reentrancy-no-eth` | 11 | `draw`, `repay`, `markLate`, deposits, exits, cancel, `processWindow`, vault deposit, withdraw, claim, accrue, and `settle` are `nonReentrant`. Share `burn` does not call back. The state writes Slither lists happen after a call the guard already holds. |
+| `reentrancy-benign` | 9 | Same guard. The later writes are not a second payout. |
+| `reentrancy-events` | 1 | `Clones.clone` and `initialize` run in one transaction. The factory event is after `initialize`. |
+| `uninitialized-local` | 2 | `impl` is set in every `QueueKind` branch or the function reverts. `prev` defaults to 0, and 0 means the id is the head of the open list. |
+| `unused-return` | 4 | Three are the fee-bps return from `line.quote`. Callers use `fee` and `available`. One is `claim`. On this vault the claimed amount is the `owed` stored at `requestWithdraw`, which uses the same formula as the sell in that transaction. `repay` pulls that face amount. |
+| `calls-loop` | 15 | Settlement, `lockgateOwed`, and `cash` walk the open list. C-4 caps that list at 128. |
+| `timestamp` | 22 | Windows, grace, cooldown, and the 9% mock yield read `block.timestamp`. A few seconds of miner influence does not move a 600-second window onto another cycle. |
+| `cyclomatic-complexity` | 1 | `_revert` is the quote-code table. |
+| `naming-convention` | 2 | `FAUCET_MAX()` and `ARBITRUM_SEPOLIA_USDG()` are the interface getters for constants. Renaming them changes the ABI. |
+| `pragma` | 1 | These files use `^0.8.24`. OpenZeppelin `Ownable` uses `^0.8.20`. The core profile compiles both with solc 0.8.28. |
+| `unimplemented-functions` | 1 | `paused()` is implemented on `CreditLineAdmin`. `LockgateCreditLine` inherits it. |
 
 ## Residual
 

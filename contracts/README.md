@@ -6,6 +6,7 @@ Stage-1 contracts cover both doors in `lockgate/SPEC.md`: the restricted-fund cr
 
 ## PROGRESS
 
+- 2026-10-02: Slither 0.11.6 on the core profile reported 121 results. The factory constructor now rejects a zero adapter, credit line, or reserve. `createDemoFund` uses `forceApprove`. The other 116 results are recorded as false positives in `../docs/SECURITY-NOTES-contracts.md`.
 - 2026-10-02: Developer notes below: how to run the core suite, the decisions that the code will not relax, and the advance, window, and door-2 diagrams. An open advance keeps its reserve floor if `setSourceTerms` lowers the live rate. The floor follows the live rate again when that source's exposure hits 0.
 - 2026-10-02: Security review of the stage-1 book. Grace is stored on the advance. A registrar cannot rewrite an open source. Utilization and concentration round up. Settlement walks at most 128 open requests. `push` rejects a short delivery. Notes are in `../docs/SECURITY-NOTES-contracts.md`.
 - 2026-10-02: The factory constructor other sessions call is the seven-argument form. `PricingMath` is unchanged: 600 seconds is 99 bps, and 599 or 596 seconds is 98. A later Anvil block prices the seconds left in that block.
@@ -29,6 +30,14 @@ FOUNDRY_PROFILE=core forge test --offline --match-contract SecurityTest --match-
 Solc is 0.8.28, the optimizer runs 200 times, `via_ir` is on, and the EVM is Cancun. A handler revert does not fail an invariant (`fail_on_revert = false`). `via_ir` caches `block.timestamp` for the whole test function. After `vm.warp`, pass a literal or a value you already stored. `vm.prank` and `vm.expectRevert` bind the next external call, including a call hidden in an argument. `expectRevert(bytes4)` does not match a custom error that carries arguments. Use `abi.encodeWithSelector`.
 
 Do not add another source file named `MockUSDG.sol`. Forge names the artifact from the filename, and `src/core/MockUSDG.sol` is the token the Anvil flows deploy. The reentering test token is `test/partner/mocks/ReenterUSDG.sol`.
+
+Slither 0.11.6, from this directory:
+
+```bash
+FOUNDRY_PROFILE=core slither . --exclude-dependencies
+```
+
+The triage is in `../docs/SECURITY-NOTES-contracts.md`.
 
 `src/partner`, `src/facility`, `engine`, `harness`, `sim`, and `e2e` are other sessions. A failure there is not a core failure. The review notes are `../docs/SECURITY-NOTES-contracts.md`.
 

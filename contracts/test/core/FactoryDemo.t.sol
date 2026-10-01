@@ -2,6 +2,8 @@
 pragma solidity ^0.8.24;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {CoreFixture} from "./Support.sol";
 import {QueueKind} from "../../src/interfaces/IQueueAdapter.sol";
 import {ILockgateCreditLine} from "../../src/interfaces/ILockgateCreditLine.sol";
@@ -12,6 +14,27 @@ import {PlatformStore} from "../../src/core/PlatformStore.sol";
 import {WeeklyCyclePlatform} from "../../src/core/WeeklyCyclePlatform.sol";
 import {EpochQueuePlatform} from "../../src/core/EpochQueuePlatform.sol";
 import {QuarterlyWindowPlatform} from "../../src/core/QuarterlyWindowPlatform.sol";
+
+/// @notice `approve` returns false only for `reject`. The clone can still allow the credit line.
+contract FalseApproveToken is ERC20 {
+    address public immutable reject;
+
+    constructor(address reject_) ERC20("false approve", "FUSDG") {
+        reject = reject_;
+    }
+
+    function decimals() public pure override returns (uint8) {
+        return 6;
+    }
+
+    function mint(address to, uint256 amount) external {
+        _mint(to, amount);
+    }
+
+    function approve(address spender, uint256) public view override returns (bool) {
+        return spender != reject;
+    }
+}
 
 contract FactoryDemoTest is CoreFixture {
     function setUp() public {
@@ -88,6 +111,29 @@ contract FactoryDemoTest is CoreFixture {
         assertLe(type(WeeklyCyclePlatform).creationCode.length + initArgs, 49_152);
         assertLe(type(EpochQueuePlatform).creationCode.length + initArgs, 49_152);
         assertLe(type(QuarterlyWindowPlatform).creationCode.length + initArgs, 49_152);
+    }
+
+    function test_constructorRejectsZeroAddresses() public {
+        address place = address(1);
+        vm.expectRevert(FundFactory.ZeroAddress.selector);
+        new FundFactory(owner, address(0), address(line), address(reserve), place, place, place);
+        vm.expectRevert(FundFactory.ZeroAddress.selector);
+        new FundFactory(owner, address(adapter), address(0), address(reserve), place, place, place);
+        vm.expectRevert(FundFactory.ZeroAddress.selector);
+        new FundFactory(owner, address(adapter), address(line), address(0), place, place, place);
+        vm.expectRevert(FundFactory.ZeroAddress.selector);
+        new FundFactory(owner, address(adapter), address(line), address(reserve), address(0), place, place);
+    }
+
+    function test_demoFundRejectsAFalseApprove() public {
+        FalseApproveToken bad = new FalseApproveToken(address(reserve));
+        FundFactory badFactory = _factory(address(new UsdgAdapter(address(bad), true)));
+        vm.prank(owner);
+        line.setRegistrar(address(badFactory), true);
+        vm.expectRevert(abi.encodeWithSelector(SafeERC20.SafeERC20FailedOperation.selector, address(bad)));
+        badFactory.createDemoFund("False approve");
+        assertEq(badFactory.allFunds().length, 0);
+        assertEq(line.sources().length, 0);
     }
 
     function test_initializeIsOnceOnTheCloneAndTheImplementation() public {

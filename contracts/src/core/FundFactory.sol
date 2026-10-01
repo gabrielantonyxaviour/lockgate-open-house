@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IFundFactory} from "../interfaces/IFundFactory.sol";
 import {ILockgateCreditLine} from "../interfaces/ILockgateCreditLine.sol";
 import {IPlatformReserve} from "../interfaces/IPlatformReserve.sol";
@@ -17,6 +18,8 @@ import {PlatformBase} from "./PlatformBase.sol";
 /// @title FundFactory
 /// @notice Sandbox platforms. `createDemoFund` seeds the MVP numbers and only works when the token is MockUSDG.
 contract FundFactory is Ownable, IFundFactory {
+    using SafeERC20 for IERC20;
+
     uint256 public constant DEMO_NAV = 1_023_400;
     uint256 public constant DEMO_SHARE_VALUE = 10_000e6;
     uint256 public constant DEMO_CASH = 2_000e6;
@@ -54,7 +57,10 @@ contract FundFactory is Ownable, IFundFactory {
         address epoch_,
         address quarter_
     ) Ownable(owner_) {
-        if (weekly_ == address(0) || epoch_ == address(0) || quarter_ == address(0)) revert ZeroAddress();
+        if (
+            adapter == address(0) || creditLine_ == address(0) || reserve_ == address(0) || weekly_ == address(0)
+                || epoch_ == address(0) || quarter_ == address(0)
+        ) revert ZeroAddress();
         token = IUsdgAdapter(adapter).token();
         creditLine = creditLine_;
         reserve = reserve_;
@@ -91,9 +97,9 @@ contract FundFactory is Ownable, IFundFactory {
         );
         ILockgateCreditLine(creditLine).registerSource(fund, DEMO_LIMIT, DEMO_RESERVE_BPS);
         IMockUSDG(token).mint(address(this), DEMO_RESERVE + DEMO_CASH);
-        IERC20(token).approve(reserve, DEMO_RESERVE);
+        IERC20(token).forceApprove(reserve, DEMO_RESERVE);
         IPlatformReserve(reserve).post(fund, DEMO_RESERVE);
-        IERC20(token).approve(fund, DEMO_CASH);
+        IERC20(token).forceApprove(fund, DEMO_CASH);
         IIssuerFund(fund).depositCash(DEMO_CASH);
     }
 
