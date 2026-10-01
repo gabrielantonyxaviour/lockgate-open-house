@@ -2,7 +2,7 @@
 
 ## SUMMARY
 
-Reviewed the harness, the local deploy scripts, and the loopback test console on 2026-10-02. The pass covered access control, reentrancy, rounding, oracle staleness, signature replay, denial of service, griefing, and economic attacks. Seven findings were fixed under `harness/` and `scripts/start-anvil.ts`. Regressions are in `harness/test/security.test.ts` and `harness/test/flows.test.ts`, with the Anvil nonce and cross-vault checks in `harness/test/failures.test.ts`. This is not a pentest and not a legal opinion. The console moves Anvil test funds only.
+Reviewed the harness, the local deploy scripts, and the loopback test console on 2026-10-02. The pass covered access control, reentrancy, rounding, oracle staleness, signature replay, denial of service, griefing, and economic attacks. Eight findings were fixed under `harness/` and `scripts/`. Regressions are in `harness/test/security.test.ts`, `harness/test/entry.test.ts`, and `harness/test/flows.test.ts`, with the Anvil nonce, failed-transaction, and cross-vault checks in `harness/test/failures.test.ts`. This is not a pentest and not a legal opinion. The console moves Anvil test funds only.
 
 ## Findings
 
@@ -15,6 +15,7 @@ Reviewed the harness, the local deploy scripts, and the loopback test console on
 | H-5 | Access | `signProposal` signed any `chainId` the caller passed. A 42161 or 421614 signature could be produced from the helper. | `assertHarnessWrite` runs before `signTypedData`. Chain 42161 is `MAINNET_REFUSED`. Every other chain is `CHAIN_REFUSED`. A fee that leaves no payout, or a payout other than nav minus fee, is `VALIDATION`. |
 | H-6 | DoS | Two `POST /api/act` calls could overlap and interleave nonce and cash. | The act route runs through `inOrder`. A failed action does not block the next one. The lock is not inside `send`, so `demoAll` cannot deadlock on its own calls. |
 | H-7 | Access | `deployProtocol` wrote the manifest before the nonce check and the seed mint. A refused deploy left predicted addresses on disk, and the next command treated them as live. | The file is written after the seed mint. `NOT_FRESH` leaves the previous bytes in place. |
+| H-8 | Access | CLI flags, act bodies, and deploy env were parsed by hand. A thrown error could keep a stack or a 32-byte hex key. | Zod parses each boundary and a failure uses a fixed sentence. `failureBody` returns `{ error, code }` only. A 32-byte hex key becomes `0x[redacted]`. A longer hex blob, such as a signature, stays. The Sepolia key check runs before any RPC read. |
 
 ## Reviewed, no code change
 

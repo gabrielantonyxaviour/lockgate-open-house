@@ -4,6 +4,7 @@ import { loadArtifact, protocolRoot } from "./artifacts.js";
 import { protocolPlan, type ProtocolOwners } from "./deploy.js";
 import { HarnessError } from "./errors.js";
 import { ARBITRUM_ONE, ARBITRUM_SEPOLIA, PAXOS_USDG_SEPOLIA, assertSepoliaBroadcast } from "./guards.js";
+import { parseSepoliaEnv, type SepoliaEnv } from "./input.js";
 import { writeManifest, type Manifest } from "./manifest.js";
 import { usdg } from "./units.js";
 
@@ -11,14 +12,12 @@ const DEFAULT_RPC = "https://sepolia-rollup.arbitrum.io/rpc";
 
 /**
  * Deploys the protocol when the allow flag, a 32-byte key, and chain 421614 are all present.
- * Arbitrum One is refused before any transaction. Tests pass a local RPC. This module does not
- * broadcast on import, and it does not read the public endpoint unless the flag is already set.
+ * The flag and the key are checked before any RPC read. Arbitrum One is refused before a
+ * transaction. Tests pass a local RPC. This module does not broadcast on import.
  */
 export async function broadcastSepolia(env: NodeJS.ProcessEnv, manifestFile: string): Promise<Manifest> {
-  if (env.LOCKGATE_ALLOW_SEPOLIA_DEPLOY !== "1") {
-    throw new HarnessError("Sepolia broadcast is blocked until LOCKGATE_ALLOW_SEPOLIA_DEPLOY=1", "SEPOLIA_BLOCKED");
-  }
-  const rpc = env.SEPOLIA_RPC ?? DEFAULT_RPC;
+  const parsed = parseSepoliaEnv(env);
+  const rpc = parsed.rpc ?? DEFAULT_RPC;
   const chainId = await readChainId(rpc);
   if (chainId === ARBITRUM_ONE) throw new HarnessError("Arbitrum One is refused", "MAINNET_REFUSED");
   const key = assertSepoliaBroadcast(chainId, env);
@@ -29,8 +28,8 @@ export async function broadcastSepolia(env: NodeJS.ProcessEnv, manifestFile: str
   const wallet = createWalletClient({ account, chain, transport });
   const nonce = await publicClient.getTransactionCount({ address: account.address });
   const factory = getContractAddress({ from: account.address, nonce: BigInt(nonce) });
-  const owners = ownersFrom(env, account.address);
-  const external = env.USE_PAXOS_USDG === "1" ? PAXOS_USDG_SEPOLIA as Address : undefined;
+  const owners = ownersFrom(parsed, account.address);
+  const external = parsed.paxos ? PAXOS_USDG_SEPOLIA as Address : undefined;
   const planned = protocolPlan(factory, owners, external);
 
   const artifact = loadArtifact("Create2Factory");
@@ -94,21 +93,15 @@ export async function broadcastSepolia(env: NodeJS.ProcessEnv, manifestFile: str
   return manifest;
 }
 
-function ownersFrom(env: NodeJS.ProcessEnv, deployer: Address): ProtocolOwners {
-  const partnerA = addressOr(env.PARTNER_A_ADDRESS, deployer);
-  const partnerB = addressOr(env.PARTNER_B_ADDRESS, deployer);
+function ownersFrom(parsed: SepoliaEnv, deployer: Address): ProtocolOwners {
+  const partnerA = parsed.partnerA ?? deployer;
+  const partnerB = parsed.partnerB ?? deployer;
   const fallback = partnerA.toLowerCase() === deployer.toLowerCase() ? partnerB : partnerA;
-  const governor = addressOr(env.GOVERNOR_ADDRESS, fallback);
+  const governor = parsed.governor ?? fallback;
   if (governor.toLowerCase() === deployer.toLowerCase()) {
     throw new HarnessError("Set GOVERNOR_ADDRESS to an account other than the deployer", "VALIDATION");
   }
   return { owner: deployer, governor, partnerA, partnerB };
-}
-
-function addressOr(value: string | undefined, fallback: Address): Address {
-  if (!value) return fallback;
-  if (!/^0x[0-9a-fA-F]{40}$/.test(value)) throw new HarnessError("Address must be 20 bytes", "VALIDATION");
-  return value as Address;
 }
 
 function sepoliaChain(rpc: string): Chain {
@@ -126,7 +119,7 @@ async function readChainId(rpc: string): Promise<number> {
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] }),
   });
-  if (!response.ok) throw new HarnessError(`RPC ${rpc} returned ${response.status}`, "RPC");
+  if (!response.ok) throw new HarnessError(`RPC returned HTTP ${response.status}`, "RPC");
   const body = await response.json() as { result?: string };
   if (!body.result) throw new HarnessError("RPC did not return a chain id", "RPC");
   return Number.parseInt(body.result, 16);

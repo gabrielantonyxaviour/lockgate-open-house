@@ -39,7 +39,7 @@ HARNESS_RPC=http://127.0.0.1:8546 npm run serve
 
 `read.status` prints balances, the credit line, the vaults, and the facility. Amounts you pass on the CLI are decimal strings with at most 6 places, such as `--navUsdg 1000`.
 
-`serve` binds `127.0.0.1` and defaults to port 18910. Open `http://127.0.0.1:18910/`. The page title is "Lockgate test console". `GET /api/surface` lists the same actions as `help`. `POST /api/act` takes `{ "action", "input" }` where every input value is a string. A number, a boolean, or a body over 8 KiB returns 400 `VALIDATION` and does not call the chain. An unknown action returns 422.
+`serve` binds `127.0.0.1` and defaults to port 18910. Open `http://127.0.0.1:18910/`. The page title is "Lockgate test console". `GET /api/surface` lists the same actions as `help`. `POST /api/act` takes `{ "action", "input" }` where every input value is a string. A number, a boolean, or a body over 8 KiB returns 400 `VALIDATION` and does not call the chain. An unknown action returns 422. A failed command or HTTP call returns `{ "error", "code" }` and does not print a stack or a private key.
 
 ```bash
 npm run cli -- stage1.quote --navUsdg 1000 --platform WeeklyQueuePlatform

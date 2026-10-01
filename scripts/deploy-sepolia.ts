@@ -1,11 +1,10 @@
-import { HarnessError } from "../harness/src/errors.js";
+import { failureBody } from "../harness/src/errors.js";
+import { parseSepoliaManifest } from "../harness/src/input.js";
 import { broadcastSepolia } from "../harness/src/sepolia.js";
-import { manifestPath } from "../harness/src/manifest.js";
-import { ARBITRUM_SEPOLIA } from "../harness/src/guards.js";
 
-const file = process.env.SEPOLIA_MANIFEST ?? manifestPath(ARBITRUM_SEPOLIA);
-
-broadcastSepolia(process.env, file).then((manifest) => {
+try {
+  const file = parseSepoliaManifest(process.env);
+  const manifest = await broadcastSepolia(process.env, file);
   process.stdout.write(`${JSON.stringify({
     mode: manifest.mode,
     chainId: manifest.chainId,
@@ -13,8 +12,7 @@ broadcastSepolia(process.env, file).then((manifest) => {
     usdg: manifest.contracts.MockUSDG,
     paxos: process.env.USE_PAXOS_USDG === "1",
   })}\n`);
-}).catch((err: unknown) => {
-  const body = err instanceof HarnessError ? err.toJSON() : { error: err instanceof Error ? err.message : "failed", code: "INTERNAL" };
-  process.stderr.write(`${JSON.stringify(body)}\n`);
+} catch (err: unknown) {
+  process.stderr.write(`${JSON.stringify(failureBody(err))}\n`);
   process.exitCode = 1;
-});
+}

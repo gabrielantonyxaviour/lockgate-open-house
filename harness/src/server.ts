@@ -4,8 +4,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { findAction, surface } from "./actions/catalog.js";
 import { loadCtx, type Ctx } from "./chain.js";
-import { HarnessError } from "./errors.js";
-import { parseActBody } from "./input.js";
+import { failureBody, HarnessError } from "./errors.js";
+import { parseActBody, parseServerEnv } from "./input.js";
 import { manifestPath, readManifest } from "./manifest.js";
 import { inOrder } from "./turnstile.js";
 
@@ -67,14 +67,14 @@ export function startServer(ctx: Ctx, port: number): Promise<{ url: string; clos
         await inOrder(async () => {
           const body = parseActBody(await readBody(req));
           const action = findAction(body.action);
-          if (!action) throw new HarnessError(`Unknown action ${body.action}`, "UNKNOWN_ACTION");
+          if (!action) throw new HarnessError("Unknown action", "UNKNOWN_ACTION");
           sendJson(res, 200, { ok: true, result: await action.run(ctx, body.input) });
         });
         return;
       }
       sendJson(res, 404, { error: "not found", code: "NOT_FOUND" });
     } catch (err) {
-      const body = err instanceof HarnessError ? err.toJSON() : { error: err instanceof Error ? err.message : "failed", code: "INTERNAL" };
+      const body = failureBody(err);
       const status = body.code === "VALIDATION" ? 400 : 422;
       sendJson(res, status, body);
     }
@@ -92,19 +92,18 @@ export function startServer(ctx: Ctx, port: number): Promise<{ url: string; clos
 }
 
 async function main(): Promise<void> {
-  const path = process.env.HARNESS_MANIFEST ?? manifestPath(31337);
+  const env = parseServerEnv(process.env);
+  const path = env.manifestFile ?? manifestPath(31337);
   const manifest = readManifest(path);
-  if (process.env.HARNESS_RPC) manifest.rpc = process.env.HARNESS_RPC;
+  if (env.rpc) manifest.rpc = env.rpc;
   const ctx = await loadCtx(manifest, path);
-  const port = Number(process.env.HARNESS_PORT ?? 18910);
-  const started = await startServer(ctx, port);
+  const started = await startServer(ctx, env.port);
   process.stderr.write(`harness ${started.url}\n`);
 }
 
 if (process.argv[1]?.endsWith("server.ts")) {
   main().catch((err: unknown) => {
-    const body = err instanceof HarnessError ? err.toJSON() : { error: err instanceof Error ? err.message : "failed", code: "INTERNAL" };
-    process.stderr.write(`${JSON.stringify(body)}\n`);
+    process.stderr.write(`${JSON.stringify(failureBody(err))}\n`);
     process.exitCode = 1;
   });
 }

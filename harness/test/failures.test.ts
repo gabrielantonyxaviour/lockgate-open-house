@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { bytesToHex, hexToBytes, keccak256, toBytes, type Hex } from "viem";
-import { HarnessError } from "../src/errors.js";
+import { failureBody, HarnessError } from "../src/errors.js";
 import { startServer } from "../src/server.js";
 import { deployNew, loadCtx, read, send, type Ctx } from "../src/chain.js";
 import { deployProtocol } from "../src/deploy.js";
@@ -56,7 +56,18 @@ test("failure paths keep cash identity and fail closed", { timeout: 180_000 }, a
     expect(eligible > 0n && late === 0n, "a fresh advance was not eligible", { eligible, late });
 
     await expectRevert(() => send(ctx, "investor", "LockgateCreditLine", "withdrawCapital", [1n]), "OwnableUnauthorizedAccount");
-    await expectRevert(() => send(ctx, "investor", "MockUSDG", "faucet", [10_001_000_000n]), "FaucetCap");
+    await assert.rejects(
+      () => send(ctx, "investor", "MockUSDG", "faucet", [10_001_000_000n]),
+      (err: unknown) => {
+        const body = failureBody(err);
+        const text = JSON.stringify(body);
+        return err instanceof HarnessError
+          && body.code === "REVERT"
+          && body.error.includes("FaucetCap")
+          && !text.includes(ROLES.investor.key.slice(2))
+          && Object.keys(body).every((key) => key === "error" || key === "code");
+      },
+    );
     await expectRevert(() => send(ctx, "investor", "CreditFacility", "draw", [1_000_000n]), "Unauthorized");
 
     await setMandate(ctx, { vault: "PartnerVaultA", minFeeBps: "25" });

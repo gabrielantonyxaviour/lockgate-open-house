@@ -12,7 +12,7 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { foundry } from "viem/chains";
 import { loadArtifact, type Artifact } from "./artifacts.js";
-import { HarnessError } from "./errors.js";
+import { HarnessError, publicMessage } from "./errors.js";
 import { ANVIL_CHAIN_ID, assertHarnessWrite, assertLocalRpc } from "./guards.js";
 import { type Manifest } from "./manifest.js";
 import { ROLES, type RoleName } from "./roles.js";
@@ -145,7 +145,7 @@ export function explain(err: unknown): HarnessError {
     if (item?.shortMessage) shorts.push(item.shortMessage);
     return false;
   });
-  const message = names[0] ?? shorts[0] ?? (err instanceof Error ? (anyErr.shortMessage ?? err.message) : "rpc failure");
+  const raw = names[0] ?? shorts[0] ?? (err instanceof Error ? (anyErr.shortMessage ?? err.message) : "rpc failure");
   const reverted = names.length > 0 || shorts.length > 0;
-  return new HarnessError(message, reverted ? "REVERT" : "RPC", { names, shorts });
+  return new HarnessError(publicMessage(raw), reverted ? "REVERT" : "RPC");
 }

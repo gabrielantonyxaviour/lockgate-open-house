@@ -24,7 +24,10 @@ export type Planned = { logical: string; from: RoleName; salt: Hex; init: Hex; a
 
 export type ProtocolOwners = { owner: Address; governor: Address; partnerA: Address; partnerB: Address };
 
-const SEED: Record<RoleName, bigint> = {
+/** Governor signs mandates and does not receive a seed balance. */
+type SeedRole = Exclude<RoleName, "governor">;
+
+const SEED: Record<SeedRole, bigint> = {
   lockgate: usdg(200_000n),
   platform: usdg(40_000n),
   partnerA: usdg(80_000n),
@@ -80,13 +83,13 @@ export async function deployProtocol(rpc: string, manifestFile?: string): Promis
       await send(ctx, item.from, "Create2Factory", "deploy", [item.salt, item.init]);
     } catch (err) {
       const message = err instanceof HarnessError ? err.message : "deploy failed";
-      throw new HarnessError(`${item.logical} create2 failed: ${message}`, "DEPLOY_FAILED", err instanceof HarnessError ? err.details : undefined);
+      throw new HarnessError(`${item.logical} create2 failed: ${message}`, "DEPLOY_FAILED");
     }
     const code = await ctx.publicClient.getBytecode({ address: item.address });
     if (!code || code === "0x") throw new HarnessError(`${item.logical} missing at ${item.address}`, "DEPLOY_MISMATCH");
   }
   await wire(ctx);
-  for (const [role, amount] of Object.entries(SEED) as Array<[RoleName, bigint]>) {
+  for (const [role, amount] of Object.entries(SEED) as Array<[SeedRole, bigint]>) {
     await send(ctx, "lockgate", "MockUSDG", "mint", [ROLES[role].address, amount]);
   }
   writeManifest(manifest, file);

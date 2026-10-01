@@ -74,13 +74,21 @@ test("mandate boundaries reject fee, tenor, deadline, and concentration", { time
   });
 });
 
-async function assertBook(ctx: Awaited<ReturnType<typeof loadCtx>>): Promise<{ eligible: bigint; late: bigint }> {
+async function assertBook(
+  ctx: Awaited<ReturnType<typeof loadCtx>>,
+  expected?: bigint,
+): Promise<{ eligible: bigint; late: bigint }> {
   const eligible = await read<bigint>(ctx, "LockgateCreditLine", "eligibleOutstanding");
   const late = await read<bigint>(ctx, "LockgateCreditLine", "lateOutstanding");
   const exposure = await read<bigint>(ctx, "LockgateCreditLine", "totalExposure");
   expect(eligible + late === exposure, "eligible plus late left total exposure", {
     eligible: eligible.toString(), late: late.toString(), exposure: exposure.toString(),
   });
+  if (expected !== undefined) {
+    expect(exposure === expected, "book exposure drifted", {
+      exposure: exposure.toString(), expected: expected.toString(),
+    });
+  }
   return { eligible, late };
 }
 
