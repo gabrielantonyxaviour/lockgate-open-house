@@ -3,7 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "e2e": "tsx src/run.ts"
+    "e2e": "tsx src/run.ts",
+    "test": "tsx --test test/*.test.ts"
   },
   "dependencies": {
     "viem": "^2.37.6",

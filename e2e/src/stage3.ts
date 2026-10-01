@@ -1,5 +1,5 @@
 import type { Address } from "viem";
-import { deploy, deployer, fail, investor, read, reverts, send, usd } from "./chain.js";
+import { deploy, deployer, fail, investor, platform, read, reverts, send, usd } from "./chain.js";
 import { engineQuote } from "./engine.js";
 
 type Books = {
@@ -15,7 +15,7 @@ export async function runStage3(now: number, stage1Line: Address) {
   const book = await deploy("ReceivablesBook", []);
   const facility = await deploy("CreditFacility", [{
     governor: deployer.address,
-    borrower: deployer.address,
+    borrower: platform.address,
     asset: token,
     book,
     oracle: "0x0000000000000000000000000000000000000000",
@@ -35,8 +35,11 @@ export async function runStage3(now: number, stage1Line: Address) {
   await send("CreditFacility", facility, "deposit", [1, usd(100_000n)], deployer);
 
   await send("ReceivablesBook", book, "set", [0n, 0n], deployer);
-  if (!(await reverts("CreditFacility", facility, "draw", [1n], deployer))) {
+  if (!(await reverts("CreditFacility", facility, "draw", [1n], platform))) {
     fail("covenant", "a draw against an empty borrowing base succeeded");
+  }
+  if (!(await reverts("CreditFacility", facility, "draw", [1n], deployer))) {
+    fail("keys", "the governor drew the facility");
   }
   if (!(await reverts("CreditFacility", facility, "draw", [1n], investor))) {
     fail("keys", "a stranger drew the facility");
@@ -45,7 +48,7 @@ export async function runStage3(now: number, stage1Line: Address) {
   await send("ReceivablesBook", book, "set", [usd(1_000_000n), 0n], deployer);
   const room = await read<bigint>("CreditFacility", facility, "availableDraw");
   if (room !== usd(600_000n)) fail("base", `available draw was ${room}`);
-  await send("CreditFacility", facility, "draw", [usd(200_000n)], deployer);
+  await send("CreditFacility", facility, "draw", [usd(200_000n)], platform);
 
   await send("ReceivablesBook", book, "set", [0n, 0n], deployer);
   await send("CreditFacility", facility, "poke", [], deployer);

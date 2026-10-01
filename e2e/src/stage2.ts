@@ -100,6 +100,8 @@ async function fund(token: Address, vault: Address, partner: typeof harbour, rou
 }
 
 async function propose(now: number, vault: Address, partner: Address, nonce: bigint): Promise<EngineProposal> {
+  const idle = await read<bigint>("PartnerVault", vault, "idle");
+  const totalAssets = await read<bigint>("PartnerVault", vault, "totalAssets");
   const built = await enginePropose({
     now,
     nav: NAV,
@@ -109,6 +111,8 @@ async function propose(now: number, vault: Address, partner: Address, nonce: big
     platform: platform.address,
     nonce,
     signEnv: "LOCKGATE_PROPOSER_KEY",
+    idle,
+    totalAssets,
   });
   if (!built.submittable || !built.signature) {
     fail("engine", `proposal blocked: ${built.blocks.map((item) => item.code).join(",")}`);

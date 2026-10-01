@@ -82,6 +82,8 @@ export async function enginePropose(args: {
   platform: Address;
   nonce: bigint;
   signEnv: string;
+  idle: bigint;
+  totalAssets: bigint;
 }): Promise<EngineProposal> {
   const request = {
     ...body(args.now, args.nav, "northwind-invoice"),
@@ -95,6 +97,8 @@ export async function enginePropose(args: {
       maxTenorSeconds: 30 * 86_400,
       concentrationCapBps: 10_000,
       expiresAt: args.now + 365 * 86_400,
+      idle: args.idle.toString(),
+      totalAssets: args.totalAssets.toString(),
     },
     platform: args.platform,
     recipient: args.platform,

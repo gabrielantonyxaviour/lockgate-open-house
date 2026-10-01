@@ -1,6 +1,6 @@
 {
   "chainId": 31337,
-  "block": 280,
+  "block": 380,
   "stage1": {
     "chainFeeBps": 99,
     "engineFeeBps": 101,
@@ -8,7 +8,7 @@
     "investorPaid": "9901000000",
     "outstanding": "0",
     "earnedFees": "99000000",
-    "line": "0x9bcc604d4381c5b0ad12ff3bf32bede063416bc7"
+    "line": "0x7c8baafa542c57ff9b2b90612bf8ab9e86e22c09"
   },
   "stage2": {
     "source": "engine/src/cli.ts propose",
