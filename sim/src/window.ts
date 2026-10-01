@@ -31,24 +31,39 @@ function due(reqs: readonly ExitReq[], day: number, advanced: boolean): ExitReq[
   return reqs.filter((req) => req.open && req.advanced === advanced && req.dueDay <= day);
 }
 
-/** FIFO advances, then investors. A short window never pays an investor while an advance is unpaid. */
+/** An investor receipt while a due advance is still open. */
+export function repayFirstBroken(advanceStillOpen: boolean, investorPaid: number): boolean {
+  return advanceStillOpen && investorPaid > 0;
+}
+
+function rollMiss(req: ExitReq, day: number, rolled: number): void {
+  req.misses += 1;
+  req.lastMissDay = day;
+  req.dueDay = rolled;
+}
+
+/** FIFO advances, then investors. Cash moves only after the advance is booked. */
 export function settleQueue(world: World, platform: Platform, day: number): void {
   const advanced = due(platform.reqs, day, true);
   let blocked = false;
   const rolled = day + platform.windowDays;
   for (const req of advanced) {
-    if (blocked || platform.cash < req.nav) {
+    if (blocked || !req.line || platform.cash < req.nav) {
       blocked = true;
-      req.misses += 1;
-      req.lastMissDay = day;
-      req.dueDay = rolled;
+      rollMiss(req, day, rolled);
       continue;
     }
     platform.cash -= req.nav;
     settleAdvance(req);
+    if (req.open) {
+      platform.cash += req.nav;
+      blocked = true;
+      rollMiss(req, day, rolled);
+    }
   }
   let paid = 0;
-  if (!blocked) {
+  const advanceOpen = advanced.some((req) => req.open);
+  if (!advanceOpen) {
     for (const req of due(platform.reqs, day, false)) {
       if (platform.cash < req.nav) break;
       platform.cash -= req.nav;
@@ -56,7 +71,7 @@ export function settleQueue(world: World, platform: Platform, day: number): void
       paid += req.nav;
     }
   }
-  if (blocked && paid > 0) world.breaches += 1;
+  if (repayFirstBroken(advanceOpen, paid)) world.breaches += 1;
   world.investorPaid += paid;
 }
 
@@ -80,7 +95,7 @@ export function enforceLates(world: World, day: number, scenario: Scenario): voi
     for (const req of platform.reqs) {
       if (!req.open || !req.advanced || !req.line) continue;
       if (req.misses < limit || day < req.lastMissDay + GRACE_DAYS) continue;
-      absorbLoss(req.line, world.facility, platform.id, req.principal);
+      absorbLoss(req.line, world.facility, platform.id, req.principal, req.nav);
       req.open = false;
       platform.dead = true;
     }

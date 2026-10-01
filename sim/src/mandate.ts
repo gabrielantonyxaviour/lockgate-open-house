@@ -19,6 +19,8 @@ export type MandateInput = {
   feeBps: number;
   tenorSeconds: number;
   principal: number;
+  /** Owed nav. Caps use this, not the cash that left the vault. */
+  owed: number;
 };
 
 export function mandateReject(line: Line, mandate: Mandate, input: MandateInput): string | null {
@@ -27,12 +29,12 @@ export function mandateReject(line: Line, mandate: Mandate, input: MandateInput)
   if (!mandate.platforms.has(input.platform)) return "mandate-platform";
   if (input.feeBps < mandate.minFeeBps || input.feeBps > MAX_FEE_BPS) return "mandate-fee";
   if (input.tenorSeconds > mandate.maxTenorSeconds) return "mandate-tenor";
-  const nextExposure = (line.exposure[input.platform] ?? 0) + input.principal;
-  if (nextExposure > mandate.limit) return "mandate-limit";
+  const nextExposure = (line.exposure[input.platform] ?? 0) + input.owed;
+  if (input.owed > mandate.limit || nextExposure > mandate.limit) return "mandate-limit";
   const assets = line.balance + line.principal;
   if (assets <= 0) return "mandate-empty";
-  const share = Math.floor((nextExposure * 10_000) / assets);
-  if (share > mandate.concentrationBps) return "mandate-concentration";
+  const cap = Math.floor((assets * mandate.concentrationBps) / 10_000);
+  if (input.owed > cap || nextExposure > cap) return "mandate-concentration";
   return null;
 }
 

@@ -16,7 +16,7 @@ test("identity holds across deposit, reserve, draw, repay and a capped withdraw"
   const line = emptyLine();
   depositEquity(line, 1_000_000);
   postReserve(line, "p", 100_000);
-  draw(line, "p", 400_000);
+  draw(line, "p", 400_000, 408_000);
   assert.equal(residual(line), 0);
   assert.ok(line.balance >= line.reserve);
   repay(line, "p", 400_000, 8_000);
@@ -63,6 +63,24 @@ test("junior absorbs before equity and equity before senior", () => {
   assert.equal(line.juniorDebt, 0);
   assert.equal(residual(line), 0);
   assert.ok(equityValue(line) >= 0);
+});
+
+test("interest already paid does not shield senior", () => {
+  const line = emptyLine();
+  depositEquity(line, 100_000);
+  line.balance += 50_000;
+  line.seniorDebt = 50_000;
+  line.interestExpense = 40_000;
+  line.balance -= 40_000;
+  draw(line, "p", 110_000);
+  const pot = facility(0, 0);
+  pot.seniorDrawn = 50_000;
+  const split = absorbLoss(line, pot, "p", 110_000);
+  assert.equal(split.equity, 60_000);
+  assert.equal(split.senior, 50_000);
+  assert.equal(pot.seniorLoss, 50_000);
+  assert.equal(line.seniorDebt, 0);
+  assert.equal(residual(line), 0);
 });
 
 test("senior is written down only after junior and equity are exhausted", () => {

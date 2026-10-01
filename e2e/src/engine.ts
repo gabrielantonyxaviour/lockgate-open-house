@@ -4,27 +4,28 @@ import { DEFAULT_PARAMS } from "../../engine/src/pricing/defaults.ts";
 import { z } from "zod";
 import type { Address } from "viem";
 
-const zBig = z.union([z.bigint(), z.number(), z.string()]).transform((value) => BigInt(value));
+/** Bigint or a decimal string. A JSON number past 2^53 has already been rounded. */
+export const zAmount = z.union([z.bigint(), z.string().regex(/^[0-9]+$/)]).transform((value) => BigInt(value));
 
 export const proposalSchema = z.object({
   submittable: z.boolean(),
   blocks: z.array(z.object({ code: z.string(), reason: z.string() })),
   feeBps: z.number().int(),
-  fee: zBig,
-  payout: zBig,
+  fee: zAmount,
+  payout: zAmount,
   digest: z.string(),
   signature: z.string().nullable(),
   message: z.object({
     platform: z.string(),
     recipient: z.string(),
-    requestId: zBig,
-    navValue: zBig,
-    fee: zBig,
-    payout: zBig,
+    requestId: zAmount,
+    navValue: zAmount,
+    fee: zAmount,
+    payout: zAmount,
     feeBps: z.number().int(),
-    dueAt: zBig,
-    expiresAt: zBig,
-    nonce: zBig,
+    dueAt: zAmount,
+    expiresAt: zAmount,
+    nonce: zAmount,
     quoteId: z.string(),
   }),
 });
@@ -34,7 +35,7 @@ export type EngineProposal = z.infer<typeof proposalSchema>;
 const quoteSchema = z.object({
   available: z.boolean(),
   feeBps: z.number().int(),
-  fee: zBig,
+  fee: zAmount,
   blocks: z.array(z.object({ code: z.string(), reason: z.string() })).default([]),
 });
 

@@ -3,7 +3,7 @@ import { test } from "node:test";
 import { draw, residual } from "../src/books.js";
 import { pickBestFee, pickProRata, pickRoundRobin, type VaultOffer } from "../src/mandate.js";
 import { u } from "../src/params.js";
-import { settleQueue } from "../src/window.js";
+import { repayFirstBroken, settleQueue } from "../src/window.js";
 import { buildWorld, type ExitReq } from "../src/world.js";
 
 function advance(nav: number, fee: number): Omit<ExitReq, "line" | "platform"> {
@@ -19,8 +19,8 @@ test("short cash repays the advance and pays no waiting investor", () => {
   const platform = world.platforms[0]!;
   const first = advance(u(10_000), u(100));
   const second = advance(u(8_000), u(80));
-  draw(line, platform.id, first.principal);
-  draw(line, platform.id, second.principal);
+  draw(line, platform.id, first.principal, first.nav);
+  draw(line, platform.id, second.principal, second.nav);
   platform.reqs.push(
     { ...first, line, platform: platform.id },
     { ...second, line, platform: platform.id },
@@ -43,7 +43,7 @@ test("investors are paid only after every due advance", () => {
   const line = world.lines[0]!;
   const platform = world.platforms[0]!;
   const first = advance(u(6_000), u(60));
-  draw(line, platform.id, first.principal);
+  draw(line, platform.id, first.principal, first.nav);
   platform.reqs.push(
     { ...first, line, platform: platform.id },
     { nav: u(1_000), fee: 0, principal: 0, advanced: false, dueDay: 1, open: true, line: null, platform: platform.id, feeBps: 0, misses: 0, lastMissDay: -1 },
@@ -54,6 +54,30 @@ test("investors are paid only after every due advance", () => {
   assert.equal(platform.reqs[1]!.open, false);
   assert.equal(world.investorPaid, u(1_000));
   assert.equal(world.breaches, 0);
+});
+
+test("an unbooked advance does not pay investors or spend cash", () => {
+  const world = buildWorld("stage1", 7);
+  const platform = world.platforms[0]!;
+  platform.reqs.push(
+    {
+      nav: 100, fee: 1, principal: 99, advanced: true, dueDay: 1, open: true,
+      line: null, platform: platform.id, feeBps: 100, misses: 0, lastMissDay: -1,
+    },
+    {
+      nav: 50, fee: 0, principal: 0, advanced: false, dueDay: 1, open: true,
+      line: null, platform: platform.id, feeBps: 0, misses: 0, lastMissDay: -1,
+    },
+  );
+  platform.cash = 1_000;
+  settleQueue(world, platform, 1);
+  assert.equal(platform.reqs[0]!.open, true);
+  assert.equal(platform.reqs[1]!.open, true);
+  assert.equal(platform.cash, 1_000);
+  assert.equal(world.investorPaid, 0);
+  assert.equal(world.breaches, 0);
+  assert.equal(repayFirstBroken(true, 50), true);
+  assert.equal(repayFirstBroken(false, 50), false);
 });
 
 test("router modes pick the cheapest, the next cursor, or the larger idle vault", () => {

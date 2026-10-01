@@ -4,6 +4,7 @@ Local Anvil only (chain 31337, `http://127.0.0.1:8545`). Deploys stage 1, two pa
 
 # PROGRESS
 
+- 2026-10-02: security pass. `npm test` is 6 tests. `npm run e2e` exited 0. `chainFeeBps` was 99 and the draw fee was 98e6, same as the previous green run. Cross-vault execute of the Harbour signature reverted and Keppel idle did not move.
 - 2026-10-02: `npm test` (3 tests) and `npm run e2e` both exited 0 against the shared Anvil (chain 31337). `PricingEngine.feeBps` at exactly 600 seconds returned 99 bps, and that is the credit-line quote recorded as `chainFeeBps`. The draw charged the fee for `dueAt - drawnAt`: fee 98e6 on 10,000e6, investor paid 9,902e6, outstanding 0, earned fees 98e6. The engine quote on that clock was 101 bps. Stage 2 calls `propose --rpc`, which reads the vault and will not sign a mandate that disagrees with it. Harbour executed the signature. Keppel used `submitProposal` (no cash moved) and then `approve`. Lockgate's `approve` reverted. Harbour idle after repay was 80,101e6. Keppel's advance stayed open at 9,899e6. Router balance 0. Lockgate balance 0. A gated propose with `--sign-env` returns `signature: null`. The facility governor is not the borrower. Available draw 600,000e6, then senior principal went from 500,000e6 to 400,000e6 after junior was exhausted. `CreditLineBook` matched the repaid stage-1 line.
 
 # Run

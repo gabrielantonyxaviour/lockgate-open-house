@@ -8,8 +8,11 @@ import { fail } from "./errors.js";
  *   balance + principal + creditLossEquity + interestExpense
  *     = equity + seniorDebt + juniorDebt + reserve + realizedFees
  *
- * Losses after the platform reserve: junior claim, then equity, then senior.
- * Junior undrawn cash is paid into the sheet before equity is touched.
+ * `exposure` is unpaid owed nav (principal + fee), matching MandateLogic.
+ * `unearnedFees` is the fee portion of that exposure. Losses after the
+ * platform reserve: junior claim, then equity, then senior. Equity that
+ * has already been paid out as interest is not loss-bearing. Junior undrawn
+ * cash is paid into the sheet before equity is touched.
  */
 export type Line = {
   balance: number;
@@ -24,6 +27,8 @@ export type Line = {
   creditLossEquity: number;
   interestExpense: number;
   reserveAbsorbed: number;
+  /** Fee still inside `exposure` and not yet realized. */
+  unearnedFees: number;
 };
 
 export type Facility = {
@@ -58,6 +63,7 @@ export function emptyLine(): Line {
     creditLossEquity: 0,
     interestExpense: 0,
     reserveAbsorbed: 0,
+    unearnedFees: 0,
   };
 }
 
@@ -104,38 +110,56 @@ export function utilizationBps(line: Line): number {
 }
 
 export function exposureBps(line: Line, platform: string): number {
-  if (line.principal <= 0) return 0;
-  return Math.floor(((line.exposure[platform] ?? 0) * 10_000) / line.principal);
+  const book = line.principal + line.unearnedFees;
+  if (book <= 0) return 0;
+  const share = Math.floor(((line.exposure[platform] ?? 0) * 10_000) / book);
+  return share > 10_000 ? 10_000 : share;
+}
+
+/** Ceiling reserve, matching MandateLogic `Rounding.Ceil` on owed nav. */
+export function reserveNeed(owed: number, reserveBps: number): number {
+  if (owed <= 0 || reserveBps <= 0) return 0;
+  return Math.floor((owed * reserveBps + 9_999) / 10_000);
 }
 
 export type DrawCheck =
   | { ok: true }
   | { ok: false; reason: string };
 
-export function canDraw(line: Line, platform: string, principal: number, reserveBps: number, limit: number): DrawCheck {
-  if (principal <= 0) return { ok: false, reason: "dust" };
-  const exposure = (line.exposure[platform] ?? 0) + principal;
-  if (exposure > limit) return { ok: false, reason: "over-limit" };
-  const need = Math.floor((exposure * reserveBps) / 10_000);
-  const have = line.reserves[platform] ?? 0;
-  if (have < need) return { ok: false, reason: "reserve-short" };
+export function canDraw(
+  line: Line,
+  platform: string,
+  principal: number,
+  owed: number,
+  reserveBps: number,
+  limit: number,
+): DrawCheck {
+  if (principal <= 0 || owed < principal) return { ok: false, reason: "dust" };
+  const exposure = (line.exposure[platform] ?? 0) + owed;
+  if (owed > limit || exposure > limit) return { ok: false, reason: "over-limit" };
+  if ((line.reserves[platform] ?? 0) < reserveNeed(exposure, reserveBps)) {
+    return { ok: false, reason: "reserve-short" };
+  }
   if (line.balance - line.reserve < principal) return { ok: false, reason: "capital-short" };
   return { ok: true };
 }
 
-export function draw(line: Line, platform: string, principal: number): void {
-  if (line.balance - line.reserve < principal) fail("draw broke reserve cash", "solvency");
+export function draw(line: Line, platform: string, principal: number, owed = principal): void {
+  if (owed < principal || line.balance - line.reserve < principal) fail("draw broke reserve cash", "solvency");
   line.balance -= principal;
   line.principal += principal;
-  line.exposure[platform] = (line.exposure[platform] ?? 0) + principal;
+  line.exposure[platform] = (line.exposure[platform] ?? 0) + owed;
+  line.unearnedFees += owed - principal;
 }
 
 export function repay(line: Line, platform: string, principal: number, fee: number): void {
+  const owed = principal + fee;
   const exposure = line.exposure[platform] ?? 0;
-  if (principal > exposure || principal > line.principal) fail("repay above exposure", "repay");
-  line.balance += principal + fee;
+  if (principal > line.principal || owed > exposure || fee > line.unearnedFees) fail("repay above exposure", "repay");
+  line.balance += owed;
   line.principal -= principal;
-  line.exposure[platform] = exposure - principal;
+  line.exposure[platform] = exposure - owed;
+  line.unearnedFees -= fee;
   line.realizedFees += fee;
 }
 
@@ -151,9 +175,18 @@ export type LossSplit = {
  * Write off `principal` of one platform. That platform's reserve is used first.
  * Then junior undrawn cash (paid into the sheet), junior drawn claim, equity, senior.
  */
-export function absorbLoss(line: Line, facility: Facility | null, platform: string, principal: number): LossSplit {
+export function absorbLoss(
+  line: Line,
+  facility: Facility | null,
+  platform: string,
+  principal: number,
+  owed = principal,
+): LossSplit {
   const exposure = line.exposure[platform] ?? 0;
-  if (principal > exposure || principal > line.principal) fail("writeoff above exposure", "loss");
+  const forgiven = owed - principal;
+  if (owed < principal || principal > line.principal || owed > exposure || forgiven > line.unearnedFees) {
+    fail("writeoff above exposure", "loss");
+  }
   const reserveHave = line.reserves[platform] ?? 0;
   const reserve = Math.min(principal, reserveHave);
   let hole = principal - reserve;
@@ -181,7 +214,7 @@ export function absorbLoss(line: Line, facility: Facility | null, platform: stri
     hole -= juniorDebt;
   }
 
-  const equityRoom = line.equity + line.realizedFees - line.creditLossEquity;
+  const equityRoom = line.equity + line.realizedFees - line.creditLossEquity - line.interestExpense;
   let equity = Math.min(hole, Math.max(0, equityRoom));
   line.creditLossEquity += equity;
   hole -= equity;
@@ -201,7 +234,8 @@ export function absorbLoss(line: Line, facility: Facility | null, platform: stri
   }
 
   line.principal -= principal;
-  line.exposure[platform] = exposure - principal;
+  line.exposure[platform] = exposure - owed;
+  line.unearnedFees -= forgiven;
   return { reserve, juniorCash, juniorDebt, equity, senior };
 }
 
@@ -219,7 +253,7 @@ export function assertLine(line: Line): void {
   if (residual(line) !== 0) fail(`identity residual ${residual(line)}`, "solvency");
   if (line.balance < line.reserve) fail("reserve cash was lent out", "solvency");
   if (sumValues(line.reserves) !== line.reserve) fail("reserve map drifted", "solvency");
-  if (sumValues(line.exposure) !== line.principal) fail("exposure drifted", "solvency");
+  if (sumValues(line.exposure) !== line.principal + line.unearnedFees) fail("exposure drifted", "solvency");
   if (line.seniorDebt > 0 && line.juniorDebt === 0 && line.creditLossEquity > 0) {
     // Senior may still be outstanding after equity has taken a loss. That is
     // the intended order. Junior must already be at zero. Checked by caller

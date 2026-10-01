@@ -3,6 +3,8 @@ import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  BaseError,
+  ContractFunctionRevertedError,
   createPublicClient,
   createWalletClient,
   defineChain,
@@ -49,6 +51,36 @@ export function fail(code: string, error: string): never {
 
 const PRIVATE_OUT = "/tmp/lockgate-g9/forge-out";
 const artifactFiles = new Map<string, string>();
+const sourceStamps = new Map<string, number>();
+
+function newestSolidity(dir: string): number {
+  if (!existsSync(dir)) return 0;
+  let max = 0;
+  for (const entry of readdirSync(dir)) {
+    if (entry === "out" || entry === "cache") continue;
+    const full = path.join(dir, entry);
+    const stat = statSync(full);
+    if (stat.isDirectory()) max = Math.max(max, newestSolidity(full));
+    else if (entry.endsWith(".sol")) max = Math.max(max, stat.mtimeMs);
+  }
+  return max;
+}
+
+/** Newest Solidity file under `src/` or `lib/`. One contract file is not enough. */
+export function solidityTreeMtime(root: string): number {
+  const cached = sourceStamps.get(root);
+  if (cached !== undefined) return cached;
+  const stamp = Math.max(newestSolidity(path.join(root, "src")), newestSolidity(path.join(root, "lib")));
+  sourceStamps.set(root, stamp);
+  return stamp;
+}
+
+/** A transport or ABI failure is not a revert. Callers must not treat it as success. */
+export function isContractRevert(err: unknown): boolean {
+  if (!(err instanceof BaseError)) return false;
+  if (err.walk((item) => item instanceof ContractFunctionRevertedError)) return true;
+  return err.message.toLowerCase().includes("reverted");
+}
 
 function contractsRoot(): string {
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../contracts");
@@ -71,7 +103,8 @@ function srcArtifact(name: string): string | undefined {
   const source = findSource(path.join(root, "src"), name);
   if (!source) return undefined;
   const dest = path.join(PRIVATE_OUT, `${name}.sol`, `${name}.json`);
-  if (!existsSync(dest) || statSync(dest).mtimeMs < statSync(source).mtimeMs) {
+  const stale = !existsSync(dest) || statSync(dest).mtimeMs < solidityTreeMtime(root);
+  if (stale) {
     execFileSync("forge", ["inspect", `${path.relative(root, source)}:${name}`, "abi", "--json"], {
       cwd: root,
       env: { ...process.env, FOUNDRY_OUT: PRIVATE_OUT },
@@ -157,7 +190,7 @@ export async function reverts(
   account: PrivateKeyAccount,
 ): Promise<boolean> {
   try {
-    await wallets.get(account.address)!.simulateContract({
+    await publicClient.simulateContract({
       address,
       abi: artifact(name),
       functionName,
@@ -165,7 +198,9 @@ export async function reverts(
       account,
     });
     return false;
-  } catch {
-    return true;
+  } catch (err) {
+    if (isContractRevert(err)) return true;
+    const message = err instanceof Error ? err.message : "call failed";
+    fail("rpc", `${name}.${functionName} did not revert: ${message}`);
   }
 }

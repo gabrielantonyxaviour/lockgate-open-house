@@ -6,7 +6,7 @@ Stage 3 fee yield is gross exit fees divided by average equity. That equity is 5
 
 # PROGRESS
 
-- 2026-10-02: `npm test` from this directory, 20 tests passed. The new tests cover pricing refusals, a 400-draw seeded fee sweep, `canDraw` reasons, coded failures from `fail()`, and a loss that exhausts senior without moving the residual. `npm run sim` was not re-run: the model is unchanged, so `RESULTS.md` and the charts stay as published. The runner throws if the accounting identity, repay-first order, fee band, or Lockgate sweep check fails.
+- 2026-10-02: `npm test` from this directory, 23 tests passed. Exposure for limits, concentration, and the reserve is owed nav, and the reserve rounds up. Interest already paid is not equity in a write-off. `npm run sim` was re-run. `RESULTS.md` still shows senior impaired on 0 of 150 paths. The runner throws if the accounting identity, repay-first order, fee band, or Lockgate sweep check fails.
 
 # Run
 

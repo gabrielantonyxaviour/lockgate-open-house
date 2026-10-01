@@ -1,4 +1,4 @@
-import { canDraw, draw, exposureBps, postReserve, repay, utilizationBps, type Line } from "./books.js";
+import { canDraw, draw, exposureBps, postReserve, repay, reserveNeed, utilizationBps, type Line } from "./books.js";
 import { mandateReject, pickBestFee, type VaultOffer } from "./mandate.js";
 import { MAX_FEE_BPS, MAX_NAV_AGE_SECONDS } from "./params.js";
 import { feeFromBps, quoteFee } from "./pricing.js";
@@ -30,11 +30,20 @@ function totalExposure(world: World, platform: string): number {
   return n;
 }
 
-function reserveShort(line: Line, platform: Platform, principal: number): number {
-  const exposure = (line.exposure[platform.id] ?? 0) + principal;
-  const need = Math.floor((exposure * platform.reserveBps) / 10_000);
+function reserveShort(line: Line, platform: Platform, owed: number): number {
+  const exposure = (line.exposure[platform.id] ?? 0) + owed;
+  const need = reserveNeed(exposure, platform.reserveBps);
   const have = line.reserves[platform.id] ?? 0;
   return Math.max(0, need - have);
+}
+
+function undoReserve(line: Line, platform: Platform, short: number): void {
+  platform.reserveBudget += short;
+  line.balance -= short;
+  line.reserve -= short;
+  const next = (line.reserves[platform.id] ?? 0) - short;
+  if (next === 0) delete line.reserves[platform.id];
+  else line.reserves[platform.id] = next;
 }
 
 function commitDraw(world: World, platform: Platform, line: Line, nav: number, feeBps: number, dueDay: number, limit: number): boolean {
@@ -44,11 +53,11 @@ function commitDraw(world: World, platform: Platform, line: Line, nav: number, f
     return false;
   }
   const principal = nav - fee;
-  if (totalExposure(world, platform.id) + principal > platform.limit) {
+  if (totalExposure(world, platform.id) + nav > platform.limit) {
     reject(world, "over-limit");
     return false;
   }
-  const short = reserveShort(line, platform, principal);
+  const short = reserveShort(line, platform, nav);
   if (short > platform.reserveBudget) {
     reject(world, "reserve-short");
     return false;
@@ -57,7 +66,7 @@ function commitDraw(world: World, platform: Platform, line: Line, nav: number, f
     reject(world, "capital-short");
     return false;
   }
-  if ((line.exposure[platform.id] ?? 0) + principal > limit) {
+  if ((line.exposure[platform.id] ?? 0) + nav > limit) {
     reject(world, "over-limit");
     return false;
   }
@@ -65,12 +74,13 @@ function commitDraw(world: World, platform: Platform, line: Line, nav: number, f
     platform.reserveBudget -= short;
     postReserve(line, platform.id, short);
   }
-  const check = canDraw(line, platform.id, principal, platform.reserveBps, limit);
+  const check = canDraw(line, platform.id, principal, nav, platform.reserveBps, limit);
   if (!check.ok) {
+    if (short > 0) undoReserve(line, platform, short);
     reject(world, check.reason);
     return false;
   }
-  draw(line, platform.id, principal);
+  draw(line, platform.id, principal, nav);
   platform.reqs.push({
     nav, fee, principal, advanced: true, dueDay, open: true, line,
     platform: platform.id, feeBps, misses: 0, lastMissDay: -1,
@@ -129,12 +139,13 @@ export function fundExit(world: World, platform: Platform, nav: number, day: num
       platform: platform.id, day, feeBps,
       tenorSeconds: Math.max(0, dueDay - day) * DAY,
       principal,
+      owed: nav,
     });
     if (why) {
       blocked = why;
       continue;
     }
-    if (reserveShort(vault.line, platform, principal) > platform.reserveBudget) {
+    if (reserveShort(vault.line, platform, nav) > platform.reserveBudget) {
       blocked = "reserve-short";
       continue;
     }

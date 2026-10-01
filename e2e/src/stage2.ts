@@ -35,6 +35,11 @@ export async function runStage2(now: number) {
 
   const first = await propose(harbourVault, 1n);
   await send("PartnerVault", harbourVault, "execute", [first.message, first.signature, "0x"], harbour);
+  const crossed = await reverts("PartnerVault", keppelVault, "execute", [first.message, first.signature, "0x"], keppel);
+  if (!crossed) fail("replay", "a harbour signature funded the keppel vault");
+  if (await read<bigint>("PartnerVault", keppelVault, "idle") !== keppelIdle) {
+    fail("replay", "a rejected cross-vault signature moved keppel cash");
+  }
   const second = await propose(keppelVault, 1n);
   await send("PartnerVault", keppelVault, "submitProposal", [second.message, second.signature], lockgate);
   if (await read<bigint>("PartnerVault", keppelVault, "idle") !== keppelIdle) {
