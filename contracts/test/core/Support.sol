@@ -9,6 +9,10 @@ import {PricingEngine} from "../../src/core/PricingEngine.sol";
 import {PlatformReserve} from "../../src/core/PlatformReserve.sol";
 import {LockgateCreditLine} from "../../src/core/LockgateCreditLine.sol";
 import {FundFactory} from "../../src/core/FundFactory.sol";
+import {PlatformConfig} from "../../src/core/PlatformConfig.sol";
+import {WeeklyCyclePlatform} from "../../src/core/WeeklyCyclePlatform.sol";
+import {EpochQueuePlatform} from "../../src/core/EpochQueuePlatform.sol";
+import {QuarterlyWindowPlatform} from "../../src/core/QuarterlyWindowPlatform.sol";
 
 /// @notice Registered draw caller. Lockgate treats `msg.sender` as the platform.
 contract StubSource {
@@ -76,10 +80,23 @@ contract CoreFixture is Test {
         usdg.mint(owner, 1_000_000e6);
         usdg.approve(address(line), type(uint256).max);
         line.depositCapital(500_000e6);
-        factory = new FundFactory(owner, address(adapter), address(line), address(reserve));
+        factory = _factory(address(adapter));
         line.setRegistrar(address(factory), true);
         usdg.setMinter(address(factory), true);
         vm.stopPrank();
+    }
+
+    function _factory(address adapter_) internal returns (FundFactory built) {
+        PlatformConfig memory blank;
+        built = new FundFactory(
+            owner,
+            adapter_,
+            address(line),
+            address(reserve),
+            address(new WeeklyCyclePlatform(blank)),
+            address(new EpochQueuePlatform(blank)),
+            address(new QuarterlyWindowPlatform(blank))
+        );
     }
 
     function _stub(uint256 limit, uint16 reserveBps) internal returns (StubSource stub) {

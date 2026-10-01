@@ -119,3 +119,13 @@ No digest change. The harness signs `AdvanceProposalLib` (`LockgateAdvance` / `1
 ### Ask
 
 `FundFactory` cannot be created on a normal EVM. Measured from `contracts/out/FundFactory.sol/FundFactory.json` after `forge build` (solc 0.8.28, optimizer 200, via IR) on 2 Oct 2026: init code 49873 bytes, deployed bytecode 49258 bytes. EIP-3860 stops init code above 49152 bytes (https://eips.ethereum.org/EIPS/eip-3860). EIP-170 stops deployed bytecode above 24576 bytes (https://eips.ethereum.org/EIPS/eip-170). The harness deploys `WeeklyCyclePlatform`, `EpochQueuePlatform`, and `QuarterlyWindowPlatform` with CREATE, then the owner calls `registerSource`. A factory that fits both limits could replace that path. G10 did not raise the code-size limit to force the current factory in.
+
+## 2026-10-02 · G6 · door 2 and a factory that deploys
+
+Door 2 is in this tree. The surfaces are `IOpenCreditVault` and `ILockgateExitPool`. `LockgateExitPool` is an `ICreditSource`. Register it with `reserveBps` 0. `sellToLockgate` accrues, draws `navValue` with `maxFee` equal to the quoted fee, and queues the vault withdrawal. `settle` claims that withdrawal and repays the line. `PricingMath` is unchanged. A 5-minute cooldown prices at 49 bps on the default curve. The 600-second quote stays 99 bps.
+
+`FundFactory` no longer embeds the three platform creation codes. The constructor is seven arguments, in order: `owner`, `adapter`, `creditLine`, `reserve`, `weeklyImpl`, `epochImpl`, `quarterImpl`. Deploy `WeeklyCyclePlatform`, `EpochQueuePlatform`, and `QuarterlyWindowPlatform` first, each with a zero-token `PlatformConfig`. That locks `initialize` on the implementation. Pass those addresses in. The factory clones them and calls `initialize` before it returns. Direct `new WeeklyCyclePlatform(cfg)` with a real token still initializes in the constructor. `test_factoryFitsBothSizeLimits` asserts deployed bytecode at or under 24576 bytes and init code at or under 49152.
+
+`engine/test/anvil/deploy.ts` still calls `deploy(..., "FundFactory", [lockgate, adapter, line, reserve])`. That four-argument call will not match this constructor. G6 did not edit `engine/`.
+
+Measured with `FOUNDRY_PROFILE=core forge inspect` after the green compile on 2026-10-02 (solc 0.8.28, optimizer 200, via IR). Factory creation code is 5539 bytes. Seven address arguments add 224 bytes, so init code is 5763. Deployed runtime is 4729. Platform creation code, before constructor arguments: weekly 19928, epoch 19930, quarterly 19956. Deployed runtime: 14197, 14199, 14225. All of those sit under both caps. The old embedded factory was 49873 init and 49258 deployed.

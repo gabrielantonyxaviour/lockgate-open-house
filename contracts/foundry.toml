@@ -24,3 +24,11 @@ fail_on_revert = false
 [profile.core]
 src = "src/core"
 test = "test/core"
+
+[profile.core.fuzz]
+runs = 512
+
+[profile.core.invariant]
+runs = 64
+depth = 40
+fail_on_revert = false

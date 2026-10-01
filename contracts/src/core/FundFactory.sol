@@ -9,10 +9,10 @@ import {IPlatformReserve} from "../interfaces/IPlatformReserve.sol";
 import {IUsdgAdapter} from "../interfaces/IUsdgAdapter.sol";
 import {QueueKind} from "../interfaces/IQueueAdapter.sol";
 import {IMockUSDG} from "../interfaces/IMockUSDG.sol";
+import {IIssuerFund} from "../interfaces/IIssuerFund.sol";
+import {Clones} from "@openzeppelin/contracts/proxy/Clones.sol";
 import {PlatformConfig} from "./PlatformConfig.sol";
-import {WeeklyCyclePlatform} from "./WeeklyCyclePlatform.sol";
-import {EpochQueuePlatform} from "./EpochQueuePlatform.sol";
-import {QuarterlyWindowPlatform} from "./QuarterlyWindowPlatform.sol";
+import {PlatformBase} from "./PlatformBase.sol";
 
 /// @title FundFactory
 /// @notice Sandbox platforms. `createDemoFund` seeds the MVP numbers and only works when the token is MockUSDG.
@@ -27,6 +27,9 @@ contract FundFactory is Ownable, IFundFactory {
     address public immutable token;
     address public immutable creditLine;
     address public immutable reserve;
+    address public immutable weeklyImpl;
+    address public immutable epochImpl;
+    address public immutable quarterImpl;
     bool public immutable mockToken;
     uint64 public demoWindow = 600;
 
@@ -36,14 +39,28 @@ contract FundFactory is Ownable, IFundFactory {
     error DemoRequiresMock();
     error BadKind();
     error BadParam();
+    error ZeroAddress();
 
     event PlatformCreated(address indexed fund, address indexed issuer, QueueKind kind, string name);
     event DemoWindowSet(uint64 interval);
 
-    constructor(address owner_, address adapter, address creditLine_, address reserve_) Ownable(owner_) {
+    /// @param weekly_ Locked implementation. This factory clones it. It does not embed platform bytecode.
+    constructor(
+        address owner_,
+        address adapter,
+        address creditLine_,
+        address reserve_,
+        address weekly_,
+        address epoch_,
+        address quarter_
+    ) Ownable(owner_) {
+        if (weekly_ == address(0) || epoch_ == address(0) || quarter_ == address(0)) revert ZeroAddress();
         token = IUsdgAdapter(adapter).token();
         creditLine = creditLine_;
         reserve = reserve_;
+        weeklyImpl = weekly_;
+        epochImpl = epoch_;
+        quarterImpl = quarter_;
         mockToken = IUsdgAdapter(adapter).isMock();
     }
 
@@ -77,7 +94,7 @@ contract FundFactory is Ownable, IFundFactory {
         IERC20(token).approve(reserve, DEMO_RESERVE);
         IPlatformReserve(reserve).post(fund, DEMO_RESERVE);
         IERC20(token).approve(fund, DEMO_CASH);
-        QuarterlyWindowPlatform(fund).depositCash(DEMO_CASH);
+        IIssuerFund(fund).depositCash(DEMO_CASH);
     }
 
     /// @inheritdoc IFundFactory
@@ -115,10 +132,13 @@ contract FundFactory is Ownable, IFundFactory {
     }
 
     function _deploy(PlatformConfig memory cfg, QueueKind kind) internal returns (address fund) {
-        if (kind == QueueKind.WeeklyCycle) fund = address(new WeeklyCyclePlatform(cfg));
-        else if (kind == QueueKind.Epoch) fund = address(new EpochQueuePlatform(cfg));
-        else if (kind == QueueKind.QuarterlyGated) fund = address(new QuarterlyWindowPlatform(cfg));
+        address impl;
+        if (kind == QueueKind.WeeklyCycle) impl = weeklyImpl;
+        else if (kind == QueueKind.Epoch) impl = epochImpl;
+        else if (kind == QueueKind.QuarterlyGated) impl = quarterImpl;
         else revert BadKind();
+        fund = Clones.clone(impl);
+        PlatformBase(fund).initialize(cfg);
         _fundsOf[cfg.issuer].push(fund);
         _all.push(fund);
         emit PlatformCreated(fund, cfg.issuer, kind, cfg.name);

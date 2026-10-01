@@ -2,7 +2,7 @@
 
 ## SUMMARY
 
-Stage-1 surfaces live in `contracts/src/interfaces`. Other sessions build against this file. Changes are requested in `contracts/INTERFACE-REQUESTS.md`. G6 decides. Door 2 from `lockgate/SPEC.md` (`OpenCreditVault`, `LockgateExitPool`) is not implemented.
+Stage-1 surfaces live in `contracts/src/interfaces`. Other sessions build against this file. Changes are requested in `contracts/INTERFACE-REQUESTS.md`. G6 decides. Door 2 (`OpenCreditVault`, `LockgateExitPool`) is in `src/core`.
 
 ## Compile
 
@@ -107,6 +107,20 @@ Quarterly is the same FIFO, and a closed gate reverts `processWindow` with `Wind
 
 `exitEarly` checks the quote before slippage. No reserve therefore reverts `NotAvailable("reserve")`, not `Slippage`. `minUsdgOut` above the quoted payout reverts `Slippage`.
 
+## Door 2
+
+`OpenCreditVault` is an 18-decimal ERC-20 (`Open credit token`, `oUSDG`). NAV is 6-decimal USDG per 1e18 shares and starts at `1_000_000`. `deposit` pulls USDG and mints `usdg * 1e18 / nav`. `requestWithdraw` burns the caller's shares, moves `shares * nav / 1e18` from `assets` into `reserved`, and starts a cooldown. The default cooldown is 5 minutes. `setCooldown(0)` reverts `BadParam`. `claim` pays the withdrawal's owner after `readyAt`. Anyone may call it.
+
+`accrue` is permissionless. On MockUSDG, deploy with `mintYield = true` and `setMinter(vault, true)`. Yield is the floor `assets * 900 * dt / (10000 * 31536000)` (9% APR, ACT/365). One year on 100e6 assets mints 9e6 and sets NAV to `1_090_000`. `mintYield = false` does not mint. That is the real-USDG path. `deposit`, `requestWithdraw`, `claim`, and `accrue` are `nonReentrant`. Token balance equals `assets + reserved` when every unit was minted or deposited through the vault.
+
+`LockgateExitPool` is the credit-line source. Register it with `reserveBps` 0. `nextWindow()` is `block.timestamp + cooldown`, so `dueAt` on a draw is the end of that sell's cooldown. `gated` stops `quote` and `sellToLockgate`. It does not stop `settle`.
+
+`sellToLockgate` accrues first. The charged fee uses that fresh NAV. A view `quote` from before `accrue` can still be stale. `draw` is called with `maxFee` equal to the quoted fee, not the payout. The pool then withdraws the shares it just took. In that same transaction `owed` equals `navValue`, because no time passes after the accrue.
+
+A 5-minute cooldown on the default curve is 49 bps: `(1200 * 300 * 4320 + 31536000/2) / 31536000 = 49`. On 100e6 the fee is `490_000` and the seller receives `99_510_000`. `PricingMath` is unchanged. The 600-second quote stays 99 bps.
+
+`settle` is anyone after `readyAt`. It claims into the pool, then repays the advance. A `Late` advance stays `Late`. After a full repay the pool's token balance is 0.
+
 ## EIP-712
 
 `AdvanceProposalLib` matches `engine/src/proposal/typed.ts`. Domain name `LockgateAdvance`, version `1`, verifying contract is the vault. The vault is not a struct field.
@@ -121,15 +135,20 @@ AdvanceProposal(address platform,address recipient,uint256 requestId,uint256 nav
 
 ## Factory
 
-`createDemoFund` only if the adapter `isMock`. Seeds: NAV `1_023_400`, share value `10_000e6`, cash `2_000e6`, limit `25_000e6`, reserve 750 bps (`1_875e6`), window `demoWindow` (default 600). The factory must be a credit-line registrar and a `MockUSDG` minter. `createPlatform` registers and does not mint shares or post reserve.
+`FundFactory` clones three locked implementations. It does not `new` a platform, so their bytecode is not inside the factory. EIP-170 stops deployed bytecode above 24576 bytes (<https://eips.ethereum.org/EIPS/eip-170>). EIP-3860 stops init code above 49152 bytes (<https://eips.ethereum.org/EIPS/eip-3860>). G10 measured the old embedded factory, on 2026-10-02, at 49873 init bytes and 49258 deployed bytes. That contract cannot be created on a normal EVM.
+
+Constructor arguments, in order: `owner`, `adapter`, `creditLine`, `reserve`, `weeklyImpl`, `epochImpl`, `quarterImpl`. Deploy `WeeklyCyclePlatform`, `EpochQueuePlatform`, and `QuarterlyWindowPlatform` first, each with a zero-token `PlatformConfig`. That locks the implementation (`initialize` reverts). Each clone starts empty. The factory calls `initialize` before it returns. Direct `new WeeklyCyclePlatform(cfg)` still initializes when `cfg.token` is set. `engine/test/anvil/deploy.ts` still passes four constructor arguments. That call will not match. G6 did not edit `engine/`.
+
+`createDemoFund` only if the adapter `isMock`. Seeds: NAV `1_023_400`, share value `10_000e6`, cash `2_000e6`, limit `25_000e6`, reserve 750 bps (`1_875e6`), window `demoWindow` (default 600). The factory must be a credit-line registrar and a `MockUSDG` minter. `createPlatform` registers and does not mint shares or post reserve. `createPlatform(None)` reverts `BadKind`.
 
 ## Deploy order for G10
 
 1. `MockUSDG`, then `UsdgAdapter(mock, true)`. Sepolia uses `UsdgAdapter(canonical, false)` instead, and skips the demo mint.
 2. `PricingEngine`, `PlatformReserve`, `LockgateCreditLine`.
 3. `reserve.setCreditLine(line)`, `reserve.setSlasher(line, true)`.
-4. `FundFactory`. `line.setRegistrar(factory, true)`. `mock.setMinter(factory, true)` on the mock path.
+4. Three locked implementations (zero-token config), then `FundFactory` with those addresses. `line.setRegistrar(factory, true)`. `mock.setMinter(factory, true)` on the mock path.
 5. Owner `depositCapital`. `createDemoFund` on the mock path.
-6. `reserve.lockSlasherSet()` when the slasher set should freeze.
+6. Door 2, mock path: `OpenCreditVault(owner, token, true)`, `mock.setMinter(vault, true)`, `LockgateExitPool(owner, vault, line)`, `registerSource(pool, limit, 0)`. Real USDG uses `mintYield = false` and skips `setMinter`.
+7. `reserve.lockSlasherSet()` when the slasher set should freeze.
 
 G10 owns the deploy scripts. This tree does not deploy.

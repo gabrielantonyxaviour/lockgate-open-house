@@ -15,18 +15,20 @@ import {PlatformShare} from "./PlatformShare.sol";
 abstract contract PlatformStore is ReentrancyGuard, IIssuerFund, IQueueAdapter {
     using SafeERC20 for IERC20;
 
-    address public immutable token;
-    ILockgateCreditLine public immutable line;
-    PlatformShare public immutable shareToken;
-    address public immutable issuer;
-    uint64 public immutable windowInterval;
+    address public token;
+    ILockgateCreditLine public line;
+    PlatformShare public shareToken;
+    address public issuer;
+    uint64 public windowInterval;
+    /// @dev Own slot. A packed write must not clear this lock.
+    uint256 private configured;
 
     string internal _fundName;
     uint256 public nav;
     uint64 public navUpdatedAt;
     bool public gated;
     uint64 public nextWindow;
-    uint256 public currentCycleId = 1;
+    uint256 public currentCycleId;
     uint256 public override(IIssuerFund, IQueueAdapter) queueLength;
     uint256 public override(IIssuerFund, IQueueAdapter) queuedValue;
     uint256 public requestCount;
@@ -63,9 +65,28 @@ abstract contract PlatformStore is ReentrancyGuard, IIssuerFund, IQueueAdapter {
         _;
     }
 
+    /// @dev `token == address(0)` locks this copy. Clones call `initialize` instead of running this body.
     constructor(PlatformConfig memory cfg) {
+        if (cfg.token == address(0)) {
+            configured = 1;
+            return;
+        }
+        _init(cfg);
+    }
+
+    /// @notice Once, on a clone. Direct `new` already initializes in the constructor.
+    ///         A clone skips field initializers, so `_init` sets the cycle id to 1.
+    function initialize(PlatformConfig calldata cfg) external {
+        if (configured != 0) revert BadConfig();
+        _init(cfg);
+    }
+
+    function _init(PlatformConfig memory cfg) internal {
+        if (configured != 0) revert BadConfig();
         if (cfg.token == address(0) || cfg.creditLine == address(0) || cfg.issuer == address(0)) revert BadConfig();
         if (cfg.nav == 0 || cfg.interval == 0) revert BadConfig();
+        configured = 1;
+        currentCycleId = 1;
         token = cfg.token;
         line = ILockgateCreditLine(cfg.creditLine);
         issuer = cfg.issuer;

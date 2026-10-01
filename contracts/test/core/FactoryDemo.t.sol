@@ -7,6 +7,10 @@ import {QueueKind} from "../../src/interfaces/IQueueAdapter.sol";
 import {ILockgateCreditLine} from "../../src/interfaces/ILockgateCreditLine.sol";
 import {FundFactory} from "../../src/core/FundFactory.sol";
 import {UsdgAdapter} from "../../src/core/UsdgAdapter.sol";
+import {PlatformConfig} from "../../src/core/PlatformConfig.sol";
+import {PlatformStore} from "../../src/core/PlatformStore.sol";
+import {WeeklyCyclePlatform} from "../../src/core/WeeklyCyclePlatform.sol";
+import {EpochQueuePlatform} from "../../src/core/EpochQueuePlatform.sol";
 import {QuarterlyWindowPlatform} from "../../src/core/QuarterlyWindowPlatform.sol";
 
 contract FactoryDemoTest is CoreFixture {
@@ -55,7 +59,7 @@ contract FactoryDemoTest is CoreFixture {
 
     function test_realAdapterCannotMintTheDemo() public {
         UsdgAdapter realish = new UsdgAdapter(address(usdg), false);
-        FundFactory other = new FundFactory(owner, address(realish), address(line), address(reserve));
+        FundFactory other = _factory(address(realish));
         vm.prank(issuer);
         vm.expectRevert(FundFactory.DemoRequiresMock.selector);
         other.createDemoFund("nope");
@@ -70,5 +74,35 @@ contract FactoryDemoTest is CoreFixture {
         vm.prank(issuer);
         vm.expectRevert(FundFactory.BadKind.selector);
         factory.createPlatform(QueueKind.None, "none", 600, 1e6, 1, 0);
+    }
+
+    /// @dev EIP-170 deployed max is 24576. EIP-3860 init max is 49152.
+    function test_factoryFitsBothSizeLimits() public view {
+        assertLe(address(factory).code.length, 24_576);
+        assertLe(factory.weeklyImpl().code.length, 24_576);
+        assertLe(factory.epochImpl().code.length, 24_576);
+        assertLe(factory.quarterImpl().code.length, 24_576);
+        assertLe(type(FundFactory).creationCode.length + 7 * 32, 49_152);
+        PlatformConfig memory blank;
+        uint256 initArgs = abi.encode(blank).length;
+        assertLe(type(WeeklyCyclePlatform).creationCode.length + initArgs, 49_152);
+        assertLe(type(EpochQueuePlatform).creationCode.length + initArgs, 49_152);
+        assertLe(type(QuarterlyWindowPlatform).creationCode.length + initArgs, 49_152);
+    }
+
+    function test_initializeIsOnceOnTheCloneAndTheImplementation() public {
+        vm.prank(issuer);
+        address fund = factory.createPlatform(QueueKind.WeeklyCycle, "Once", 600, 1e6, 1, 0);
+        PlatformConfig memory cfg;
+        cfg.token = address(usdg);
+        cfg.creditLine = address(line);
+        cfg.issuer = issuer;
+        cfg.nav = 1e6;
+        cfg.interval = 600;
+        vm.expectRevert(PlatformStore.BadConfig.selector);
+        WeeklyCyclePlatform(fund).initialize(cfg);
+        address impl = factory.weeklyImpl();
+        vm.expectRevert(PlatformStore.BadConfig.selector);
+        WeeklyCyclePlatform(impl).initialize(cfg);
     }
 }
