@@ -1,6 +1,7 @@
 import { send, type Ctx } from "../chain.js";
 import { isRole, type RoleName } from "../roles.js";
 import { parseUsdg } from "../units.js";
+import { door2Cycle } from "./door2.js";
 import { demoAll, demoStage1, demoStage2, demoStage3 } from "./demo.js";
 import { status } from "./read.js";
 import {
@@ -31,7 +32,7 @@ async function faucet(ctx: Ctx, input: Record<string, string>): Promise<unknown>
 export const ACTIONS: Action[] = [
   { id: "read.status", summary: "Read balances, the credit line, vaults and the facility", fields: [], run: (ctx) => status(ctx) },
   { id: "token.faucet", summary: "Take test USDG from the faucet (max 10000 per call)", fields: [{ name: "role", label: "role", default: "investor" }, { name: "amountUsdg", label: "USDG", default: "1000" }], run: faucet },
-  { id: "stage1.registerPlatform", summary: "Deploy a sandbox platform and register it (kind 1 weekly, 2 epoch, 3 quarterly)", fields: [{ name: "kind", label: "kind", default: "1" }, { name: "limitUsdg", label: "limit", default: "25000" }, { name: "reserveBps", label: "reserve bps", default: "750" }, { name: "initialShares", label: "unbacked shares", default: "0" }], run: registerPlatform },
+  { id: "stage1.registerPlatform", summary: "Deploy a sandbox platform and register it (kind 1 weekly, 2 epoch, 3 quarterly)", fields: [{ name: "kind", label: "kind", default: "1" }, { name: "limitUsdg", label: "limit", default: "25000" }, { name: "reserveBps", label: "reserve bps", default: "750" }, { name: "initialShares", label: "unbacked shares", default: "0" }, { name: "viaFactory", label: "true clones through FundFactory", default: "false" }], run: registerPlatform },
   { id: "stage1.postReserve", summary: "Post the platform first-loss reserve", fields: [{ name: "platform", label: "platform", default: "WeeklyQueuePlatform" }, { name: "amountUsdg", label: "USDG", default: "2000" }], run: postReserve },
   { id: "stage1.depositCapital", summary: "Deposit Lockgate's own USDG", fields: [{ name: "amountUsdg", label: "USDG", default: "100000" }], run: depositCapital },
   { id: "stage1.quote", summary: "Quote an exit on the credit line", fields: [{ name: "navUsdg", label: "NAV USDG", default: "1000" }, { name: "platform", label: "platform", default: "WeeklyQueuePlatform" }], run: quote },
@@ -45,6 +46,7 @@ export const ACTIONS: Action[] = [
   { id: "stage1.exitNow", summary: "Same draw path as stage1.draw", fields: [{ name: "shares", label: "whole shares", default: "100" }], run: exitNow },
   { id: "stage1.setGated", summary: "Gate or ungate the platform", fields: [{ name: "gated", label: "true or false", default: "true" }], run: setGated },
   { id: "stage1.pause", summary: "Pause or unpause the credit line", fields: [{ name: "paused", label: "true or false", default: "true" }], run: pauseLine },
+  { id: "door2.cycle", summary: "Lockgate buys open-token shares, pays nav minus fee, and settle returns the withdrawal to the stage-1 line. Reserve bps is 0. Lockgate holds no partner key.", fields: [{ name: "amountUsdg", label: "USDG", default: "1000" }], run: (ctx, input) => door2Cycle(ctx, input) },
   { id: "stage2.setMandate", summary: "Partner sets min fee, tenor, concentration and expiry", fields: [{ name: "vault", label: "vault", default: "PartnerVaultA" }, { name: "minFeeBps", label: "min fee bps", default: "25" }], run: setMandate },
   { id: "stage2.approvePlatform", summary: "Partner approves a platform, payout, proposer and router", fields: [{ name: "vault", label: "vault", default: "PartnerVaultA" }, { name: "limitUsdg", label: "limit", default: "20000" }], run: approvePlatform },
   { id: "stage2.postReserve", summary: "Partner posts a vault reserve for the platform", fields: [{ name: "vault", label: "vault", default: "PartnerVaultA" }, { name: "amountUsdg", label: "USDG", default: "200" }], run: postVaultReserve },

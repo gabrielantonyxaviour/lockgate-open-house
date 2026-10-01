@@ -38,6 +38,8 @@ test("sepolia script deploys the protocol on local chain 421614", { timeout: 120
     assert.equal(manifest.mode, "protocol");
     assert.ok(manifest.contracts.MockUSDG);
     assert.ok(manifest.contracts.LockgateCreditLine);
+    assert.ok(manifest.contracts.FundFactory);
+    assert.ok(manifest.contracts.LockgateExitPool);
     assert.ok(manifest.contracts.PartnerVaultA);
     assert.notEqual(manifest.contracts.PartnerVaultA.toLowerCase(), manifest.roles.deployer.toLowerCase());
     assert.equal(manifest.roles.partnerA.toLowerCase(), ROLES.partnerA.address.toLowerCase());

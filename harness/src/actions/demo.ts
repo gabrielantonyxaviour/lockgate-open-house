@@ -11,6 +11,7 @@ import {
   approvePlatform, approveProposal, assertLockgateHasNoControl, depositVault, enlist, payInvestor, postVaultReserve,
   preview, proposeUpgrade, repayRoute, routedAdvance, setMandate, setPaused,
 } from "./stage2.js";
+import { door2Cycle } from "./door2.js";
 import { approveLenders, books, borrowingBase, depositJunior, depositSenior, drawFacility, recognizeLoss, waterfall } from "./stage3.js";
 
 export async function demoStage1(ctx: Ctx): Promise<unknown> {
@@ -118,7 +119,14 @@ export async function demoStage2(ctx: Ctx): Promise<unknown> {
 }
 
 export async function demoStage3(ctx: Ctx): Promise<unknown> {
-  await registerPlatform(ctx, { kind: "2", limitUsdg: "25000", reserveBps: "750" });
+  const created = await registerPlatform(ctx, { kind: "2", limitUsdg: "25000", reserveBps: "750", viaFactory: "true" }) as {
+    viaFactory?: boolean; address?: string;
+  };
+  expect(created.viaFactory === true, "epoch platform was not created by the factory", created);
+  expect(
+    created.address?.toLowerCase() !== ctx.binding("EpochImpl").address.toLowerCase(),
+    "epoch clone is the locked implementation",
+  );
   await postReserve(ctx, { platform: "EpochQueuePlatform", amountUsdg: "2000" });
   await buyShares(ctx, { platform: "EpochQueuePlatform", shares: "5000" });
   const drawn = await exitNow(ctx, { platform: "EpochQueuePlatform", shares: "5000" }) as { advanceId: string };
@@ -151,10 +159,11 @@ export async function demoStage3(ctx: Ctx): Promise<unknown> {
 
 export async function demoAll(ctx: Ctx): Promise<unknown> {
   const stage1 = await demoStage1(ctx);
+  const door2 = await door2Cycle(ctx);
   const stage2 = await demoStage2(ctx);
   const stage3 = await demoStage3(ctx);
   expect(!same(ROLES.lockgate.address, ROLES.partnerA.address), "roles collided");
-  return { stage1, stage2, stage3 };
+  return { stage1, door2, stage2, stage3 };
 }
 
 async function sendMint(ctx: Ctx, to: `0x${string}`, amount: bigint): Promise<void> {

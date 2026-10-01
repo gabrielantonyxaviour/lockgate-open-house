@@ -20,6 +20,12 @@ export async function registerPlatform(ctx: Ctx, input: Record<string, string>):
   const interval = INTERVALS[kind] ?? 0;
   if (!LABELS[kind] || interval === 0) throw new HarnessError("kind must be 1 weekly, 2 epoch, or 3 quarterly", "VALIDATION");
   const initialShares = input.initialShares && input.initialShares !== "0" ? wholeShares(input.initialShares, "1") : 0n;
+  if (input.viaFactory === "true") {
+    if (initialShares > 0n) {
+      throw new HarnessError("factory clones start with zero shares; unbacked shares use direct CREATE", "VALIDATION");
+    }
+    return registerClone(ctx, kind, logical, interval, input);
+  }
   const address = await deployNew(ctx, "platform", logical, [{
     token: ctx.binding("MockUSDG").address,
     creditLine: ctx.binding("LockgateCreditLine").address,
@@ -190,6 +196,34 @@ function asAdvance(value: unknown): AdvanceView {
     to: parts[1] as Address, principal: BigInt(parts[2] as bigint), fee: BigInt(parts[3] as bigint),
     dueAt: BigInt(parts[5] as bigint), status: Number(parts[6]),
   };
+}
+
+const IMPL = ["", "WeeklyImpl", "EpochImpl", "QuarterImpl"];
+
+async function registerClone(
+  ctx: Ctx,
+  kind: number,
+  logical: string,
+  interval: number,
+  input: Record<string, string>,
+): Promise<unknown> {
+  await send(ctx, "platform", "FundFactory", "createPlatform", [
+    kind,
+    LABELS[kind],
+    BigInt(interval),
+    DEMO.nav,
+    parseUsdg(input.limitUsdg ?? "25000"),
+    parseBps(input.reserveBps ?? "750"),
+  ]);
+  const funds = await read<readonly Address[]>(ctx, "FundFactory", "fundsOf", [ROLES.platform.address]);
+  const address = funds[funds.length - 1];
+  if (!address) throw new HarnessError("factory returned no platform", "DEPLOY_FAILED");
+  const impl = ctx.binding(IMPL[kind] ?? "").address;
+  if (address.toLowerCase() === impl.toLowerCase()) {
+    throw new HarnessError("clone matched the locked implementation", "DEPLOY_MISMATCH");
+  }
+  remember(ctx, logical, address);
+  return { logical, address, kind, viaFactory: true };
 }
 
 function list(value: unknown): unknown[] {

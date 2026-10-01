@@ -129,3 +129,13 @@ Door 2 is in this tree. The surfaces are `IOpenCreditVault` and `ILockgateExitPo
 `engine/test/anvil/deploy.ts` still calls `deploy(..., "FundFactory", [lockgate, adapter, line, reserve])`. That four-argument call will not match this constructor. G6 did not edit `engine/`.
 
 Measured with `FOUNDRY_PROFILE=core forge inspect` after the green compile on 2026-10-02 (solc 0.8.28, optimizer 200, via IR). Factory creation code is 5539 bytes. Seven address arguments add 224 bytes, so init code is 5763. Deployed runtime is 4729. Platform creation code, before constructor arguments: weekly 19928, epoch 19930, quarterly 19956. Deployed runtime: 14197, 14199, 14225. All of those sit under both caps. The old embedded factory was 49873 init and 49258 deployed.
+
+## 2026-10-02 · G10 · factory and door 2
+
+The ask above, to replace the oversized `FundFactory`, is closed by the clone factory in this tree. The harness CREATE2-deploys the three locked implementations and the 7-argument factory. It calls `setRegistrar(factory, true)` before any platform is created. On the mock path the factory and `OpenCreditVault` are minters. `mintYield` is false when the asset is the external token.
+
+The epoch platform in the stage-3 demo is `createPlatform`, sent by the platform account. The weekly short-cash case stays direct CREATE with unbacked `initialShares`, because a clone starts at zero shares.
+
+Door 2 is in the local Anvil demo, after stage 1 and before stage 2. The pool is registered at reserve bps 0. A gated sell reverts `Gated`. `settle` before `readyAt` reverts `NotReady`. After the 5-minute cooldown, settle repays the stage-1 advance. Partner idle is unchanged. The cooldown quote is 49 bps. `PricingMath` was not changed.
+
+`engine/test/anvil/deploy.ts` in this tree already passes the seven constructor arguments and `setRegistrar`. G10 did not edit `engine/`. No new Solidity ask. The harness pretest no longer skips `LockgateExitPool`. CI's `forge test` job was already skip-free.

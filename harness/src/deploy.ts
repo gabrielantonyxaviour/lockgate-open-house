@@ -94,8 +94,13 @@ export async function deployProtocol(rpc: string, manifestFile?: string): Promis
 
 async function wire(ctx: Awaited<ReturnType<typeof loadCtx>>): Promise<void> {
   const line = ctx.binding("LockgateCreditLine").address;
+  const factory = ctx.binding("FundFactory").address;
+  const vault = ctx.binding("OpenCreditVault").address;
   await send(ctx, "lockgate", "PlatformReserve", "setCreditLine", [line]);
   await send(ctx, "lockgate", "PlatformReserve", "setSlasher", [line, true]);
+  await send(ctx, "lockgate", "LockgateCreditLine", "setRegistrar", [factory, true]);
+  await send(ctx, "lockgate", "MockUSDG", "setMinter", [factory, true]);
+  await send(ctx, "lockgate", "MockUSDG", "setMinter", [vault, true]);
 }
 
 export function protocolPlan(factory: Address, owners: ProtocolOwners = anvilOwners(), externalAsset?: Address): Planned[] {
@@ -112,8 +117,34 @@ export function protocolPlan(factory: Address, owners: ProtocolOwners = anvilOwn
   const facility = predict(factory, "CreditFacility", [facilityInit(owners.governor, owners.owner, usdg.address, creditBook.address)]);
   const vaultA = predictProxy(factory, "PartnerVaultA", impl.address, owners.partnerA, usdg.address);
   const vaultB = predictProxy(factory, "PartnerVaultB", impl.address, owners.partnerB, usdg.address);
-  const planned = [usdg, adapter, pricing, reserve, line, router, impl, creditBook, facility, vaultA, vaultB];
+  const locked = lockedConfig();
+  const weekly = predict(factory, "WeeklyImpl", [locked]);
+  const epoch = predict(factory, "EpochImpl", [locked]);
+  const quarter = predict(factory, "QuarterImpl", [locked]);
+  const fundFactory = predict(factory, "FundFactory", [
+    owners.owner, adapter.address, line.address, reserve.address, weekly.address, epoch.address, quarter.address,
+  ]);
+  const openVault = predict(factory, "OpenCreditVault", [owners.owner, usdg.address, !externalAsset]);
+  const exitPool = predict(factory, "LockgateExitPool", [owners.owner, openVault.address, line.address]);
+  const planned = [
+    usdg, adapter, pricing, reserve, line, router, impl, creditBook, facility, vaultA, vaultB,
+    weekly, epoch, quarter, fundFactory, openVault, exitPool,
+  ];
   return externalAsset ? planned.filter((item) => item.logical !== "MockUSDG") : planned;
+}
+
+function lockedConfig() {
+  return {
+    token: zeroAddress,
+    creditLine: zeroAddress,
+    reserve: zeroAddress,
+    issuer: zeroAddress,
+    name: "",
+    nav: 0n,
+    interval: 0n,
+    initialHolder: zeroAddress,
+    initialShares: 0n,
+  };
 }
 
 function anvilOwners(): ProtocolOwners {

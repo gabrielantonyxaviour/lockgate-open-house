@@ -58,10 +58,25 @@ export async function broadcastSepolia(env: NodeJS.ProcessEnv, manifestFile: str
   };
   await wire("setCreditLine", [line]);
   await wire("setSlasher", [line, true]);
+  const fundFactory = contracts.FundFactory;
+  const openVault = contracts.OpenCreditVault;
+  if (!fundFactory || !openVault) throw new HarnessError("Factory or open vault missing from the plan", "DEPLOY_FAILED");
+  const lineAbi = loadArtifact("LockgateCreditLine").abi;
+  const registrar = await wallet.writeContract({
+    address: line, abi: lineAbi, functionName: "setRegistrar", args: [fundFactory, true], account, chain,
+  });
+  await publicClient.waitForTransactionReceipt({ hash: registrar });
   if (!external) {
     const token = loadArtifact("MockUSDG");
+    const tokenAddress = contracts.MockUSDG as Address;
+    for (const who of [fundFactory, openVault]) {
+      const allow = await wallet.writeContract({
+        address: tokenAddress, abi: token.abi, functionName: "setMinter", args: [who, true], account, chain,
+      });
+      await publicClient.waitForTransactionReceipt({ hash: allow });
+    }
     const hash = await wallet.writeContract({
-      address: contracts.MockUSDG as Address, abi: token.abi, functionName: "mint", args: [account.address, usdg(1_000_000n)], account, chain,
+      address: tokenAddress, abi: token.abi, functionName: "mint", args: [account.address, usdg(1_000_000n)], account, chain,
     });
     await publicClient.waitForTransactionReceipt({ hash });
   }
