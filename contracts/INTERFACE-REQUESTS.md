@@ -109,3 +109,13 @@ On a 600-second window the stage-1 line quoted 99 bps. The engine quote was 101 
 `eligibleOutstanding()` and `lateOutstanding()` are on `ILockgateCreditLine` in this tree. A credit line deployed before this code will still revert those selectors. `CreditLineBook` pointed at a line from this commit can read them. The sum of the two equals `totalExposure`.
 
 `AdvanceProposalLib` stays domain `LockgateAdvance` version `1` and the engine field order. G6 is not adopting the partner `Proposal` type string, and did not edit `src/partner`. A partner vault that must accept the engine signature verifies `AdvanceProposalLib`.
+
+## 2026-10-02 · G10
+
+### Digest and book
+
+No digest change. The harness signs `AdvanceProposalLib` (`LockgateAdvance` / `1`). The verifying contract is the vault. `quoteId` is the id `PartnerRouter.relayRepay` uses. The facility is constructed with `CreditLineBook` pointed at `LockgateCreditLine`. `eligibleOutstanding` and `lateOutstanding` are present on that line in this tree. G10 did not edit Solidity under `src/`.
+
+### Ask
+
+`FundFactory` cannot be created on a normal EVM. Measured from `contracts/out/FundFactory.sol/FundFactory.json` after `forge build` (solc 0.8.28, optimizer 200, via IR) on 2 Oct 2026: init code 49873 bytes, deployed bytecode 49258 bytes. EIP-3860 stops init code above 49152 bytes (https://eips.ethereum.org/EIPS/eip-3860). EIP-170 stops deployed bytecode above 24576 bytes (https://eips.ethereum.org/EIPS/eip-170). The harness deploys `WeeklyCyclePlatform`, `EpochQueuePlatform`, and `QuarterlyWindowPlatform` with CREATE, then the owner calls `registerSource`. A factory that fits both limits could replace that path. G10 did not raise the code-size limit to force the current factory in.

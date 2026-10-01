@@ -1,0 +1,26 @@
+{
+  "name": "@lockgate/harness",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:fixture": "forge build --root fixture",
+    "pretest": "forge build --skip test --root ../contracts && forge build --root fixture",
+    "test": "node --import tsx --test --test-concurrency=1 test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "deploy:local": "tsx ../scripts/deploy-local.ts",
+    "deploy:sepolia": "tsx ../scripts/deploy-sepolia.ts",
+    "anvil": "tsx ../scripts/start-anvil.ts",
+    "serve": "tsx src/server.ts",
+    "demo": "tsx src/cli.ts demo.all",
+    "cli": "tsx src/cli.ts"
+  },
+  "dependencies": {
+    "viem": "^2.37.6",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "^24.3.0",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}
