@@ -11,6 +11,7 @@ abstract contract FacilityCash is FacilityStore {
     function deposit(Tranche tranche, uint256 assets) external nonReentrant returns (uint256 shares) {
         if (assets == 0) revert BadParam();
         _count(msg.sender);
+        if (tranche == Tranche.Junior && acct.recovery) revert SeniorFirst();
         _touch();
         _pull(assets);
         shares = tranche == Tranche.Senior ? _mint(msg.sender, assets, true) : _mint(msg.sender, assets, false);
@@ -76,14 +77,15 @@ abstract contract FacilityCash is FacilityStore {
         emit RecoveryEntered(acct.drawn);
     }
 
-    /// @notice Crystallise the uncollateralised draw. Junior principal takes the loss first.
-    ///         A later repayment restores senior before junior. The amount is not a caller input.
+    /// @notice Crystallise the draw that eligible receivables do not cover. The advance rate is not the loss.
+    ///         Junior principal takes it first. A later repayment restores senior before junior.
     function recognizeLoss() external nonReentrant returns (uint256 loss) {
         _touch();
         if (!acct.recovery) revert NotRecovery();
         FacilityMath.subordinate(acct);
-        uint256 base = borrowingBase();
-        if (acct.drawn > base) loss = FacilityMath.applyLoss(acct, acct.drawn - base);
+        (uint256 eligible,, bool ok) = _readBook();
+        uint256 covered = ok ? eligible : 0;
+        if (acct.drawn > covered) loss = FacilityMath.applyLoss(acct, acct.drawn - covered);
         _lockOrphans();
         emit LossRecognized(loss);
     }

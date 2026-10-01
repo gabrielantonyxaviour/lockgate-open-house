@@ -8,6 +8,7 @@ Stage 3 lends against Lockgate's own receivables, not a partner vault. Instituti
 
 - 2026-10-02: Senior/junior accounting, borrowing base, sticky recovery, derived loss, and the repayment waterfall are implemented. Tests cover the default path, interest order, the 51st lender, depeg, and the book timelock. A partner vault balance is unchanged by these flows.
 - 2026-10-02: Gap review. Construction reverts when the governor and the borrower are the same address. `cancelTerms` emits `TermsCancelled` and reverts when nothing is pending. `poke` and `recognizeLoss` use the reentrancy guard. New tests cover that guard's neighbours: loss before recovery, a residual sweep while senior is still drawn, a book that cannot be read, a revoked lender that does not free the 50-person cap, fee-on-transfer deposits, accrual fuzz, loss order, and a solvency invariant.
+- 2026-10-02: Security review. `recognizeLoss` writes down `drawn` above eligible receivables, not above the advance-rate borrowing base. `executeTerms` accrues at the old rate first. Junior deposits revert once recovery has started. Notes are in `docs/SECURITY-NOTES-partner.md`.
 
 ## Waterfall
 
@@ -22,7 +23,7 @@ flowchart TD
     jd --> residual[Residual]
 ```
 
-Recovery is sticky. Entering it cancels unpaid junior interest and uses junior's idle cash to pay down senior drawn. That reclass does not move tokens. `recognizeLoss` takes no amount from the caller. The loss is `drawn - borrowingBase` after that subordination. Junior principal is written down first, then senior. A later repayment restores the senior deficit before junior principal and before anything can be swept.
+Recovery is sticky. Entering it cancels unpaid junior interest and uses junior's idle cash to pay down senior drawn. That reclass does not move tokens. Junior deposits revert in recovery. `recognizeLoss` takes no amount from the caller. The loss is the draw that still exceeds eligible receivables after that subordination. An unreadable book counts as zero cover. The advance rate stops new draws; it does not by itself forgive principal. Junior principal is written down first, then senior. A later repayment restores the senior deficit before junior principal and before anything can be swept. `executeTerms` accrues the open period at the old rate, then stores the new one.
 
 ## Borrowing base
 

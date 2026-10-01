@@ -73,6 +73,7 @@ contract CreditFacility is FacilityCash {
     function executeTerms() external {
         _onlyGovernor();
         if (!pendingTerms.active || block.timestamp < pendingTerms.eta) revert TooEarly();
+        _touch();
         acct.advanceRateBps = pendingTerms.advanceRateBps;
         acct.maxLateBps = pendingTerms.maxLateBps;
         acct.minJuniorBps = pendingTerms.minJuniorBps;

@@ -145,12 +145,15 @@ abstract contract PartnerVaultRead is Initializable, UUPSUpgradeable, Reentrancy
         input.gateReason = _gateReason(cfg, p.platform);
     }
 
+    /// @dev Decode as raw words. `try/catch` does not trap a bad `uint64` or `bool` under this compiler.
     function _oracleReason() internal view returns (RejectReason) {
         VaultLayout.Layout storage s = _s();
         if (s.pegOracle == address(0)) return RejectReason.None;
         (bool ok, bytes memory data) = s.pegOracle.staticcall(abi.encodeCall(IPegOracle.latest, ()));
         if (!ok || data.length < 64) return RejectReason.StaleOracle;
-        (uint256 price, uint64 updated) = abi.decode(data, (uint256, uint64));
+        (uint256 price, uint256 updatedWord) = abi.decode(data, (uint256, uint256));
+        if (updatedWord > type(uint64).max) return RejectReason.StaleOracle;
+        uint64 updated = uint64(updatedWord);
         if (updated > block.timestamp || s.maxOracleAge == 0 || block.timestamp - updated > s.maxOracleAge) {
             return RejectReason.StaleOracle;
         }
@@ -158,13 +161,18 @@ abstract contract PartnerVaultRead is Initializable, UUPSUpgradeable, Reentrancy
         return RejectReason.None;
     }
 
+    /// @dev A bool other than 0 or 1 is closed. A timestamp that does not fit in `uint64` is stale.
     function _gateReason(PlatformConfig memory cfg, address platform) internal view returns (RejectReason) {
         if (!cfg.checkGate) return RejectReason.None;
         (bool okG, bytes memory g) = platform.staticcall(abi.encodeWithSignature("gated()"));
-        if (!okG || g.length < 32 || abi.decode(g, (bool))) return RejectReason.Gated;
+        if (!okG || g.length < 32) return RejectReason.Gated;
+        uint256 flag = abi.decode(g, (uint256));
+        if (flag != 0) return RejectReason.Gated;
         (bool okN, bytes memory n) = platform.staticcall(abi.encodeWithSignature("navUpdatedAt()"));
         if (!okN || n.length < 32) return RejectReason.StaleNav;
-        uint64 updated = abi.decode(n, (uint64));
+        uint256 updatedWord = abi.decode(n, (uint256));
+        if (updatedWord > type(uint64).max) return RejectReason.StaleNav;
+        uint64 updated = uint64(updatedWord);
         if (cfg.maxNavAge == 0 || updated > block.timestamp || block.timestamp - updated > cfg.maxNavAge) {
             return RejectReason.StaleNav;
         }

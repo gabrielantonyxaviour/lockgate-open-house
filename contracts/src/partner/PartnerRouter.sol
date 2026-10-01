@@ -8,6 +8,7 @@ import {AdvanceProposal} from "../interfaces/IAdvanceProposal.sol";
 import {Advance, AdvanceStatus, RejectReason} from "./Types.sol";
 import {IPartnerRouter} from "./interfaces/IPartnerRouter.sol";
 import {IPartnerVault} from "./interfaces/IPartnerVault.sol";
+import {FeeMath} from "./libraries/FeeMath.sol";
 import {RouterLogic} from "./libraries/RouterLogic.sol";
 
 /// @title PartnerRouter
@@ -16,6 +17,9 @@ import {RouterLogic} from "./libraries/RouterLogic.sol";
 ///      which pulls from the caller and forwards the same amount to the vault that funded that exit.
 contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
     using SafeERC20 for IERC20;
+
+    /// @dev One registration cannot spend the block inside `quote`. An honest `maxNav` fits under this.
+    uint256 internal constant PROBE_GAS = 2_500_000;
 
     address[] public vaultList;
     mapping(address => uint256) public indexPlusOne;
@@ -127,12 +131,45 @@ contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
         uint256 n = vaultList.length;
         rows = new RouterLogic.Candidate[](n);
         for (uint256 i; i < n; ++i) {
-            address vault = vaultList[i];
-            uint16 minFee = IPartnerVault(vault).mandate().minFeeBps;
-            uint16 charged = request.feeBps > minFee ? request.feeBps : minFee;
-            uint256 cap = IPartnerVault(vault).maxNav(request.platform, request.feeBps, request.dueAt);
-            rows[i] = RouterLogic.Candidate(vault, cap, charged, IPartnerVault(vault).idle());
+            rows[i] = _probe(vaultList[i], request);
         }
+    }
+
+    /// @dev A revert, an out-of-gas probe, or a `maxNav` above `uint128` leaves the vault ineligible.
+    function _probe(address vault, ExitRequest calldata request) private view returns (RouterLogic.Candidate memory row) {
+        row.vault = vault;
+        row.feeBps = type(uint16).max;
+        (bool okFee, uint16 minFee) = _minFee(vault);
+        if (!okFee || minFee > FeeMath.BPS) return row;
+        uint16 charged = request.feeBps > minFee ? request.feeBps : minFee;
+        (bool okNav, uint256 cap) = _uint256Call(
+            vault, abi.encodeWithSignature("maxNav(address,uint16,uint64)", request.platform, request.feeBps, request.dueAt)
+        );
+        if (!okNav || cap > type(uint128).max) return row;
+        (bool okIdle, uint256 cash) = _uint256Call(vault, abi.encodeWithSignature("idle()"));
+        if (!okIdle) return row;
+        row.maxNav = cap;
+        row.feeBps = charged;
+        row.idle = cash;
+    }
+
+    function _minFee(address vault) private view returns (bool ok, uint16 fee) {
+        (bool success, bytes memory ret) = vault.staticcall{gas: PROBE_GAS}(abi.encodeWithSignature("mandate()"));
+        if (!success || ret.length < 192) return (false, 0);
+        // `mandate()` word 2 is `minFeeBps`. The bytes header occupies the first 32 bytes.
+        uint256 word;
+        assembly {
+            word := mload(add(ret, 96))
+        }
+        if (word > type(uint16).max) return (false, 0);
+        return (true, uint16(word));
+    }
+
+    function _uint256Call(address vault, bytes memory data) private view returns (bool ok, uint256 value) {
+        bytes memory ret;
+        (ok, ret) = vault.staticcall{gas: PROBE_GAS}(data);
+        if (!ok || ret.length < 32) return (false, 0);
+        value = abi.decode(ret, (uint256));
     }
 
     function _filter(RouterLogic.Slice[] memory parts, ExitRequest calldata request)
@@ -174,6 +211,8 @@ contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
             nonce: 0,
             quoteId: request.exitRef
         });
-        return IPartnerVault(vault).preview(proposal) == RejectReason.None;
+        (bool ok, bytes memory ret) = vault.staticcall{gas: PROBE_GAS}(abi.encodeCall(IPartnerVault.preview, (proposal)));
+        if (!ok || ret.length < 32) return false;
+        return abi.decode(ret, (uint8)) == uint8(RejectReason.None);
     }
 }

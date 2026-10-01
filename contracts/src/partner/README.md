@@ -9,6 +9,7 @@ One vault per licensed partner. The partner deploys it, owns it, and holds every
 - 2026-10-02: Vault, mandate, EIP-712 advance, auto-approve module, timelocked UUPS upgrade, and router are implemented and covered by permission, mandate, replay, reentrancy, fuzz, and invariant tests.
 - Digest matches `AdvanceProposalLib` / `engine/src/proposal/partner.ts` (domain `LockgateAdvance`, version `1`). `submitProposal` records that digest and moves no tokens.
 - 2026-10-02: Gap review. `IPartnerVault.submitProposal` now returns the digest the engine already reads. `AutoApproveModule` stores `Bounds.allowlistEnabled` on construction and on `setBounds`. Failure paths cover a second submit, a filed-hash mismatch, a zero expiry, a zero concentration cap, the payout desk, early mark-late, a second repay, fee-on-transfer pulls, the auto-approve allowlist and daily window, the upgrade timelock, and two-step ownership. Router failures cover an unknown vault, a mismatched notify, a duplicate notify, an empty repay, and a zero quote. Fuzz covers pure router selection and mandate boundaries. The vault invariant also calls mark-late, write-off, skim, and reserve moves.
+- 2026-10-02: Security review. `quote` isolates a vault that reverts, burns the probe gas, or reports an absurd `maxNav`. A bad oracle or gate returns `StaleOracle` or `Gated` instead of reverting. Grace is stored when the advance is funded. The auto-approve module rejects a fee above `maxFeeBps`. Notes are in `docs/SECURITY-NOTES-partner.md`.
 
 ## Flow
 

@@ -17,6 +17,7 @@ contract AutoApproveModule is ReentrancyGuard {
         uint64 maxTenor;
         bool enabled;
         bool allowlistEnabled;
+        uint16 maxFeeBps;
     }
 
     address public owner;
@@ -28,6 +29,7 @@ contract AutoApproveModule is ReentrancyGuard {
     uint64 public maxTenor;
     bool public enabled;
     bool public allowlistEnabled;
+    uint16 public maxFeeBps;
     uint64 public windowStart;
     uint256 public windowUsed;
     mapping(address => bool) public allowedPlatform;
@@ -39,7 +41,7 @@ contract AutoApproveModule is ReentrancyGuard {
 
     event OwnershipTransferStarted(address indexed pending);
     event OwnershipTransferred(address indexed previous, address indexed current);
-    event BoundsSet(uint256 maxNavValue, uint256 dailyLimit, uint16 minFeeBps, uint64 maxTenor, bool enabled);
+    event BoundsSet(uint256 maxNavValue, uint256 dailyLimit, uint16 minFeeBps, uint16 maxFeeBps, uint64 maxTenor, bool enabled);
     event AllowlistSet(bool enabled);
     event PlatformAllowed(address indexed platform, bool allowed);
     event AutoExecuted(uint256 indexed nonce, uint256 navValue);
@@ -88,6 +90,8 @@ contract AutoApproveModule is ReentrancyGuard {
         if (!enabled) revert Disabled();
         if (proposal.navValue == 0 || proposal.navValue > maxNavValue) revert BoundsExceeded();
         if (proposal.fee < FeeMath.minFee(proposal.navValue, minFeeBps)) revert BoundsExceeded();
+        if (proposal.feeBps > maxFeeBps) revert BoundsExceeded();
+        if (proposal.fee > FeeMath.mulDivHalfUp(proposal.navValue, maxFeeBps, FeeMath.BPS)) revert BoundsExceeded();
         if (proposal.dueAt <= block.timestamp || proposal.dueAt - block.timestamp > maxTenor) revert BoundsExceeded();
         if (allowlistEnabled && !allowedPlatform[proposal.platform]) revert BoundsExceeded();
         _consume(proposal.navValue);
@@ -96,17 +100,21 @@ contract AutoApproveModule is ReentrancyGuard {
     }
 
     function _apply(Bounds memory bounds_) internal {
-        if (bounds_.minFeeBps > FeeMath.BPS) revert BoundsExceeded();
+        if (bounds_.minFeeBps > FeeMath.BPS || bounds_.maxFeeBps > FeeMath.BPS) revert BoundsExceeded();
+        if (bounds_.maxFeeBps < bounds_.minFeeBps) revert BoundsExceeded();
         maxNavValue = bounds_.maxNavValue;
         dailyLimit = bounds_.dailyLimit;
         minFeeBps = bounds_.minFeeBps;
+        maxFeeBps = bounds_.maxFeeBps;
         maxTenor = bounds_.maxTenor;
         enabled = bounds_.enabled;
         if (allowlistEnabled != bounds_.allowlistEnabled) {
             allowlistEnabled = bounds_.allowlistEnabled;
             emit AllowlistSet(bounds_.allowlistEnabled);
         }
-        emit BoundsSet(bounds_.maxNavValue, bounds_.dailyLimit, bounds_.minFeeBps, bounds_.maxTenor, bounds_.enabled);
+        emit BoundsSet(
+            bounds_.maxNavValue, bounds_.dailyLimit, bounds_.minFeeBps, bounds_.maxFeeBps, bounds_.maxTenor, bounds_.enabled
+        );
     }
 
     function _consume(uint256 navValue) internal {

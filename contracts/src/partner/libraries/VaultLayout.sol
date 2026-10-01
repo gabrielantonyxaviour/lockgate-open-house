@@ -43,7 +43,9 @@ library VaultLayout {
         mapping(uint256 => bytes32) proposalHash;
         mapping(uint256 => bool) nonceUsed;
         mapping(uint256 => Advance) advances;
-        uint256[16] reserved;
+        /// @notice Grace captured when the advance was funded. A later `setGrace` cannot shorten it.
+        mapping(uint256 => uint64) graceAtFunding;
+        uint256[15] reserved;
     }
 
     function layout() internal pure returns (Layout storage s) {

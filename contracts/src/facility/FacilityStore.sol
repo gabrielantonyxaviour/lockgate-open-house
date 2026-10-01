@@ -6,7 +6,6 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IPegOracle} from "../partner/interfaces/IPegOracle.sol";
-import {IReceivablesBook} from "./interfaces/IReceivablesBook.sol";
 import {FacilityMath} from "./libraries/FacilityMath.sol";
 
 /// @title FacilityStore
@@ -178,26 +177,29 @@ abstract contract FacilityStore is ReentrancyGuard {
 
     function _readBook() internal view returns (uint256 eligible, uint256 late, bool ok) {
         if (receivables == address(0)) return (0, 0, false);
-        try IReceivablesBook(receivables).eligibleOutstanding() returns (uint256 e) {
-            try IReceivablesBook(receivables).lateOutstanding() returns (uint256 l) {
-                return (e, l, true);
-            } catch {
-                return (0, 0, false);
-            }
-        } catch {
-            return (0, 0, false);
-        }
+        (bool okE, uint256 e) = _word(receivables, abi.encodeWithSignature("eligibleOutstanding()"));
+        if (!okE) return (0, 0, false);
+        (bool okL, uint256 l) = _word(receivables, abi.encodeWithSignature("lateOutstanding()"));
+        if (!okL) return (0, 0, false);
+        return (e, l, true);
+    }
+
+    /// @dev A short or reverting read is a failed word. `try/catch` does not trap a bad decode here.
+    function _word(address target, bytes memory data) private view returns (bool ok, uint256 value) {
+        (bool success, bytes memory ret) = target.staticcall(data);
+        if (!success || ret.length < 32) return (false, 0);
+        return (true, abi.decode(ret, (uint256)));
     }
 
     function _pegBad() internal view returns (bool) {
         if (oracle == address(0)) return false;
-        try IPegOracle(oracle).latest() returns (uint256 price, uint64 updated) {
-            if (price < minPriceE8) return true;
-            if (maxOracleAge == 0 || updated > block.timestamp || block.timestamp - updated > maxOracleAge) return true;
-            return false;
-        } catch {
-            return true;
-        }
+        (bool ok, bytes memory data) = oracle.staticcall(abi.encodeCall(IPegOracle.latest, ()));
+        if (!ok || data.length < 64) return true;
+        (uint256 price, uint256 updatedWord) = abi.decode(data, (uint256, uint256));
+        if (updatedWord > type(uint64).max || price < minPriceE8) return true;
+        uint64 updated = uint64(updatedWord);
+        if (maxOracleAge == 0 || updated > block.timestamp || block.timestamp - updated > maxOracleAge) return true;
+        return false;
     }
 
     function _count(address lender) internal {

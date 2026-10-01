@@ -169,7 +169,7 @@ contract PartnerVault is PartnerVaultAdmin {
         VaultLayout.Layout storage s = _s();
         Advance storage a = s.advances[advanceId];
         if (a.status != AdvanceStatus.Active) revert BadStatus();
-        if (block.timestamp < uint256(a.dueAt) + s.grace) revert TooEarly();
+        if (block.timestamp < uint256(a.dueAt) + s.graceAtFunding[advanceId]) revert TooEarly();
         uint256 cover = s.reserveOfPlatform[a.platform] < a.owed ? s.reserveOfPlatform[a.platform] : a.owed;
         if (cover > 0) _reduce(a, cover, true);
         uint256 shortfall = a.owed;
@@ -231,6 +231,7 @@ contract PartnerVault is PartnerVaultAdmin {
         a.requestId = proposal.requestId;
         a.exitRef = proposal.quoteId;
         a.status = AdvanceStatus.Active;
+        s.graceAtFunding[id] = s.grace;
         s.idleCash -= principal;
         s.outstandingPrincipal += principal;
         s.exposureOf[proposal.platform] += proposal.navValue;

@@ -69,6 +69,7 @@ contract GuardTest is VaultFixture {
                 maxNavValue: 50_000 * UNIT,
                 dailyLimit: 60_000 * UNIT,
                 minFeeBps: 100,
+                maxFeeBps: 100,
                 maxTenor: 30 days,
                 enabled: true,
                 allowlistEnabled: false
@@ -78,7 +79,7 @@ contract GuardTest is VaultFixture {
         vault.setAutoModule(address(module));
         vm.prank(lockgate);
         vm.expectRevert(AutoApproveModule.Unauthorized.selector);
-        module.setBounds(AutoApproveModule.Bounds(1, 1, 1, 1, true, false));
+        module.setBounds(AutoApproveModule.Bounds(1, 1, 1, 1, true, false, 1));
         vm.prank(address(module));
         vm.expectRevert(PartnerVaultAdmin.Unauthorized.selector);
         vault.withdraw(1, lockgate);
@@ -97,12 +98,12 @@ contract GuardTest is VaultFixture {
         AdvanceProposal memory slow = _proposal(10_000 * UNIT, 4);
         bytes memory slowSig = _engineSig(vault, slow);
         vm.prank(partner);
-        module.setBounds(AutoApproveModule.Bounds(50_000 * UNIT, 60_000 * UNIT, 100, 1 days, true, false));
+        module.setBounds(AutoApproveModule.Bounds(50_000 * UNIT, 60_000 * UNIT, 100, 1 days, true, false, 100));
         vm.prank(lockgate);
         vm.expectRevert(AutoApproveModule.BoundsExceeded.selector);
         module.execute(slow, slowSig);
         vm.prank(partner);
-        module.setBounds(AutoApproveModule.Bounds(50_000 * UNIT, 60_000 * UNIT, 100, 30 days, true, false));
+        module.setBounds(AutoApproveModule.Bounds(50_000 * UNIT, 60_000 * UNIT, 100, 30 days, true, false, 100));
         AdvanceProposal memory first = _proposal(40_000 * UNIT, 5);
         bytes memory firstSig = _engineSig(vault, first);
         vm.prank(lockgate);
@@ -115,7 +116,7 @@ contract GuardTest is VaultFixture {
         vm.expectRevert(AutoApproveModule.BoundsExceeded.selector);
         module.execute(second, secondSig);
         vm.prank(partner);
-        module.setBounds(AutoApproveModule.Bounds(50_000 * UNIT, 60_000 * UNIT, 100, 30 days, false, false));
+        module.setBounds(AutoApproveModule.Bounds(50_000 * UNIT, 60_000 * UNIT, 100, 30 days, false, false, 100));
         vm.prank(lockgate);
         vm.expectRevert(AutoApproveModule.Disabled.selector);
         module.execute(second, secondSig);

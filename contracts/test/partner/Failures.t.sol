@@ -120,6 +120,7 @@ contract PartnerFailuresTest is VaultFixture {
                 maxNavValue: 200_000 * UNIT,
                 dailyLimit: 150_000 * UNIT,
                 minFeeBps: 100,
+                maxFeeBps: 100,
                 maxTenor: 30 days,
                 enabled: true,
                 allowlistEnabled: true
@@ -150,6 +151,7 @@ contract PartnerFailuresTest is VaultFixture {
                 maxNavValue: 200_000 * UNIT,
                 dailyLimit: 150_000 * UNIT,
                 minFeeBps: 100,
+                maxFeeBps: 100,
                 maxTenor: 30 days,
                 enabled: false,
                 allowlistEnabled: true
