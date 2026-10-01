@@ -7,8 +7,10 @@ import { loadCtx, type Ctx } from "./chain.js";
 import { HarnessError } from "./errors.js";
 import { parseActBody } from "./input.js";
 import { manifestPath, readManifest } from "./manifest.js";
+import { inOrder } from "./turnstile.js";
 
 const webRoot = fileURLToPath(new URL("../web", import.meta.url));
+const MAX_BODY = 8_192;
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
   const json = JSON.stringify(body, (_key, value) => typeof value === "bigint" ? value.toString() : value);
@@ -17,8 +19,18 @@ function sendJson(res: ServerResponse, status: number, body: unknown): void {
 }
 
 async function readBody(req: IncomingMessage): Promise<unknown> {
+  const declared = Number(req.headers["content-length"] ?? 0);
+  if (Number.isFinite(declared) && declared > MAX_BODY) {
+    throw new HarnessError("body is too large", "VALIDATION");
+  }
   const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(chunk as Buffer);
+  let size = 0;
+  for await (const chunk of req) {
+    const buf = chunk as Buffer;
+    size += buf.length;
+    if (size > MAX_BODY) throw new HarnessError("body is too large", "VALIDATION");
+    chunks.push(buf);
+  }
   const text = Buffer.concat(chunks).toString("utf8");
   if (!text) return {};
   try {
@@ -52,10 +64,12 @@ export function startServer(ctx: Ctx, port: number): Promise<{ url: string; clos
         return;
       }
       if (req.method === "POST" && url.pathname === "/api/act") {
-        const body = parseActBody(await readBody(req));
-        const action = findAction(body.action);
-        if (!action) throw new HarnessError(`Unknown action ${body.action}`, "UNKNOWN_ACTION");
-        sendJson(res, 200, { ok: true, result: await action.run(ctx, body.input) });
+        await inOrder(async () => {
+          const body = parseActBody(await readBody(req));
+          const action = findAction(body.action);
+          if (!action) throw new HarnessError(`Unknown action ${body.action}`, "UNKNOWN_ACTION");
+          sendJson(res, 200, { ok: true, result: await action.run(ctx, body.input) });
+        });
         return;
       }
       sendJson(res, 404, { error: "not found", code: "NOT_FOUND" });

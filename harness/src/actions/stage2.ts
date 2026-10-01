@@ -1,6 +1,6 @@
-import { keccak256, toBytes, type Address, type Hex } from "viem";
+import { keccak256, toBytes, zeroAddress, type Address, type Hex } from "viem";
 import { read, send, type Ctx } from "../chain.js";
-import { proposalTuple, signProposal, type AdvanceProposal } from "../eip712.js";
+import { assertProposalShape, proposalTuple, signProposal, type AdvanceProposal } from "../eip712.js";
 import { HarnessError } from "../errors.js";
 import { DEMO } from "../params.js";
 import { ROLES } from "../roles.js";
@@ -177,7 +177,26 @@ export async function draftProposal(ctx: Ctx, input: Record<string, string>): Pr
     nonce,
     quoteId: looked.exitRef,
   };
+  await guardProposal(ctx, vault, proposal);
   return { proposal, slice, vault, exitRef: looked.exitRef };
+}
+
+const ZERO_HASH = `0x${"0".repeat(64)}`;
+
+async function guardProposal(ctx: Ctx, vault: string, proposal: AdvanceProposal): Promise<void> {
+  assertProposalShape(proposal);
+  const payoutTo = await read<Address>(ctx, vault, "payoutTo", [proposal.platform]);
+  const expected = same(payoutTo, zeroAddress) ? proposal.platform : payoutTo;
+  if (!same(proposal.recipient, expected)) {
+    throw new HarnessError("recipient is not the mandate payout", "VALIDATION");
+  }
+  if (await read<boolean>(ctx, vault, "nonceUsed", [proposal.nonce])) {
+    throw new HarnessError("nonce is already used", "REPLAY");
+  }
+  const filed = await read<Hex>(ctx, vault, "proposalHashOf", [proposal.nonce]);
+  if (!same(filed, ZERO_HASH)) throw new HarnessError("nonce already holds a proposal", "REPLAY");
+  const reason = Number(await read(ctx, vault, "preview", [proposalTuple(proposal)]));
+  if (reason !== 0) throw new HarnessError(`vault preview rejected the proposal (${reason})`, "ASSERTION");
 }
 
 async function funded(ctx: Ctx, drafted: { proposal: AdvanceProposal; slice: Slice; vault: string; exitRef: Hex }, hash: Hex) {

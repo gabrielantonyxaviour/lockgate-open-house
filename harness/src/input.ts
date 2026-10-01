@@ -1,11 +1,9 @@
 import { z } from "zod";
 import { HarnessError } from "./errors.js";
 
-const scalar = z.union([z.string(), z.number(), z.boolean()]);
-
 export const actBodySchema = z.object({
-  action: z.string().min(1),
-  input: z.record(scalar).optional(),
+  action: z.string().min(1).max(64),
+  input: z.record(z.string().max(256)).optional(),
 });
 
 export const flagSchema = z.record(z.string());
@@ -15,9 +13,7 @@ export function parseActBody(value: unknown): { action: string; input: Record<st
   if (!parsed.success) {
     throw new HarnessError("action body is invalid", "VALIDATION");
   }
-  const input: Record<string, string> = {};
-  for (const [key, item] of Object.entries(parsed.data.input ?? {})) input[key] = String(item);
-  return { action: parsed.data.action, input };
+  return { action: parsed.data.action, input: parsed.data.input ?? {} };
 }
 
 export function parseFlags(value: Record<string, string>): Record<string, string> {

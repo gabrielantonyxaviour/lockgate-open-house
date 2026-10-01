@@ -12,7 +12,7 @@ import {
 import { loadArtifact, protocolRoot } from "./artifacts.js";
 import { loadCtx, send } from "./chain.js";
 import { HarnessError } from "./errors.js";
-import { ANVIL_CHAIN_ID, assertHarnessWrite } from "./guards.js";
+import { ANVIL_CHAIN_ID, assertHarnessWrite, assertLocalRpc } from "./guards.js";
 import { manifestPath, writeManifest, type Manifest } from "./manifest.js";
 import { DEMO } from "./params.js";
 import { ROLES, type RoleName } from "./roles.js";
@@ -44,6 +44,7 @@ function initOf(logical: string, args: readonly unknown[]): Hex {
 }
 
 export async function deployProtocol(rpc: string, manifestFile?: string): Promise<Manifest> {
+  assertLocalRpc(rpc);
   const factory = getContractAddress({ from: ROLES.lockgate.address, nonce: 0n });
   const planned = protocolPlan(factory);
   const contracts: Record<string, Address> = { Create2Factory: factory };

@@ -1,4 +1,6 @@
 import { type Address, type Hex, type WalletClient } from "viem";
+import { HarnessError } from "./errors.js";
+import { assertHarnessWrite } from "./guards.js";
 
 /** Matches contracts/src/interfaces/AdvanceProposalLib.sol. The vault is the verifying contract, not a field. */
 export const ADVANCE_DOMAIN_NAME = "LockgateAdvance";
@@ -41,13 +43,24 @@ export function proposalTuple(proposal: AdvanceProposal): readonly unknown[] {
   ];
 }
 
+export function assertProposalShape(proposal: AdvanceProposal): void {
+  if (proposal.navValue <= 0n || proposal.fee < 0n || proposal.fee >= proposal.navValue) {
+    throw new HarnessError("fee must leave a payout", "VALIDATION");
+  }
+  if (proposal.payout !== proposal.navValue - proposal.fee) {
+    throw new HarnessError("payout is not nav minus fee", "VALIDATION");
+  }
+}
+
 export async function signProposal(
   wallet: WalletClient,
   proposal: AdvanceProposal,
   chainId: number,
   vault: Address,
 ): Promise<Hex> {
-  if (!wallet.account) throw new Error("signer missing");
+  assertHarnessWrite(chainId);
+  assertProposalShape(proposal);
+  if (!wallet.account) throw new HarnessError("signer missing", "ROLE_UNKNOWN");
   return wallet.signTypedData({
     account: wallet.account,
     domain: {

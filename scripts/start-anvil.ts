@@ -1,14 +1,19 @@
 import { spawn } from "node:child_process";
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { HarnessError } from "../harness/src/errors.js";
+import { assertAnvilPort } from "../harness/src/guards.js";
 
-const port = process.env.HARNESS_ANVIL_PORT ?? "8546";
-if (port === "8545") {
-  process.stderr.write("{\"error\":\"port 8545 belongs to the shared Anvil\",\"code\":\"PORT_RESERVED\"}\n");
+let port: number;
+try {
+  port = assertAnvilPort(process.env.HARNESS_ANVIL_PORT ?? "8546");
+} catch (err) {
+  const body = err instanceof HarnessError ? err.toJSON() : { error: "bad port", code: "VALIDATION" };
+  process.stderr.write(`${JSON.stringify(body)}\n`);
   process.exit(1);
 }
 
-const child = spawn("anvil", ["--host", "127.0.0.1", "--port", port, "--chain-id", "31337", "--silent"], {
+const child = spawn("anvil", ["--host", "127.0.0.1", "--port", String(port), "--chain-id", "31337", "--silent"], {
   detached: true,
   stdio: "ignore",
 });

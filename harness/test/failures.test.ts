@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { bytesToHex, hexToBytes, keccak256, toBytes, type Hex } from "viem";
+import { HarnessError } from "../src/errors.js";
 import { startServer } from "../src/server.js";
 import { deployNew, loadCtx, read, send, type Ctx } from "../src/chain.js";
 import { deployProtocol } from "../src/deploy.js";
@@ -80,10 +81,26 @@ test("failure paths keep cash identity and fail closed", { timeout: 180_000 }, a
     expect(funded.vault === "PartnerVaultA", "approve funded the wrong vault", funded.vault);
     expect((await balanceOf(ctx, ROLES.lockgate.address)) === lockgateBefore, "approve paid Lockgate");
     await assertVaultCash(ctx);
+    await assert.rejects(
+      () => draftProposal(ctx, { navUsdg: "300", strategy: "0", nonce: "8" }),
+      (err: unknown) => err instanceof HarnessError && err.code === "REPLAY",
+    );
+    const replay = manual(ctx, 8n, (await ctx.publicClient.getBlock()).timestamp);
+    const replaySig = await signProposal(ctx.wallet("lockgate"), replay, ctx.chainId, ctx.binding("PartnerVaultA").address);
     await expectRevert(
-      () => approveProposal(ctx, { navUsdg: "300", strategy: "0", nonce: "8" }),
+      () => send(ctx, "lockgate", "PartnerVaultA", "submitProposal", [proposalTuple(replay), replaySig]),
       "NonceUsed",
     );
+
+    await send(ctx, "partnerB", "PartnerVaultB", "setProposer", [ROLES.lockgate.address]);
+    const foreign = await draftProposal(ctx, { navUsdg: "300", strategy: "0", nonce: "11" });
+    const foreignSig = await signProposal(ctx.wallet("lockgate"), foreign.proposal, ctx.chainId, foreign.slice.vault);
+    await expectRevert(
+      () => send(ctx, "lockgate", "PartnerVaultB", "submitProposal", [proposalTuple(foreign.proposal), foreignSig]),
+      "BadEngineSig",
+    );
+    const pinned = await read<Hex>(ctx, "PartnerVaultB", "proposalHashOf", [11n]);
+    expect(pinned === `0x${"0".repeat(64)}`, "a foreign signature pinned the other vault's nonce", pinned);
 
     const routerBefore = await balanceOf(ctx, ctx.binding("Router").address);
     await send(ctx, "lockgate", "MockUSDG", "mint", [ROLES.platform.address, parseUsdg("300")]);

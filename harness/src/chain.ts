@@ -13,7 +13,7 @@ import { privateKeyToAccount } from "viem/accounts";
 import { foundry } from "viem/chains";
 import { loadArtifact, type Artifact } from "./artifacts.js";
 import { HarnessError } from "./errors.js";
-import { ANVIL_CHAIN_ID, assertHarnessWrite } from "./guards.js";
+import { ANVIL_CHAIN_ID, assertHarnessWrite, assertLocalRpc } from "./guards.js";
 import { type Manifest } from "./manifest.js";
 import { ROLES, type RoleName } from "./roles.js";
 
@@ -32,6 +32,7 @@ function makeTestClient(rpc: string) {
 }
 
 export async function loadCtx(manifest: Manifest, manifestFile = ""): Promise<Ctx> {
+  assertLocalRpc(manifest.rpc);
   const transport = http(manifest.rpc);
   const publicClient = createPublicClient({ chain: foundry, transport });
   const chainId = await publicClient.getChainId();
