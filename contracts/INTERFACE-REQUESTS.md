@@ -92,7 +92,7 @@ A local Anvil on chain 31337, on a port other than the shared 8545, runs three f
 
 ### Digest
 
-`AdvanceHash.digest` calls `AdvanceProposalLib` (`LockgateAdvance` / `1`). `PartnerVault.execute(AdvanceProposal,bytes,bytes)` is the function on disk at the end of this run, and `e2e/` sends the signature from `engine/src/cli.ts propose` to that function. If that call is accepted, this paragraph stands. If a later edit puts `Proposal` / `LockgatePartnerVault` back, the engine signature will not verify: `sign.ts` does not hash `vault, exitRef, deadline`.
+`AdvanceHash.digest` calls `AdvanceProposalLib` (`LockgateAdvance` / `1`). On 2026-10-02 the local e2e sent `engine/src/cli.ts propose` into `PartnerVault.execute(AdvanceProposal,bytes,bytes)` on two vaults. Both signatures were accepted. Replay and a flipped signature were rejected. Harbour's repayment returned to that vault. Lockgate's balance stayed 0. If a later edit puts `Proposal` / `LockgatePartnerVault` back, that signature will stop verifying: `sign.ts` does not hash `vault, exitRef, deadline`.
 
 ### Book
 
