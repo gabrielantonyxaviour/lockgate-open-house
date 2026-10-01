@@ -80,45 +80,35 @@ export async function preview(ctx: Ctx, input: Record<string, string>): Promise<
 }
 
 export async function routedAdvance(ctx: Ctx, input: Record<string, string>): Promise<unknown> {
-  const looked = await preview(ctx, input);
-  const slice = looked.slices[0];
-  if (!slice) throw new HarnessError("No vault accepted the exit", "ASSERTION");
-  const vault = logicalVault(ctx, slice.vault);
-  const nonce = BigInt(input.nonce ?? "1");
-  const block = await ctx.publicClient.getBlock();
-  const proposal: AdvanceProposal = {
-    platform: ctx.binding(input.platform ?? "WeeklyQueuePlatform").address,
-    recipient: ROLES.platform.address,
-    requestId: nonce,
-    navValue: slice.navValue,
-    fee: slice.fee,
-    payout: slice.navValue - slice.fee,
-    feeBps: slice.feeBps,
-    dueAt: BigInt(looked.dueAt),
-    expiresAt: block.timestamp + 86_400n,
-    nonce,
-    quoteId: looked.exitRef,
-  };
-  const engineSig = await signProposal(ctx.wallet("lockgate"), proposal, ctx.chainId, slice.vault);
+  const drafted = await draftProposal(ctx, input);
+  const engineSig = await signProposal(ctx.wallet("lockgate"), drafted.proposal, ctx.chainId, drafted.slice.vault);
   if (input.rejectLockgate === "true") {
-    const forged = await signProposal(ctx.wallet("lockgate"), proposal, ctx.chainId, slice.vault);
+    const forged = await signProposal(ctx.wallet("lockgate"), drafted.proposal, ctx.chainId, drafted.slice.vault);
     await expectRevert(
-      () => send(ctx, "investor", vault, "execute", [proposalTuple(proposal), engineSig, forged]),
+      () => send(ctx, "investor", drafted.vault, "execute", [proposalTuple(drafted.proposal), engineSig, forged]),
       "NotApproved",
     );
   }
-  const partnerSig = await signProposal(ctx.wallet(vaultRole(vault)), proposal, ctx.chainId, slice.vault);
-  const hash = await send(ctx, "investor", vault, "execute", [proposalTuple(proposal), engineSig, partnerSig]);
-  const advanceId = await read<bigint>(ctx, vault, "advanceCount");
-  return {
-    hash,
-    vault,
-    advanceId: advanceId.toString(),
-    fee: slice.fee.toString(),
-    navValue: slice.navValue.toString(),
-    exitRef: looked.exitRef,
-    nonce: nonce.toString(),
-  };
+  const partnerSig = await signProposal(ctx.wallet(vaultRole(drafted.vault)), drafted.proposal, ctx.chainId, drafted.slice.vault);
+  const hash = await send(ctx, "investor", drafted.vault, "execute", [proposalTuple(drafted.proposal), engineSig, partnerSig]);
+  return funded(ctx, drafted, hash);
+}
+
+/** Engine `submitProposal`, then the partner `approve`. Lockgate's approve does not pay. */
+export async function approveProposal(ctx: Ctx, input: Record<string, string>): Promise<unknown> {
+  const drafted = await draftProposal(ctx, input);
+  const engineSig = await signProposal(ctx.wallet("lockgate"), drafted.proposal, ctx.chainId, drafted.slice.vault);
+  const filed = await send(ctx, "lockgate", drafted.vault, "submitProposal", [proposalTuple(drafted.proposal), engineSig]);
+  const idle = await read<bigint>(ctx, drafted.vault, "idle");
+  if (input.rejectLockgate === "true") {
+    await expectRevert(
+      () => send(ctx, "lockgate", drafted.vault, "approve", [proposalTuple(drafted.proposal)]),
+      "NotApproved",
+    );
+    expect((await read<bigint>(ctx, drafted.vault, "idle")) === idle, "a rejected approve moved cash");
+  }
+  const hash = await send(ctx, vaultRole(drafted.vault), drafted.vault, "approve", [proposalTuple(drafted.proposal)]);
+  return { ...await funded(ctx, drafted, hash), submitted: filed };
 }
 
 export async function repayRoute(ctx: Ctx, input: Record<string, string>): Promise<unknown> {
@@ -163,6 +153,44 @@ export async function assertLockgateHasNoControl(ctx: Ctx): Promise<unknown> {
 
 export async function setPaused(ctx: Ctx, vault: string, paused: boolean): Promise<void> {
   await send(ctx, vaultRole(vault), vault, "setPaused", [paused]);
+}
+
+export async function draftProposal(ctx: Ctx, input: Record<string, string>): Promise<{
+  proposal: AdvanceProposal; slice: Slice; vault: string; exitRef: Hex;
+}> {
+  const looked = await preview(ctx, input);
+  const slice = looked.slices[0];
+  if (!slice) throw new HarnessError("No vault accepted the exit", "ASSERTION");
+  const vault = logicalVault(ctx, slice.vault);
+  const nonce = BigInt(input.nonce ?? "1");
+  const block = await ctx.publicClient.getBlock();
+  const proposal: AdvanceProposal = {
+    platform: ctx.binding(input.platform ?? "WeeklyQueuePlatform").address,
+    recipient: ROLES.platform.address,
+    requestId: nonce,
+    navValue: slice.navValue,
+    fee: slice.fee,
+    payout: slice.navValue - slice.fee,
+    feeBps: slice.feeBps,
+    dueAt: BigInt(looked.dueAt),
+    expiresAt: block.timestamp + 86_400n,
+    nonce,
+    quoteId: looked.exitRef,
+  };
+  return { proposal, slice, vault, exitRef: looked.exitRef };
+}
+
+async function funded(ctx: Ctx, drafted: { proposal: AdvanceProposal; slice: Slice; vault: string; exitRef: Hex }, hash: Hex) {
+  const advanceId = await read<bigint>(ctx, drafted.vault, "advanceCount");
+  return {
+    hash,
+    vault: drafted.vault,
+    advanceId: advanceId.toString(),
+    fee: drafted.slice.fee.toString(),
+    navValue: drafted.slice.navValue.toString(),
+    exitRef: drafted.exitRef,
+    nonce: drafted.proposal.nonce.toString(),
+  };
 }
 
 function logicalVault(ctx: Ctx, address: Address): string {

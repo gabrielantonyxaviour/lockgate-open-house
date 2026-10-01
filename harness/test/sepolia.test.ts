@@ -41,5 +41,22 @@ test("sepolia script deploys the protocol on local chain 421614", { timeout: 120
     assert.ok(manifest.contracts.PartnerVaultA);
     assert.notEqual(manifest.contracts.PartnerVaultA.toLowerCase(), manifest.roles.deployer.toLowerCase());
     assert.equal(manifest.roles.partnerA.toLowerCase(), ROLES.partnerA.address.toLowerCase());
+    assert.equal(manifest.roles.governor.toLowerCase(), ROLES.partnerA.address.toLowerCase());
+  }, 421614);
+});
+
+test("sepolia script refuses a governor equal to the deployer", { timeout: 30_000 }, async () => {
+  await withAnvil(async (rpc) => {
+    await assert.rejects(
+      () => broadcastSepolia({
+        SEPOLIA_RPC: rpc,
+        LOCKGATE_ALLOW_SEPOLIA_DEPLOY: "1",
+        DEPLOYER_PRIVATE_KEY: ROLES.lockgate.key,
+        GOVERNOR_ADDRESS: ROLES.lockgate.address,
+        PARTNER_A_ADDRESS: ROLES.partnerA.address,
+        PARTNER_B_ADDRESS: ROLES.partnerB.address,
+      }, "/tmp/lockgate-sepolia-governor.json"),
+      (err: unknown) => err instanceof HarnessError && err.code === "VALIDATION",
+    );
   }, 421614);
 });

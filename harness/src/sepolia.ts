@@ -73,7 +73,7 @@ export async function broadcastSepolia(env: NodeJS.ProcessEnv, manifestFile: str
     artifactRoot: protocolRoot,
     factory,
     contracts,
-    roles: { deployer: account.address, partnerA: owners.partnerA, partnerB: owners.partnerB },
+    roles: { deployer: account.address, governor: owners.governor, partnerA: owners.partnerA, partnerB: owners.partnerB },
   };
   writeManifest(manifest, manifestFile);
   return manifest;
@@ -82,12 +82,17 @@ export async function broadcastSepolia(env: NodeJS.ProcessEnv, manifestFile: str
 function ownersFrom(env: NodeJS.ProcessEnv, deployer: Address): ProtocolOwners {
   const partnerA = addressOr(env.PARTNER_A_ADDRESS, deployer);
   const partnerB = addressOr(env.PARTNER_B_ADDRESS, deployer);
-  return { owner: deployer, partnerA, partnerB };
+  const fallback = partnerA.toLowerCase() === deployer.toLowerCase() ? partnerB : partnerA;
+  const governor = addressOr(env.GOVERNOR_ADDRESS, fallback);
+  if (governor.toLowerCase() === deployer.toLowerCase()) {
+    throw new HarnessError("Set GOVERNOR_ADDRESS to an account other than the deployer", "VALIDATION");
+  }
+  return { owner: deployer, governor, partnerA, partnerB };
 }
 
 function addressOr(value: string | undefined, fallback: Address): Address {
   if (!value) return fallback;
-  if (!/^0x[0-9a-fA-F]{40}$/.test(value)) throw new HarnessError("Partner address must be 20 bytes", "VALIDATION");
+  if (!/^0x[0-9a-fA-F]{40}$/.test(value)) throw new HarnessError("Address must be 20 bytes", "VALIDATION");
   return value as Address;
 }
 

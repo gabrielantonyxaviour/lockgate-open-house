@@ -13,6 +13,10 @@ Local Anvil test console for the Lockgate contracts in `contracts/`. It deploys 
 - 2026-10-02: Facility reads `CreditLineBook`. The stage-1 line exposes `eligibleOutstanding` and `lateOutstanding`.
 - 2026-10-02: Sepolia broadcaster is gated. It was executed only against local Anvil chain id 421614. Public Sepolia was not deployed. Chain 42161 is refused.
 - 2026-10-02: Flow test covers register, reserve, quote, draw, repay, late/slash, mandate, routed advance, and facility draw/waterfall.
+- 2026-10-02: `stage2.approve` files the proposal from the engine. The partner `approve` pays. Lockgate `approve` reverts `NotApproved` and does not move idle.
+- 2026-10-02: The facility governor is Anvil account 7. The borrower stays account 0. Lender approval is sent as the governor.
+- 2026-10-02: Failure tests cover a bad engine signature, nonce replay, faucet cap, a closed window, a stranger draw, and a peg or stale oracle. `PegOracle` is only deployed in that test.
+- 2026-10-02: Invariant checks keep eligible + late = exposure, vault tokens = idle + reserve, and facility `solvent()` with tokens matching `accounting.cash`. Fuzz checks the fee ceiling for 256 draws.
 
 ## Run
 
@@ -28,4 +32,6 @@ Anvil for this harness uses port 8546 or an ephemeral port. Port 8545 is refused
 
 `npm run deploy:sepolia` does nothing unless `LOCKGATE_ALLOW_SEPOLIA_DEPLOY=1` and `DEPLOYER_PRIVATE_KEY` are set and the RPC reports chain 421614. Do not export the published Anvil keys into that command on a public RPC.
 
-Fixture sources under `harness/fixture/src` other than `Create2Factory.sol` and `ImportProxy.sol` are unused leftovers, including `HarnessBook.sol`. They are not deployed.
+`npm test` builds `contracts/` with `forge build --skip test --skip LockgateExitPool` so an untracked sibling file that fails to compile does not stop the harness. That skip is not in CI. CI runs `forge test` with no skip.
+
+Fixture sources under `harness/fixture/src` other than `Create2Factory.sol`, `ImportProxy.sol`, and `PegOracle.sol` are unused leftovers, including `HarnessBook.sol`. `PegOracle` is deployed only by the failure test. The others are not deployed.

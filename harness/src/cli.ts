@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { findAction } from "./actions/catalog.js";
 import { loadCtx } from "./chain.js";
 import { HarnessError } from "./errors.js";
+import { parseFlags } from "./input.js";
 import { manifestPath, readManifest } from "./manifest.js";
 
 function flags(argv: string[]): Record<string, string> {
@@ -15,7 +16,7 @@ function flags(argv: string[]): Record<string, string> {
     out[key] = value;
     i += 1;
   }
-  return out;
+  return parseFlags(out);
 }
 
 async function main(): Promise<void> {

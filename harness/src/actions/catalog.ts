@@ -8,8 +8,8 @@ import {
   registerPlatform, repay, requestRedeem, setGated,
 } from "./stage1.js";
 import {
-  approvePlatform, assertLockgateHasNoControl, depositVault, enlist, payInvestor, postVaultReserve, preview,
-  proposeUpgrade, repayRoute, routedAdvance, setMandate, setPolicy,
+  approvePlatform, approveProposal, assertLockgateHasNoControl, depositVault, enlist, payInvestor, postVaultReserve,
+  preview, proposeUpgrade, repayRoute, routedAdvance, setMandate, setPolicy,
 } from "./stage2.js";
 import { depositJunior, depositSenior, drawFacility, recognizeLoss, repayFacility, waterfall } from "./stage3.js";
 
@@ -53,6 +53,7 @@ export const ACTIONS: Action[] = [
   { id: "stage2.setPolicy", summary: "Strategy is chosen per quote: 0 best fee, 1 pro-rata, 2 round-robin", fields: [{ name: "policy", label: "strategy", default: "0" }], run: setPolicy },
   { id: "stage2.preview", summary: "Ask the router which vault would fund an exit", fields: [{ name: "navUsdg", label: "NAV USDG", default: "1000" }, { name: "strategy", label: "strategy", default: "0" }], run: preview },
   { id: "stage2.routedAdvance", summary: "Engine proposes, partner signs, a third party executes", fields: [{ name: "navUsdg", label: "NAV USDG", default: "1000" }, { name: "strategy", label: "strategy", default: "0" }, { name: "nonce", label: "nonce", default: "1" }], run: routedAdvance },
+  { id: "stage2.approve", summary: "Engine files the proposal. The partner approve pays. Lockgate cannot approve.", fields: [{ name: "navUsdg", label: "NAV USDG", default: "400" }, { name: "strategy", label: "strategy", default: "0" }, { name: "nonce", label: "nonce", default: "4" }], run: approveProposal },
   { id: "stage2.repay", summary: "Repay a routed advance back to the funding vault", fields: [{ name: "exitRef", label: "exit ref" }], run: repayRoute },
   { id: "stage2.payInvestor", summary: "Platform forwards advance cash to the investor", fields: [{ name: "amountUsdg", label: "USDG", default: "990" }], run: payInvestor },
   { id: "stage2.proposeUpgrade", summary: "Partner schedules a timelocked implementation", fields: [{ name: "vault", label: "vault", default: "PartnerVaultA" }], run: proposeUpgrade },

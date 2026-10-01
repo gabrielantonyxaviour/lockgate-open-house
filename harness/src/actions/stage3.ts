@@ -12,8 +12,8 @@ export type Books = {
 };
 
 export async function approveLenders(ctx: Ctx): Promise<unknown> {
-  await send(ctx, "lockgate", "CreditFacility", "approveLender", [ROLES.senior.address, true]);
-  await send(ctx, "lockgate", "CreditFacility", "approveLender", [ROLES.junior.address, true]);
+  await send(ctx, "governor", "CreditFacility", "approveLender", [ROLES.senior.address, true]);
+  await send(ctx, "governor", "CreditFacility", "approveLender", [ROLES.junior.address, true]);
   return { senior: true, junior: true };
 }
 
@@ -80,7 +80,7 @@ export async function borrowingBase(ctx: Ctx): Promise<bigint> {
 
 async function depositTranche(ctx: Ctx, role: "senior" | "junior", tranche: number, amountText: string): Promise<unknown> {
   const amount = parseUsdg(amountText);
-  await send(ctx, "lockgate", "CreditFacility", "approveLender", [ROLES[role].address, true]);
+  await send(ctx, "governor", "CreditFacility", "approveLender", [ROLES[role].address, true]);
   await approve(ctx, role, "CreditFacility", amount);
   const hash = await send(ctx, role, "CreditFacility", "deposit", [tranche, amount]);
   return { hash, tranche, amount: amount.toString() };

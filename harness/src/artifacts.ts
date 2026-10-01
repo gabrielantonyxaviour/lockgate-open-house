@@ -22,7 +22,7 @@ const CONTRACT_FILE: Record<string, string> = {
   ERC1967Proxy: "ERC1967Proxy",
 };
 
-const FIXTURE_FILES = new Set(["HarnessBook", "Create2Factory", "ERC1967Proxy", "ImportProxy"]);
+const FIXTURE_FILES = new Set(["HarnessBook", "Create2Factory", "ERC1967Proxy", "ImportProxy", "PegOracle"]);
 
 export type Artifact = { abi: Abi; bytecode: Hex };
 

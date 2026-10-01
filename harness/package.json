@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build:fixture": "forge build --root fixture",
-    "pretest": "forge build --skip test --root ../contracts && forge build --root fixture",
+    "pretest": "forge build --skip test --skip LockgateExitPool --root ../contracts && forge build --root fixture",
     "test": "node --import tsx --test --test-concurrency=1 test/*.test.ts",
     "typecheck": "tsc --noEmit",
     "deploy:local": "tsx ../scripts/deploy-local.ts",

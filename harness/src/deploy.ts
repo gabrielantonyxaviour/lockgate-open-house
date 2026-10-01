@@ -22,7 +22,7 @@ const DAY = 86_400n;
 
 export type Planned = { logical: string; from: RoleName; salt: Hex; init: Hex; address: Address };
 
-export type ProtocolOwners = { owner: Address; partnerA: Address; partnerB: Address };
+export type ProtocolOwners = { owner: Address; governor: Address; partnerA: Address; partnerB: Address };
 
 const SEED: Record<RoleName, bigint> = {
   lockgate: usdg(200_000n),
@@ -109,7 +109,7 @@ export function protocolPlan(factory: Address, owners: ProtocolOwners = anvilOwn
   const router = predict(factory, "Router", []);
   const impl = predict(factory, "PartnerVaultImpl", []);
   const creditBook = predict(factory, "CreditLineBook", [line.address]);
-  const facility = predict(factory, "CreditFacility", [facilityInit(owners.owner, usdg.address, creditBook.address)]);
+  const facility = predict(factory, "CreditFacility", [facilityInit(owners.governor, owners.owner, usdg.address, creditBook.address)]);
   const vaultA = predictProxy(factory, "PartnerVaultA", impl.address, owners.partnerA, usdg.address);
   const vaultB = predictProxy(factory, "PartnerVaultB", impl.address, owners.partnerB, usdg.address);
   const planned = [usdg, adapter, pricing, reserve, line, router, impl, creditBook, facility, vaultA, vaultB];
@@ -117,13 +117,18 @@ export function protocolPlan(factory: Address, owners: ProtocolOwners = anvilOwn
 }
 
 function anvilOwners(): ProtocolOwners {
-  return { owner: ROLES.lockgate.address, partnerA: ROLES.partnerA.address, partnerB: ROLES.partnerB.address };
+  return {
+    owner: ROLES.lockgate.address,
+    governor: ROLES.governor.address,
+    partnerA: ROLES.partnerA.address,
+    partnerB: ROLES.partnerB.address,
+  };
 }
 
-function facilityInit(owner: Address, asset: Address, book: Address) {
+function facilityInit(governor: Address, borrower: Address, asset: Address, book: Address) {
   return {
-    governor: owner,
-    borrower: owner,
+    governor,
+    borrower,
     asset,
     book,
     oracle: zeroAddress,

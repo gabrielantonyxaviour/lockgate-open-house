@@ -23,9 +23,9 @@ flowchart TD
 
 Stage 1 cash sits in `LockgateCreditLine` and `PlatformReserve`. The investor's early exit calls `exitNow` on the platform. The platform is the only caller of `draw`. Repayment pulls USDG from the platform contract, so the harness deposits cash and then calls `processWindow`. A short cash balance does not repay and does not roll the window. `contracts/src/core/PlatformBase.sol`.
 
-Stage 2 is one vault per partner, behind an ERC-1967 proxy the partner transaction deploys. OpenZeppelin UUPS: https://docs.openzeppelin.com/contracts/5.x/api/proxy#UUPSUpgradeable. Lockgate may be the proposer. `execute` still requires the partner. The router stores no custody except the tokens it pulls and forwards inside `relayRepay`.
+Stage 2 is one vault per partner, behind an ERC-1967 proxy the partner transaction deploys. OpenZeppelin UUPS: https://docs.openzeppelin.com/contracts/5.x/api/proxy#UUPSUpgradeable. Lockgate may be the proposer. `execute` still requires the partner signature. The other path is `submitProposal`, which stores the digest, then the partner's `approve`, which pays. Lockgate calling `approve` reverts `NotApproved` and leaves idle cash where it was. The router stores no custody except the tokens it pulls and forwards inside `relayRepay`.
 
-Stage 3 lends to Lockgate, the borrower. Senior interest is paid before senior principal, then junior. `recognizeLoss` takes no amount. Junior principal is written down first. `FacilityMath.subordinate` can also move junior cash onto senior drawn when recovery starts. Positions do not transfer.
+Stage 3 lends to Lockgate, the borrower. The facility constructor reverts when the governor and the borrower are the same address. On local Anvil the governor is the published development account 7 and the borrower is account 0. The governor calls `approveLender`. The borrower calls `draw`. Senior interest is paid before senior principal, then junior. `recognizeLoss` takes no amount. Junior principal is written down first. `FacilityMath.subordinate` can also move junior cash onto senior drawn when recovery starts. Positions do not transfer.
 
 ## What is deployed
 

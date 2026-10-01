@@ -8,8 +8,8 @@ import {
   registerPlatform, requestRedeem, requestView, setGated,
 } from "./stage1.js";
 import {
-  approvePlatform, assertLockgateHasNoControl, depositVault, enlist, payInvestor, postVaultReserve, preview,
-  proposeUpgrade, repayRoute, routedAdvance, setMandate, setPaused,
+  approvePlatform, approveProposal, assertLockgateHasNoControl, depositVault, enlist, payInvestor, postVaultReserve,
+  preview, proposeUpgrade, repayRoute, routedAdvance, setMandate, setPaused,
 } from "./stage2.js";
 import { approveLenders, books, borrowingBase, depositJunior, depositSenior, drawFacility, recognizeLoss, waterfall } from "./stage3.js";
 
@@ -109,6 +109,8 @@ export async function demoStage2(ctx: Ctx): Promise<unknown> {
   const first = await routedAdvance(ctx, { navUsdg: "500", strategy: "2", nonce: "2" }) as { vault: string };
   const second = await routedAdvance(ctx, { navUsdg: "500", strategy: "2", nonce: "3" }) as { vault: string };
   expect(first.vault !== second.vault, "round robin used the same vault twice", { first, second });
+  const approved = await approveProposal(ctx, { navUsdg: "400", strategy: "0", nonce: "4", rejectLockgate: "true" }) as { vault: string };
+  expect(approved.vault === "PartnerVaultA", "approve did not use the lower fee vault", approved.vault);
   const upgrade = await proposeUpgrade(ctx, { vault: "PartnerVaultA" }) as { eta: string };
   const now = await ctx.publicClient.getBlock();
   expect(BigInt(upgrade.eta) > now.timestamp, "upgrade eta is not in the future", upgrade);
