@@ -21,7 +21,7 @@ const NOTES: Record<keyof typeof SCENARIOS, string> = {
   "epoch-repay": "Constructed 30-day epoch. Face, cash, and reserve are round test amounts.",
   "gated-refuse": "Constructed quarterly book with gated set true.",
   "stale-refuse": "Constructed epoch whose NAV stamp is eight days before now.",
-  "busy-book": "Constructed epoch with utilization 6667 bps.",
+  "busy-book": "Constructed epoch with utilization 9000 bps (above the 6667 kink).",
   "reserve-short": "Constructed epoch whose reserve is one unit under 750 USDG.",
 };
 

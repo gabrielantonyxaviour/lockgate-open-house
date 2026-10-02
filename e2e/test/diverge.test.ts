@@ -20,7 +20,7 @@ function sheet(patch?: Partial<CompareSheet>): CompareSheet {
       idleAfterRepay: 80_101_000_000n,
       lockgate: 0n,
     },
-    rounding: { nav: 1_000_001n, bps: 99, sim: 9_901n, engineHalfUp: 9_900n, engineCeil: 9_901n, chain: 9_901n },
+    rounding: { nav: 1_000_001n, bps: 99, sim: 9_901n, engine: 9_900n, chain: 9_901n },
     fullUtil: { sim: 431, engine: 180, chain: 148 },
   };
   return { ...base, ...patch };
@@ -42,6 +42,21 @@ test("a funded engine fee that matches the vault is not an integration break", (
   same.engine = { ...same.engine, bps: 99 };
   same.chain = { ...same.chain, bps: 99 };
   assert.equal(classify(same).divergences.some((item) => item.id === "fee-bps-600s"), false);
+});
+
+test("three legs on the same integer curve report no divergence", () => {
+  const agreed = sheet({
+    sim: { bps: 100, fee: 100_000_000n, agedBps: 100, rawBps: 100 },
+    engine: { bps: 100, fee: 100_000_000n, payout: 9_900_000_000n, pricedSeconds: 2_592_000, apr: 1217, riskBps: 276 },
+    chain: { bps: 100, fee: 100_000_000n, reason: "" },
+    rounding: { nav: 1_000_001n, bps: 100, sim: 10_001n, engine: 10_001n, chain: 10_001n },
+    fullUtil: { sim: 149, engine: 149, chain: 149 },
+  });
+  agreed.funded = { ...agreed.funded, vaultFee: 100_000_000n, vaultPayout: 9_900_000_000n, idleAfterFund: 70_100_000_000n, idleAfterRepay: 80_100_000_000n };
+  const { breaks, divergences } = classify(agreed);
+  assert.deepEqual(breaks, []);
+  assert.deepEqual(divergences, []);
+  assert.match(render(agreed, breaks, divergences), /return the same bps and fee/);
 });
 
 test("a vault that stores a different fee is a break", () => {

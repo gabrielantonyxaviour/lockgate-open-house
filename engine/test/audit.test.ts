@@ -122,9 +122,9 @@ describe("audit log", () => {
   it("appends a quote and a signed proposal, and skips example and a thrown command", async () => {
     const path = logPath();
     const quote = await run(["quote", "--file", "fixtures/sepolia/quote.json", "--audit", path]) as { feeBps: number };
-    expect(quote.feeBps).toBe(109);
+    expect(quote.feeBps).toBe(101);
     expect(decisionAt(path, 0).dryRun).toBe(false);
-    expect(decisionAt(path, 0).result.feeBps).toBe(109);
+    expect(decisionAt(path, 0).result.feeBps).toBe(101);
 
     process.env.LOCKGATE_TEST_PROPOSER = PROPOSER;
     try {

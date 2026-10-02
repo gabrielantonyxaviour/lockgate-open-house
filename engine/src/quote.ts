@@ -77,8 +77,9 @@ export function quoteExit(rawInput: unknown, rawParams: unknown): Quote {
   const floored = rawFeeBps < params.minFeeBps && !wait.illiquid && !wait.windowOpen;
   const capped = rawFeeBps > params.maxFeeBps;
   const charged = Math.min(params.maxFeeBps, Math.max(params.minFeeBps, rawFeeBps));
-  const blocks = collectBlocks(input, params, wait, navAge, exposureAfter, reserveRequired, bookBps, charged);
-  const fee = blocks.length === 0 ? mulDivRoundHalfUp(input.navValue, BigInt(charged), 10_000n) : 0n;
+  const blocks = collectBlocks(input, params, wait, navAge, exposureAfter, reserveRequired, bookBps, rawFeeBps);
+  // Ceil, as PricingMath.feeFromBps charges on chain.
+  const fee = blocks.length === 0 ? mulDivCeil(input.navValue, BigInt(charged), 10_000n) : 0n;
   const payout = blocks.length === 0 ? input.navValue - fee : 0n;
   if (blocks.length === 0 && payout + fee !== input.navValue) {
     throw new EngineError("invariant", "payout and fee do not sum to nav");
@@ -142,7 +143,7 @@ function collectBlocks(
   exposureAfter: bigint,
   reserveRequired: bigint,
   bookBps: number,
-  chargedBps: number,
+  rawFeeBps: number,
 ): Block[] {
   const blocks: Block[] = [];
   if (input.reserveBps < 500 || input.reserveBps > 1_000) {
@@ -168,7 +169,8 @@ function collectBlocks(
   if (input.reserveBalance < reserveRequired) {
     blocks.push(block("reserve", "posted reserve does not cover exposure after this advance"));
   }
-  if (blocks.length === 0 && chargedBps > params.maxFeeBps) {
+  // PricingMath refuses a raw fee above the max (code 15); it does not clamp it into a price.
+  if (blocks.length === 0 && rawFeeBps > params.maxFeeBps) {
     blocks.push(block("max-fee", "fee would exceed the maximum"));
   }
   return blocks;
@@ -188,7 +190,7 @@ export function applyMandateFloor(quote: Quote, mandateMinFeeBps: number, maxFee
     };
   }
   if (quote.feeBps >= mandateMinFeeBps) return quote;
-  const fee = mulDivRoundHalfUp(quote.navValue, BigInt(mandateMinFeeBps), 10_000n);
+  const fee = mulDivCeil(quote.navValue, BigInt(mandateMinFeeBps), 10_000n);
   return {
     ...quote,
     feeBps: mandateMinFeeBps,

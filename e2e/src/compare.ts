@@ -1,5 +1,5 @@
 import { encodeFunctionData, type Address } from "viem";
-import { mulDivCeil, mulDivRoundHalfUp } from "../../engine/src/money.ts";
+import { mulDivCeil } from "../../engine/src/money.ts";
 import { quoteExit } from "../../engine/src/quote.ts";
 import { feeFromBps, quoteFee } from "../../sim/src/pricing.ts";
 import { DEMO_TIME_SCALE } from "../../sim/src/params.ts";
@@ -32,13 +32,6 @@ export async function runCompare(): Promise<CompareSheet> {
   process.env.LOCKGATE_PROPOSER_KEY = proposerKey;
 
   const pricing = await deploy("PricingEngine", [deployer.address]);
-  const chain = await chainQuote(pricing, 0);
-  const chainFull = await chainQuote(pricing, 10_000);
-  const sim = simQuote(0, 0);
-  const simAged = simQuote(3_600, 0);
-  const simFull = simQuote(0, 10_000);
-  if (!sim.available || !simAged.available || !simFull.available) fail("sim", "sim refused the 600s window");
-
   const token = await deploy("MockUSDG", [deployer.address]);
   const vault = await vaultFor(token);
   const opened = await publicClient.getBlock();
@@ -49,6 +42,15 @@ export async function runCompare(): Promise<CompareSheet> {
   const fullBody = stageQuoteBody(now, NAV);
   fullBody.input.utilizationBps = 10_000;
   const quotedFull = quoteExit(fullBody.input, fullBody.params);
+  // Every leg prices the same inputs: the engine's NAV age and risk score are what the chain and sim receive.
+  const navAge = now - fullBody.input.navUpdatedAt;
+  const risk = quoted.risk.bps;
+  const chain = await chainQuote(pricing, 0, navAge, risk);
+  const chainFull = await chainQuote(pricing, 10_000, navAge, quotedFull.risk.bps);
+  const sim = simQuote(navAge, 0, risk);
+  const simAged = simQuote(navAge, 0, risk);
+  const simFull = simQuote(navAge, 10_000, quotedFull.risk.bps);
+  if (!sim.available || !simAged.available || !simFull.available) fail("sim", "sim refused the 600s window");
   const idleBefore = await read<bigint>("PartnerVault", vault, "idle");
   const proposal = await enginePropose({
     now,
@@ -108,8 +110,7 @@ export async function runCompare(): Promise<CompareSheet> {
       nav: ROUND_NAV,
       bps,
       sim: BigInt(feeFromBps(Number(ROUND_NAV), bps)),
-      engineHalfUp: mulDivRoundHalfUp(ROUND_NAV, BigInt(bps), 10_000n),
-      engineCeil: mulDivCeil(ROUND_NAV, BigInt(bps), 10_000n),
+      engine: mulDivCeil(ROUND_NAV, BigInt(bps), 10_000n),
       chain: await read<bigint>("PricingEngine", pricing, "feeFromBps", [ROUND_NAV, bps]),
     },
     fullUtil: { sim: simFull.bps, engine: quotedFull.feeBps, chain: chainFull.bps },
@@ -120,8 +121,10 @@ export function compared(sheet: CompareSheet) {
   return classify(sheet);
 }
 
-async function chainQuote(pricing: Address, utilization: number) {
-  const row = await read<unknown>("PricingEngine", pricing, "feeBps", [BigInt(SECONDS), 0n, false, 0, utilization]);
+async function chainQuote(pricing: Address, utilization: number, navAge: number, risk: number) {
+  const row = await read<unknown>("PricingEngine", pricing, "feeBpsWithRisk", [
+    BigInt(SECONDS), BigInt(navAge), false, 0, utilization, risk,
+  ]);
   const bps = Number(cell(row, "bps", 0));
   const available = Boolean(cell(row, "available", 1));
   if (!available) fail("quote", `chain refused ${utilization} util: ${String(cell(row, "reason", 2))}`);
@@ -132,14 +135,14 @@ async function chainQuote(pricing: Address, utilization: number) {
   };
 }
 
-function simQuote(navAgeSeconds: number, utilizationBps: number) {
+function simQuote(navAgeSeconds: number, utilizationBps: number, riskBps: number) {
   return quoteFee({
     secondsToWindow: SECONDS,
     navAgeSeconds,
     gated: false,
     exposureBps: 0,
     utilizationBps,
-    riskBps: 10_000,
+    riskBps,
     timeScale: DEMO_TIME_SCALE,
   });
 }

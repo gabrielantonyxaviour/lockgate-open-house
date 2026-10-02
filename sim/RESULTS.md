@@ -2,7 +2,7 @@
 
 Reference book, 360 days, 36 platforms, 10 seeds, stages 1–3, five shocks. Every completed path kept the accounting identity, repaid advances before waiting investors, charged 25–1500 bps, and moved 0 partner-vault tokens to Lockgate. The runner throws on a breach, so a finished table is the check.
 
-Illustrated seed 20261001, stage 1 baseline: 3,500 advances out of 5,140 exit requests, peak utilization 50.99%, annualized exit-fee yield 22.13% on average equity, credit losses $0.00. The same seed's bank-run peaks at 85.53% utilization. Stage 2 baseline invoices $72,000.00 as a flat technology fee and does not sweep it from the vaults. Stage 3 bank-run senior loss on that seed is $0.00; senior was impaired on 0 of 150 paths, and only after junior was exhausted.
+Illustrated seed 20261001, stage 1 baseline: 3,500 advances out of 5,140 exit requests, peak utilization 56.94%, annualized exit-fee yield 4.15% on average equity, credit losses $0.00. The same seed's bank-run peaks at 91.70% utilization. Stage 2 baseline invoices $72,000.00 as a flat technology fee and does not sweep it from the vaults. Stage 3 bank-run senior loss on that seed is $0.00; senior was impaired on 0 of 150 paths, and only after junior was exhausted.
 
 Stage 3 fee yield is gross exit fees divided by average equity value. That equity is 500,000 USDG, levered by the senior and junior facility. The percentage is not a net return. Facility interest is reported beside it and is not subtracted.
 
@@ -22,63 +22,63 @@ Advances funded:
 
 | | baseline | gating | default | depeg | bank-run |
 |---|---:|---:|---:|---:|---:|
-| stage1 | 3,503 | 3,397 | 2,953 | 3,496 | 3,916 |
-| stage2 | 3,490 | 3,389 | 2,945 | 3,490 | 3,880 |
-| stage3 | 3,503 | 3,397 | 2,924 | 3,496 | 2,508 |
+| stage1 | 3,503 | 3,397 | 2,953 | 3,496 | 3,917 |
+| stage2 | 3,491 | 3,389 | 2,946 | 3,491 | 3,834 |
+| stage3 | 3,500 | 3,397 | 2,921 | 3,494 | 3,356 |
 
 Peak utilization:
 
 | | baseline | gating | default | depeg | bank-run |
 |---|---:|---:|---:|---:|---:|
-| stage1 | 48.97% | 46.74% | 50.19% | 48.77% | 88.78% |
-| stage2 | 64.19% | 60.28% | 66.22% | 64.38% | 97.19% |
-| stage3 | 85.61% | 80.05% | 83.48% | 85.61% | 99.99% |
+| stage1 | 55.54% | 52.92% | 55.66% | 55.53% | 96.64% |
+| stage2 | 74.05% | 71.49% | 76.64% | 73.57% | 99.70% |
+| stage3 | 99.85% | 99.19% | 98.56% | 99.83% | 99.99% |
 
 Annualized exit-fee yield on average equity value. Stage 2 is the partners' yield. Lockgate's stage-2 income is the flat invoice, not this column:
 
 | | baseline | gating | default | depeg | bank-run |
 |---|---:|---:|---:|---:|---:|
-| stage1 | 21.64% | 19.24% | 19.45% | 21.61% | 25.25% |
-| stage2 | 32.13% | 29.97% | 29.85% | 32.22% | 36.75% |
-| stage3 | 125.81% | 125.63% | 116.99% | 125.71% | 95.97% |
+| stage1 | 4.18% | 3.99% | 3.87% | 4.19% | 4.92% |
+| stage2 | 9.38% | 8.94% | 9.15% | 9.38% | 10.55% |
+| stage3 | 34.38% | 32.33% | 30.36% | 34.33% | 32.81% |
 
 Credit loss (reserve absorbed + junior + equity credit loss + senior), median:
 
 | | baseline | gating | default | depeg | bank-run |
 |---|---:|---:|---:|---:|---:|
-| stage1 | $0.00 | $0.00 | $198,974.55 | $48,940.15 | $374,441.02 |
-| stage2 | $0.00 | $0.00 | $198,462.29 | $0.00 | $207,314.62 |
-| stage3 | $0.00 | $0.00 | $195,182.46 | $48,273.02 | $390,307.69 |
+| stage1 | $0.00 | $0.00 | $200,644.38 | $49,925.70 | $389,678.75 |
+| stage2 | $0.00 | $0.00 | $200,267.48 | $0.00 | $206,339.58 |
+| stage3 | $0.00 | $0.00 | $200,643.21 | $49,870.52 | $317,374.09 |
 
 Stage 3 also pays facility interest out of equity. Median interest and median senior loss:
 
 | | median interest | median senior loss | paths with senior loss |
 |---|---:|---:|---:|
-| baseline | $134,400.22 | $0.00 | 0/10 |
-| gating | $118,923.81 | $0.00 | 0/10 |
-| default | $114,945.82 | $0.00 | 0/10 |
-| depeg | $134,332.50 | $0.00 | 0/10 |
-| bank-run | $139,380.13 | $0.00 | 0/10 |
+| baseline | $138,085.98 | $0.00 | 0/10 |
+| gating | $122,483.88 | $0.00 | 0/10 |
+| default | $117,603.09 | $0.00 | 0/10 |
+| depeg | $138,105.70 | $0.00 | 0/10 |
+| bank-run | $146,255.93 | $0.00 | 0/10 |
 
 ## Illustrated seed
 
 | stage | shock | advanced | peak util | fee yield | reserve | junior | equity loss | senior | tech fee |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
-| stage1 | baseline | 3500 | 50.99% | 22.13% | $0.00 | $0.00 | $0.00 | $0.00 | $0.00 |
-| stage1 | gating | 3390 | 49.16% | 19.73% | $0.00 | $0.00 | $0.00 | $0.00 | $0.00 |
-| stage1 | default | 2958 | 50.23% | 19.52% | $37,505.57 | $0.00 | $129,997.33 | $0.00 | $0.00 |
-| stage1 | depeg | 3495 | 51.64% | 22.08% | $37,443.91 | $0.00 | $71,541.35 | $0.00 | $0.00 |
-| stage1 | bank-run | 3791 | 85.53% | 23.96% | $67,500.00 | $0.00 | $263,080.48 | $0.00 | $0.00 |
-| stage2 | baseline | 3488 | 65.17% | 32.59% | $0.00 | $0.00 | $0.00 | $0.00 | $72,000.00 |
-| stage2 | gating | 3371 | 66.21% | 30.30% | $0.00 | $0.00 | $0.00 | $0.00 | $72,000.00 |
-| stage2 | default | 2947 | 65.84% | 29.83% | $10,895.67 | $0.00 | $156,152.06 | $0.00 | $72,000.00 |
-| stage2 | depeg | 3489 | 66.05% | 32.67% | $0.00 | $0.00 | $0.00 | $0.00 | $72,000.00 |
-| stage2 | bank-run | 3763 | 95.94% | 35.32% | $50,814.27 | $0.00 | $154,943.29 | $0.00 | $72,000.00 |
-| stage3 | baseline | 3500 | 91.02% | 126.64% | $0.00 | $0.00 | $0.00 | $0.00 | $0.00 |
-| stage3 | gating | 3390 | 86.80% | 126.97% | $0.00 | $0.00 | $0.00 | $0.00 | $0.00 |
-| stage3 | default | 2958 | 87.49% | 119.75% | $37,505.57 | $126,478.56 | $0.00 | $0.00 | $0.00 |
-| stage3 | depeg | 3495 | 91.02% | 125.88% | $37,260.83 | $70,208.21 | $0.00 | $0.00 | $0.00 |
-| stage3 | bank-run | 2447 | 100.00% | 94.51% | $67,500.00 | $270,005.30 | $0.00 | $0.00 | $0.00 |
+| stage1 | baseline | 3500 | 56.94% | 4.15% | $0.00 | $0.00 | $0.00 | $0.00 | $0.00 |
+| stage1 | gating | 3390 | 53.49% | 3.91% | $0.00 | $0.00 | $0.00 | $0.00 | $0.00 |
+| stage1 | default | 2958 | 55.39% | 3.80% | $37,532.72 | $0.00 | $131,259.85 | $0.00 | $0.00 |
+| stage1 | depeg | 3495 | 57.68% | 4.16% | $37,688.00 | $0.00 | $73,502.18 | $0.00 | $0.00 |
+| stage1 | bank-run | 3791 | 91.70% | 4.77% | $67,500.00 | $0.00 | $274,521.56 | $0.00 | $0.00 |
+| stage2 | baseline | 3490 | 76.21% | 9.42% | $0.00 | $0.00 | $0.00 | $0.00 | $72,000.00 |
+| stage2 | gating | 3372 | 75.11% | 8.94% | $0.00 | $0.00 | $0.00 | $0.00 | $72,000.00 |
+| stage2 | default | 2948 | 75.80% | 9.01% | $10,895.67 | $0.00 | $157,610.15 | $0.00 | $72,000.00 |
+| stage2 | depeg | 3491 | 77.28% | 9.42% | $0.00 | $0.00 | $0.00 | $0.00 | $72,000.00 |
+| stage2 | bank-run | 3744 | 99.00% | 10.45% | $51,720.90 | $0.00 | $148,985.16 | $0.00 | $72,000.00 |
+| stage3 | baseline | 3497 | 99.53% | 34.33% | $0.00 | $0.00 | $0.00 | $0.00 | $0.00 |
+| stage3 | gating | 3387 | 99.40% | 31.97% | $0.00 | $0.00 | $0.00 | $0.00 | $0.00 |
+| stage3 | default | 2957 | 99.87% | 30.71% | $37,532.72 | $131,258.47 | $0.00 | $0.00 | $0.00 |
+| stage3 | depeg | 3491 | 99.99% | 34.30% | $37,670.73 | $73,460.93 | $0.00 | $0.00 | $0.00 |
+| stage3 | bank-run | 3732 | 99.99% | 35.82% | $67,500.00 | $185,419.56 | $0.00 | $0.00 | $0.00 |
 
 Stage 1 baseline rejections on the illustrated seed:
 

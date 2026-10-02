@@ -29,7 +29,7 @@ test("a gated quote is unavailable and the engine will not sign it", async () =>
   assert.equal(quote.blocks[0]?.reason, "platform withdrawals are gated");
   const open = quoteSchema.parse(await run(["quote", "--file", write("open", { gated: false })]));
   assert.equal(open.available, true);
-  assert.equal(open.feeBps, 101);
+  assert.equal(open.feeBps, 100);
   assert.deepEqual(open.blocks, []);
   const signed = proposalSchema.parse(
     await run(["propose", "--file", write("gated-propose", { gated: true }, true), "--sign-env", "LOCKGATE_PROPOSER_KEY"]),
@@ -48,7 +48,7 @@ test("a stale nav is refused and a future nav is a param error", async () => {
   assert.deepEqual(stale.blocks.map((block) => block.code), ["stale-nav"]);
   const fresh = quoteSchema.parse(await run(["quote", "--file", write("fresh", { navUpdatedAt: now - 3_600 })]));
   assert.equal(fresh.available, true);
-  assert.equal(fresh.feeBps, 101);
+  assert.equal(fresh.feeBps, 100);
 
   await assert.rejects(run(["quote", "--file", write("future", { navUpdatedAt: now + 60 })]), (err: unknown) => {
     assert.ok(err instanceof EngineError);

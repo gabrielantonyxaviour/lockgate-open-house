@@ -15,12 +15,12 @@ describe("pricing", () => {
     expect(raw).toBe(99);
   });
 
-  it("pins the utilization curve to the 12 / 16.5 / 18 bands", () => {
+  it("pins the utilization curve to the on-chain 12 / 12 / 18 bands", () => {
     expect(utilizationAprBps(0, DEFAULT_PARAMS)).toBe(1200);
-    expect(utilizationAprBps(6667, DEFAULT_PARAMS)).toBe(1650);
+    expect(utilizationAprBps(6667, DEFAULT_PARAMS)).toBe(1200);
     expect(utilizationAprBps(10_000, DEFAULT_PARAMS)).toBe(1800);
-    expect(utilizationAprBps(3000, DEFAULT_PARAMS)).toBe(1402);
-    expect(utilizationAprBps(9000, DEFAULT_PARAMS)).toBe(1755);
+    expect(utilizationAprBps(3000, DEFAULT_PARAMS)).toBe(1200);
+    expect(utilizationAprBps(9000, DEFAULT_PARAMS)).toBe(1620);
   });
 
   it("prices a 30-day epoch from the APR the quote itself reports", () => {
@@ -32,7 +32,7 @@ describe("pricing", () => {
     expect(quote.riskFeeBps).toBe(raw);
     expect(quote.feeBps).toBe(Math.min(1500, Math.max(25, raw)));
     expect(quote.payout + quote.fee).toBe(quote.navValue);
-    expect(quote.fee).toBe(mulDivRoundHalfUp(quote.navValue, BigInt(quote.feeBps), 10_000n));
+    expect(quote.fee).toBe(mulDivCeil(quote.navValue, BigInt(quote.feeBps), 10_000n));
   });
 
   it("treats a 10-minute demo window at time scale 4320 as a 30-day wait", () => {
@@ -44,13 +44,15 @@ describe("pricing", () => {
     expect(scaled.feeBps).toBe(real.feeBps);
   });
 
-  it("charges more when the book is two-thirds busy", () => {
+  it("charges more once the book is past the two-thirds kink", () => {
     const idle = quoteExit(monthEpoch(), DEFAULT_PARAMS);
-    const busy = quoteExit({ ...monthEpoch(), utilizationBps: 6667 }, DEFAULT_PARAMS);
+    const kink = quoteExit({ ...monthEpoch(), utilizationBps: 6667 }, DEFAULT_PARAMS);
+    const busy = quoteExit({ ...monthEpoch(), utilizationBps: 9000 }, DEFAULT_PARAMS);
     const full = quoteExit({ ...monthEpoch(), utilizationBps: 10_000 }, DEFAULT_PARAMS);
+    expect(kink.feeBps).toBe(idle.feeBps);
     expect(busy.feeBps).toBeGreaterThan(idle.feeBps);
     expect(full.feeBps).toBeGreaterThanOrEqual(busy.feeBps);
-    expect(busy.apr.utilization).toBe(1650);
+    expect(busy.apr.utilization).toBe(1620);
   });
 
   it("floors a covered one-day wait at 25 bps", () => {
@@ -85,7 +87,7 @@ describe("pricing", () => {
       limit: 80_000n * U,
       reserveBalance: 3_000n * U,
       bookAssets: 100_000n * U,
-    }, DEFAULT_PARAMS);
+    }, { ...DEFAULT_PARAMS, concentrationCapBps: 2500 });
     expect(crowded.blocks.map((item) => item.code)).toContain("concentration");
     const now = 1_700_000_000;
     const open = quoteExit({

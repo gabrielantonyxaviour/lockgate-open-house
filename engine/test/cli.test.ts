@@ -26,9 +26,9 @@ describe("cli", () => {
       payout: bigint;
     };
     expect(quote.available).toBe(true);
-    expect(quote.feeBps).toBe(109);
-    expect(quote.fee).toBe(109_000_000n);
-    expect(quote.payout).toBe(9_891_000_000n);
+    expect(quote.feeBps).toBe(101);
+    expect(quote.fee).toBe(101_000_000n);
+    expect(quote.payout).toBe(9_899_000_000n);
     const report = await run(["backtest", "--scenario", "gated-refuse"]) as { refused: number };
     expect(report.refused).toBe(1);
   });

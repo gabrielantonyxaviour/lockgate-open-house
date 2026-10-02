@@ -18,12 +18,25 @@ export const MIN_FEE_BPS = 25;
 export const MAX_FEE_BPS = 1500;
 export const DEMO_TIME_SCALE = 4320;
 
-/** Assumption: utilization add-on at 100% utilized. SPEC names the premium, not the slope. */
-export const UTIL_PREMIUM_AT_FULL_BPS = 500;
-/** Assumption: concentration add-on when one platform is the whole book. */
-export const CONC_PREMIUM_AT_FULL_BPS = 300;
-/** Assumption: NAV-age add-on at the staleness limit. */
-export const AGE_PREMIUM_AT_MAX_BPS = 100;
+/**
+ * The `PricingEngine` constructor curve (contracts/src/core/PricingEngine.sol), the source of truth for every fee.
+ * `quoteFee` reproduces PricingMath on these numbers exactly; change them only together with the contract.
+ */
+export const PRICING = {
+  baseAprBps: 1200,
+  kinkUtilBps: 6667,
+  aprAtKinkBps: 1200,
+  aprAtFullBps: 1800,
+  minFeeBps: 25,
+  maxFeeBps: 1500,
+  maxRiskPremiumAprBps: 600,
+  navWarnSeconds: 86_400,
+  navAgeMaxPremiumAprBps: 300,
+  concentrationCapBps: 10_000,
+  concentrationMaxPremiumAprBps: 0,
+  maxTenorSeconds: 366 * 86_400,
+  yearSeconds: 31_536_000,
+} as const;
 /** Assumption: draws stop after this NAV age. SPEC leaves maxNavAge owner-set. */
 export const MAX_NAV_AGE_SECONDS = 7 * 24 * 60 * 60;
 

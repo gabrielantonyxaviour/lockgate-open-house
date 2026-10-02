@@ -34,7 +34,7 @@ export function staleRefuse(): BacktestTick[] {
 }
 
 export function busyBook(): BacktestTick[] {
-  return [{ input: { ...monthEpoch(), utilizationBps: 6_667, platformId: "harbor-busy" }, outcome: "repay" }];
+  return [{ input: { ...monthEpoch(), utilizationBps: 9_000, platformId: "harbor-busy" }, outcome: "repay" }];
 }
 
 export function reserveShort(): BacktestTick[] {

@@ -17,23 +17,23 @@ flowchart LR
 | baseline | stage1 | 3500 | 0 | 0 | 0 | 0 | 405000000000 | no loss |
 | usdc-depeg | stage1 | 3226 | 293 | 0 | 0 | 0 | 405000000000 | no loss |
 | stale-price | stage1 | 3226 | 0 | 293 | 0 | 0 | 405000000000 | no loss |
-| default | stage1 | 2958 | 0 | 0 | 167502908000 | 37505576100 | 405000000000 | 2239 |
-| default-usdc-depeg | stage1 | 2729 | 293 | 0 | 167502908000 | 37505576100 | 405000000000 | 2239 |
-| default-stale-price | stage1 | 2729 | 0 | 293 | 167502908000 | 37505576100 | 405000000000 | 2239 |
-| baseline | stage2 | 3488 | 0 | 0 | 0 | 0 | 354869400000 | no loss |
-| usdc-depeg | stage2 | 3213 | 293 | 0 | 0 | 0 | 352092275000 | no loss |
-| stale-price | stage2 | 3213 | 0 | 293 | 0 | 0 | 350472175000 | no loss |
-| default | stage2 | 2947 | 0 | 0 | 167047743500 | 10895675000 | 328017325000 | 652 |
-| default-usdc-depeg | stage2 | 2717 | 293 | 0 | 167047743500 | 10895675000 | 322640950000 | 652 |
-| default-stale-price | stage2 | 2717 | 0 | 293 | 167047743500 | 10895675000 | 322501800000 | 652 |
-| baseline | stage3 | 3500 | 0 | 0 | 0 | 0 | 405000000000 | no loss |
-| usdc-depeg | stage3 | 3226 | 293 | 0 | 0 | 0 | 405000000000 | no loss |
-| stale-price | stage3 | 3226 | 0 | 293 | 0 | 0 | 405000000000 | no loss |
-| default | stage3 | 2958 | 0 | 0 | 163984141100 | 37505576100 | 405000000000 | 2287 |
-| default-usdc-depeg | stage3 | 2729 | 293 | 0 | 163984141100 | 37505576100 | 405000000000 | 2287 |
-| default-stale-price | stage3 | 2729 | 0 | 293 | 163984141100 | 37505576100 | 405000000000 | 2287 |
+| default | stage1 | 2958 | 0 | 0 | 168792576900 | 37532722500 | 405000000000 | 2223 |
+| default-usdc-depeg | stage1 | 2729 | 293 | 0 | 168792576900 | 37532722500 | 405000000000 | 2223 |
+| default-stale-price | stage1 | 2729 | 0 | 293 | 168792576900 | 37532722500 | 405000000000 | 2223 |
+| baseline | stage2 | 3490 | 0 | 0 | 0 | 0 | 330677075000 | no loss |
+| usdc-depeg | stage2 | 3215 | 293 | 0 | 0 | 0 | 327905450000 | no loss |
+| stale-price | stage2 | 3215 | 0 | 293 | 0 | 0 | 328060650000 | no loss |
+| default | stage2 | 2948 | 0 | 0 | 168505832000 | 10895675000 | 310785400000 | 646 |
+| default-usdc-depeg | stage2 | 2718 | 293 | 0 | 168505832000 | 10895675000 | 311022200000 | 646 |
+| default-stale-price | stage2 | 2718 | 0 | 293 | 168505832000 | 10895675000 | 311022200000 | 646 |
+| baseline | stage3 | 3497 | 0 | 0 | 0 | 0 | 405000000000 | no loss |
+| usdc-depeg | stage3 | 3220 | 293 | 0 | 0 | 0 | 405000000000 | no loss |
+| stale-price | stage3 | 3220 | 0 | 293 | 0 | 0 | 405000000000 | no loss |
+| default | stage3 | 2957 | 0 | 0 | 168791196300 | 37532722500 | 405000000000 | 2223 |
+| default-usdc-depeg | stage3 | 2727 | 293 | 0 | 168791196300 | 37532722500 | 405000000000 | 2223 |
+| default-stale-price | stage3 | 2727 | 0 | 293 | 168791196300 | 37532722500 | 405000000000 | 2223 |
 
-stage1 clean coverage is no loss (USDC no loss, stale no loss). Default coverage is 2239 and stays the same under both shocks. Posted reserve has 1 distinct value. stage2 clean coverage is no loss (USDC no loss, stale no loss). Default coverage is 652 and stays the same under both shocks. Posted reserve has 6 distinct values. stage3 clean coverage is no loss (USDC no loss, stale no loss). Default coverage is 2287 and stays the same under both shocks. Posted reserve has 1 distinct value. USDC depeg peg refusals are 293 and stale refusals are 0. Stale-price stale refusals are 293 and peg refusals are 0.
+stage1 clean coverage is no loss (USDC no loss, stale no loss). Default coverage is 2223 and stays the same under both shocks. Posted reserve has 1 distinct value. stage2 clean coverage is no loss (USDC no loss, stale no loss). Default coverage is 646 and stays the same under both shocks. Posted reserve has 5 distinct values. stage3 clean coverage is no loss (USDC no loss, stale no loss). Default coverage is 2223 and stays the same under both shocks. Posted reserve has 1 distinct value. USDC depeg peg refusals are 293 and stale refusals are 0. Stale-price stale refusals are 293 and peg refusals are 0.
 
 A price equal to the floor is still good. One unit under it is peg. An age equal to 1 day is still fresh. One second later is stale-oracle, including when the price is also under the floor.
 

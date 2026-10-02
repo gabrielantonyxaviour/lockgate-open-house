@@ -132,7 +132,7 @@ describe("sample mandates and proposals", () => {
         expect(storedKey).toBe("0x00000000000000000000000000000000000000b1");
         expect(built.message.platform).toBe("0x00000000000000000000000000000000000000B1");
         expect(body.input.navValue).toBe(10_000_000_000n);
-        expect(built.message.feeBps).toBe(109);
+        expect(built.message.feeBps).toBe(101);
       }
       if (sample.name === "weekly.json") {
         expect(body.input.epochStart).toBe(1_699_827_200);
@@ -145,7 +145,7 @@ describe("sample mandates and proposals", () => {
       }
       if (sample.name === "quarterly.json") {
         expect(built.quote.secondsToClear).toBe(7_776_000);
-        expect(built.message.feeBps).toBe(328);
+        expect(built.message.feeBps).toBe(304);
       }
     }
     expect([...chains].sort((a, b) => a - b)).toEqual([31_337, 421_614, 11_155_111]);

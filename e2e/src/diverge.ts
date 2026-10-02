@@ -28,7 +28,7 @@ export type CompareSheet = {
     idleAfterRepay: bigint;
     lockgate: bigint;
   };
-  rounding: { nav: bigint; bps: number; sim: bigint; engineHalfUp: bigint; engineCeil: bigint; chain: bigint };
+  rounding: { nav: bigint; bps: number; sim: bigint; engine: bigint; chain: bigint };
   fullUtil: { sim: number; engine: number; chain: number };
 };
 
@@ -69,18 +69,18 @@ export function classify(sheet: CompareSheet): { breaks: Break[]; divergences: D
       sim: `${sheet.sim.bps} bps, fee ${money(sheet.sim.fee)}, raw ${sheet.sim.rawBps}, age-3600 ${sheet.sim.agedBps}`,
       engine: `${sheet.engine.bps} bps, fee ${money(sheet.engine.fee)}, pricedSeconds ${sheet.engine.pricedSeconds}, apr ${sheet.engine.apr}, risk ${sheet.engine.riskBps}`,
       chain: `${sheet.chain.bps} bps, fee ${money(sheet.chain.fee)}, refusal ${sheet.chain.reason || "none"}`,
-      repro: `${repro}. Sim riskBps is 10000 (a 1.0x multiplier on the APR) and nav age 0. Chain feeBps passes platform risk 0. Engine scores its own risk and uses navUpdatedAt = now - 3600.`,
+      repro: `${repro}. All three legs get the engine NAV age and risk score.`,
     });
   }
   const round = sheet.rounding;
-  if (round.sim !== round.chain || round.engineHalfUp !== round.engineCeil || round.chain !== round.engineHalfUp) {
+  if (round.sim !== round.chain || round.chain !== round.engine) {
     divergences.push({
       id: "fee-rounding",
       what: `fee amount at ${round.bps} bps on nav ${money(round.nav)}`,
       sim: money(round.sim),
-      engine: `half-up ${money(round.engineHalfUp)}, ceil ${money(round.engineCeil)}`,
+      engine: money(round.engine),
       chain: money(round.chain),
-      repro: `PricingEngine.feeFromBps and the sim both ceil. Engine mulDivRoundHalfUp is the signed fee. Nav ${money(round.nav)} is not a multiple of 10000.`,
+      repro: `PricingEngine.feeFromBps, the sim and the engine all ceil. Nav ${money(round.nav)} is not a multiple of 10000.`,
     });
   }
   if (sheet.fullUtil.sim !== sheet.fullUtil.engine || sheet.fullUtil.engine !== sheet.fullUtil.chain) {
@@ -90,7 +90,7 @@ export function classify(sheet: CompareSheet): { breaks: Break[]; divergences: D
       sim: String(sheet.fullUtil.sim),
       engine: String(sheet.fullUtil.engine),
       chain: String(sheet.fullUtil.chain),
-      repro: `${repro}, utilizationBps 10000. This row is a quote and was not funded. The sim adds the utilization premium after the time fraction. The chain and the engine add a utilization APR and then scale by time.`,
+      repro: `${repro}, utilizationBps 10000. This row is a quote and was not funded.`,
     });
   }
   const simIdle = funded.idleBefore + sheet.sim.fee;
@@ -116,6 +116,9 @@ export function render(sheet: CompareSheet, breaks: Break[], divergences: Diverg
     .join("\n");
   const breakRows = breaks.map((item) => `- ${item.id}: ${item.what} Repro: ${item.repro}`).join("\n");
   const agree = [
+    `600-second window: sim ${sheet.sim.bps} bps, engine ${sheet.engine.bps} bps, chain ${sheet.chain.bps} bps; fees ${sheet.sim.fee}, ${sheet.engine.fee}, ${sheet.chain.fee}.`,
+    `Full utilization: sim ${sheet.fullUtil.sim} bps, engine ${sheet.fullUtil.engine} bps, chain ${sheet.fullUtil.chain} bps.`,
+    `Fee on nav ${sheet.rounding.nav} at ${sheet.rounding.bps} bps: sim ${sheet.rounding.sim}, engine ${sheet.rounding.engine}, chain ${sheet.rounding.chain} (all ceil).`,
     `Vault fee ${sheet.funded.vaultFee} equals the signed engine fee ${sheet.engine.fee}.`,
     `Vault principal ${sheet.funded.vaultPayout} equals the signed payout ${sheet.engine.payout}.`,
     `Idle fell from ${sheet.funded.idleBefore} to ${sheet.funded.idleAfterFund}, then repay left it at ${sheet.funded.idleAfterRepay}.`,
@@ -123,7 +126,7 @@ export function render(sheet: CompareSheet, breaks: Break[], divergences: Diverg
   ].join("\n");
   return `# SUMMARY
 
-One engine proposal was executed on local Anvil, chain 31337, block ${sheet.block}. The vault funded the signed fee. The sim, the engine, and the on-chain curve do not return the same bps for a 600-second window. ${divergences.length} divergences. ${breaks.length} integration breaks. The chain was not reset and was not warped.
+One engine proposal was executed on local Anvil, chain 31337, block ${sheet.block}. The vault funded the signed fee. ${divergences.length === 0 ? "The sim, the engine, and the on-chain curve return the same bps and fee for the 600-second window, at idle and at full utilization." : "The sim, the engine, and the on-chain curve disagree; see below."} ${divergences.length} divergences. ${breaks.length} integration breaks. The chain was not reset and was not warped.
 
 # Agreements
 

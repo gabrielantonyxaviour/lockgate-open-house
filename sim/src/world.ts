@@ -80,7 +80,7 @@ export function buildWorld(stage: Stage, seed: number): World {
       reserveBudget: Math.floor((limit * reserveBps) / 10_000),
       navAgeDays: i % 3,
       refreshPhase: i % 3,
-      riskBps: [8_000, 10_000, 13_000][i % 3]!,
+      riskBps: [0, 2_500, 5_000][i % 3]!,
       gateInRun: rng.bool(0.25),
       dead: false,
       reqs: [],

@@ -56,7 +56,7 @@ describe("dry-run", () => {
     } finally {
       globalThis.fetch = original;
     }
-    expect(found.get("quote")?.actions[0]?.summary.feeBps).toBe(109);
+    expect(found.get("quote")?.actions[0]?.summary.feeBps).toBe(101);
     expect(found.get("propose")?.actions[0]?.data?.startsWith("0xe7c1fee8")).toBe(true);
     expect(found.get("propose")?.actions[0]?.summary.signature).toBeNull();
     expect(found.get("sweep")?.actions[0]?.kind).toBe("repay");

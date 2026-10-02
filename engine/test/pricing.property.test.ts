@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import fc from "fast-check";
-import { mulDivRoundHalfUp } from "../src/money.js";
+import { mulDivCeil } from "../src/money.js";
 import { DEFAULT_PARAMS, RISK_WEIGHTS } from "../src/pricing/defaults.js";
 import { quoteExit } from "../src/quote.js";
 import { monthEpoch } from "../src/examples.js";
@@ -33,7 +33,7 @@ describe("pricing properties", () => {
         expect(quote.risk.bps).toBeGreaterThanOrEqual(0);
         expect(quote.risk.bps).toBeLessThanOrEqual(10_000);
         expect(quote.payout + quote.fee).toBe(navValue);
-        expect(quote.fee).toBe(mulDivRoundHalfUp(navValue, BigInt(quote.feeBps), 10_000n));
+        expect(quote.fee).toBe(mulDivCeil(navValue, BigInt(quote.feeBps), 10_000n));
         expect(quote.feeBps).toBeGreaterThanOrEqual(DEFAULT_PARAMS.minFeeBps);
         expect(quote.feeBps).toBeLessThanOrEqual(DEFAULT_PARAMS.maxFeeBps);
       },

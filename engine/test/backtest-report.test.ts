@@ -49,28 +49,28 @@ describe("backtest report", () => {
     }
 
     const row = epoch(bundle);
-    expect(row?.feeEarned).toBe("109000000");
+    expect(row?.feeEarned).toBe("101000000");
     expect(row?.loss).toBe("0");
     expect(row?.refused).toBe(0);
     expect(row?.ticks[0]).toMatchObject({
       platformId: "harbor-epoch-credit",
       kind: "epoch",
-      feeBps: 109,
-      fee: "109000000",
-      payout: "9891000000",
+      feeBps: 101,
+      fee: "101000000",
+      payout: "9899000000",
       available: true,
     });
     const gated = bundle.scenarios.find((scenario) => scenario.name === "gated-refuse");
     expect(gated?.refused).toBe(1);
     expect(gated?.feeEarned).toBe("0");
     const busy = bundle.scenarios.find((scenario) => scenario.name === "busy-book");
-    expect(BigInt(busy?.feeEarned ?? "0")).toBeGreaterThan(109000000n);
+    expect(BigInt(busy?.feeEarned ?? "0")).toBeGreaterThan(101000000n);
     const slashed = bundle.scenarios.find((scenario) => scenario.name === "kasu-repay-slash");
     expect(BigInt(slashed?.loss ?? "0")).toBeGreaterThan(0n);
 
     const markdown = renderBacktestMarkdown(bundle);
     expect(markdown).toContain("| epoch-repay | synthetic |");
-    expect(markdown).toContain("| 109000000 |");
+    expect(markdown).toContain("| 101000000 |");
     expect(markdown).toContain("Source: none.");
     expect(markdown).not.toMatch(/https?:\/\//);
     const parsed = JSON.parse(renderBacktestJson(bundle)) as BacktestBundle;
@@ -108,12 +108,12 @@ describe("backtest report", () => {
   it("writes markdown and JSON from the CLI and skips the files on a dry run", async () => {
     const dir = mkdtempSync(join(tmpdir(), "lockgate-backtest-"));
     const result = await run(["backtest", "--scenario", "epoch-repay", "--report", dir]) as { feeEarned: bigint };
-    expect(result.feeEarned).toBe(109000000n);
+    expect(result.feeEarned).toBe(101000000n);
     expect(readdirSync(dir).sort()).toEqual(["backtest-report.json", "backtest-report.md"]);
     const saved = JSON.parse(readFileSync(join(dir, "backtest-report.json"), "utf8")) as BacktestBundle;
     const markdown = readFileSync(join(dir, "backtest-report.md"), "utf8");
     expect(saved.scenarios).toHaveLength(Object.keys(SCENARIOS).length);
-    expect(epoch(saved)?.feeEarned).toBe("109000000");
+    expect(epoch(saved)?.feeEarned).toBe("101000000");
     expect(markdown).toContain("epoch-repay");
     expect(markdown).toContain("synthetic");
     expect(markdown).toContain(epoch(saved)?.feeEarned ?? "");

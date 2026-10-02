@@ -25,7 +25,7 @@ const tapeShape = [
   ["repay", "northwind-invoice", "epoch", 0],
   ["slash", "northwind-invoice", "epoch", 0],
   ["repay", "northwind-invoice", "epoch", 0],
-  ["repay", "northwind-invoice", "epoch", 6667],
+  ["repay", "northwind-invoice", "epoch", 9000],
   ["repay", "northwind-invoice", "weekly-cycle", 0],
   ["repay", "northwind-invoice", "fifo-open", 0],
   ["repay", "harbor-epoch-credit", "epoch", 0],
@@ -45,7 +45,7 @@ describe("backtest regression", () => {
     const rows = JSON.parse(first) as Row[];
     const [quarter, clean, slash, afterSlash, busy, weekly, fifo, other] = rows;
     expect(rows).toHaveLength(tapeShape.length);
-    expect(clean?.feeBps).toBe(109);
+    expect(clean?.feeBps).toBe(101);
     expect(slash?.feeBps).toBe(clean?.feeBps);
     expect(other?.feeBps).toBe(clean?.feeBps);
     expect(afterSlash!.feeBps).toBeGreaterThan(clean!.feeBps);
@@ -59,7 +59,7 @@ describe("backtest regression", () => {
     for (const row of rows) {
       expect(row.digest).toMatch(/^0x[0-9a-f]{64}$/);
       expect(row.calldata.startsWith("0xe7c1fee8")).toBe(true);
-      expect(BigInt(row.fee)).toBe((NAV * BigInt(row.feeBps) + 5_000n) / 10_000n);
+      expect(BigInt(row.fee)).toBe((NAV * BigInt(row.feeBps) + 9_999n) / 10_000n);
     }
   });
 

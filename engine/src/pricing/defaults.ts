@@ -1,11 +1,14 @@
 /**
  * Numbers that are product decisions, not fitted market data.
  * Citations and the [design] marks live in MODEL.md.
+ * The curve knobs equal the `PricingEngine` constructor (contracts/src/core/PricingEngine.sol), which is the
+ * source of truth: same APR kink, same concentration premium (none), same year. Only `timeScale` differs, since the
+ * chain ships the demo scale; pass DEMO_TIME_SCALE to price the demo clock.
  */
 export const DEFAULT_PARAMS = {
   baseAprBps: 1200,
   kinkUtilBps: 6667,
-  aprAtKinkBps: 1650,
+  aprAtKinkBps: 1200,
   aprAtFullBps: 1800,
   minFeeBps: 25,
   maxFeeBps: 1500,
@@ -14,8 +17,8 @@ export const DEFAULT_PARAMS = {
   navWarnSeconds: 86_400,
   maxNavAgeSeconds: 7 * 86_400,
   navAgeMaxPremiumAprBps: 300,
-  concentrationCapBps: 2500,
-  concentrationMaxPremiumAprBps: 200,
+  concentrationCapBps: 10_000,
+  concentrationMaxPremiumAprBps: 0,
   maxTenorSeconds: 366 * 86_400,
   proposalTtlSeconds: 600,
   graceSeconds: 86_400,

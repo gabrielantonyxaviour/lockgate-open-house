@@ -1,22 +1,22 @@
 {
   "chainId": 31337,
-  "block": 1894,
+  "block": 0,
   "stage1": {
     "chainFeeBps": 99,
-    "engineFeeBps": 101,
-    "fee": "98000000",
-    "investorPaid": "9902000000",
+    "engineFeeBps": 100,
+    "fee": "99000000",
+    "investorPaid": "9901000000",
     "outstanding": "0",
-    "earnedFees": "98000000",
-    "line": "0x9090ecaeba8d113e49ad8ca83bf9fb516c723885"
+    "earnedFees": "99000000",
+    "line": "0xdc64a140aa3e981100a9beca4e685f962f0cf6c9"
   },
   "stage2": {
     "source": "engine/src/cli.ts propose --rpc",
     "engineSignatureAccepted": true,
-    "harbourFeeBps": 101,
-    "keppelFeeBps": 101,
-    "harbourRepaid": "80101000000",
-    "keppelOutstanding": "9899000000",
+    "harbourFeeBps": 100,
+    "keppelFeeBps": 100,
+    "harbourRepaid": "80100000000",
+    "keppelOutstanding": "9900000000",
     "routerBalance": "0",
     "lockgateBalance": "0"
   },
@@ -25,7 +25,7 @@
     "seniorAfterLoss": "400000000000",
     "juniorAfterLoss": "0",
     "cash": "400000000000",
-    "engineFeeBps": 101,
+    "engineFeeBps": 100,
     "engineAvailable": true,
     "creditLineBookMatches": true
   }

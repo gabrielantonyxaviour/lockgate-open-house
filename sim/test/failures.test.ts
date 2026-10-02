@@ -24,7 +24,7 @@ const flat: Omit<QuoteInput, "secondsToWindow"> = {
   gated: false,
   exposureBps: 0,
   utilizationBps: 0,
-  riskBps: 10_000,
+  riskBps: 0,
   timeScale: 1,
 };
 
@@ -33,7 +33,7 @@ test("refusals name the reason and do not clamp into a price", () => {
   assert.equal(quoteFee({ ...flat, secondsToWindow: 86_400, utilizationBps: 10_001 }).reason, "bps-range");
   assert.equal(quoteFee({ ...flat, secondsToWindow: 366 * 86_400 + 1 }).reason, "tenor");
   assert.equal(quoteFee({ ...flat, secondsToWindow: 86_400, timeScale: 10_001 }).reason, "tenor");
-  assert.equal(quoteFee({ ...flat, secondsToWindow: 86_400, riskBps: 50_001 }).reason, "risk");
+  assert.equal(quoteFee({ ...flat, secondsToWindow: 86_400, riskBps: 10_001 }).reason, "risk");
   const atCap = quoteFee({ ...flat, secondsToWindow: 86_400, navAgeSeconds: MAX_NAV_AGE_SECONDS });
   assert.equal(atCap.available, true);
   const past = quoteFee({ ...flat, secondsToWindow: 86_400, navAgeSeconds: MAX_NAV_AGE_SECONDS + 1 });
@@ -53,12 +53,12 @@ test("a seeded sweep keeps every available fee inside the band", () => {
       gated: next() % 7 === 0,
       exposureBps: next() % 12_000,
       utilizationBps: next() % 12_000,
-      riskBps: next() % 60_000,
+      riskBps: next() % 12_000,
       timeScale: next() % 12_000,
     });
     if (!quote.available) {
       assert.equal(quote.bps, 0);
-      assert.ok(["gated", "stale-nav", "bps-range", "tenor", "risk"].includes(quote.reason));
+      assert.ok(["gated", "stale-nav", "bps-range", "tenor", "risk", "fee-above-max"].includes(quote.reason));
       continue;
     }
     assert.ok(quote.bps >= MIN_FEE_BPS && quote.bps <= MAX_FEE_BPS);

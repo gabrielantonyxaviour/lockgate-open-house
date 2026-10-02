@@ -21,13 +21,13 @@ flowchart LR
 | Book | Stage | Advances | Gated | p00 | p18 | p30 | Other gated | Mandate-limit refusals | Concentration refusals | Over-limit refusals | Credit loss | Reserve absorbed | Reserve posted | Coverage bps | Platform peak | Harbour / Keppel / Marina | Concentration gaps | Largest gap |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | baseline | stage1 | 3457 | 47 | 26 | 16 | 5 | 0 | 0 | 0 | 70 | 0 | 0 | 405000000000 | no loss | 149338000000 | 0 / 0 / 0 | 0 | 0 |
-| default | stage1 | 2946 | 47 | 26 | 16 | 5 | 0 | 0 | 0 | 70 | 239841176300 | 37505576100 | 405000000000 | 1563 | 149338000000 | 0 / 0 / 0 | 0 | 0 |
-| baseline | stage2 | 3441 | 47 | 26 | 16 | 5 | 0 | 71 | 0 | 0 | 0 | 0 | 360023825000 | no loss | 148979000000 | 78942000000 / 99905000000 / 119769000000 | 0 | 0 |
-| default | stage2 | 2929 | 47 | 26 | 16 | 5 | 0 | 71 | 0 | 0 | 239105333600 | 14576975000 | 333584500000 | 609 | 148979000000 | 78053000000 / 99905000000 / 119769000000 | 0 | 0 |
-| baseline | stage3 | 3457 | 47 | 26 | 16 | 5 | 0 | 0 | 0 | 70 | 0 | 0 | 405000000000 | no loss | 149338000000 | 0 / 0 / 0 | 0 | 0 |
-| default | stage3 | 2946 | 47 | 26 | 16 | 5 | 0 | 0 | 0 | 70 | 235628405300 | 37505576100 | 405000000000 | 1591 | 149338000000 | 0 / 0 / 0 | 0 | 0 |
+| default | stage1 | 2946 | 47 | 26 | 16 | 5 | 0 | 0 | 0 | 70 | 242234511900 | 37532722500 | 405000000000 | 1549 | 149338000000 | 0 / 0 / 0 | 0 | 0 |
+| baseline | stage2 | 3444 | 47 | 26 | 16 | 5 | 0 | 71 | 0 | 0 | 0 | 0 | 330588025000 | no loss | 148979000000 | 79835000000 / 99905000000 / 119769000000 | 0 | 0 |
+| default | stage2 | 2933 | 47 | 26 | 16 | 5 | 0 | 71 | 0 | 0 | 241673996000 | 14576975000 | 314168375000 | 603 | 148979000000 | 66196000000 / 99905000000 / 119769000000 | 1 | 3758269120 |
+| baseline | stage3 | 3454 | 47 | 26 | 16 | 5 | 0 | 0 | 0 | 70 | 0 | 0 | 405000000000 | no loss | 149338000000 | 0 / 0 / 0 | 0 | 0 |
+| default | stage3 | 895 | 47 | 26 | 16 | 5 | 0 | 0 | 0 | 0 | 242230509500 | 37532722500 | 405000000000 | 1549 | 148979000000 | 0 / 0 / 0 | 0 | 0 |
 
-Each of p00, p18, and p30 records a gated refusal. No other platform does. Baseline coverage is no loss. Default coverage is 1563, 609, 1591. Senior loss is 0 on every row. Stage 2 peaks sit under the three mandate caps. Concentration gaps are 0.
+Each of p00, p18, and p30 records a gated refusal. No other platform does. Baseline coverage is no loss. Default coverage is 1549, 603, 1549. Senior loss is 0 on every row. Stage 2 peaks sit under the three mandate caps. A concentration gap was recorded.
 
 Stage 1 and stage 3 have no partner mandate, so Harbour, Keppel, and Marina peaks stay 0. The platform owed-nav cap still applies. Stage 2 checks each vault. The default book still names the first four platforms as defaulters. p00 is both gated and a defaulter there. Once it is dead, a later ask is defaulted rather than gated. Posted reserve equals reserve left plus reserve absorbed.
 

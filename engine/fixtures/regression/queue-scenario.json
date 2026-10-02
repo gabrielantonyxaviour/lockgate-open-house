@@ -179,7 +179,7 @@
         "exposure": "0",
         "limit": "25000000000",
         "bookAssets": "100000000000",
-        "utilizationBps": 6667,
+        "utilizationBps": 9000,
         "repayment": {
           "samples": 8,
           "onTime": 8,
