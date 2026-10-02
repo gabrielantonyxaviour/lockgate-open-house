@@ -76,6 +76,7 @@ contract PartnerVault is PartnerVaultAdmin {
         emit Skimmed(extra);
     }
 
+    /// @notice Anyone may post first-loss for an approved platform. Only that platform can withdraw it.
     function postReserve(address platform, uint256 amount) external nonReentrant {
         if (!_s().platformOf[platform].approved || amount == 0) revert BadParam();
         _pull(msg.sender, amount);
@@ -85,9 +86,11 @@ contract PartnerVault is PartnerVaultAdmin {
         emit ReservePosted(platform, msg.sender, amount);
     }
 
+    /// @notice Platform withdraws its own reserve. A stored rate above 0 keeps the ceil of open exposure.
     function withdrawReserve(address platform, uint256 amount, address to) external nonReentrant {
-        if (msg.sender != platform || to == address(0) || amount == 0) revert Unauthorized();
+        if (msg.sender != platform) revert Unauthorized();
         VaultLayout.Layout storage s = _s();
+        if (to == address(0) || amount == 0 || amount > s.reserveOfPlatform[platform]) revert BadParam();
         uint256 next = s.reserveOfPlatform[platform] - amount;
         uint16 bps = s.platformOf[platform].reserveBps;
         if (bps > 0) {
@@ -114,6 +117,7 @@ contract PartnerVault is PartnerVaultAdmin {
         emit ProposalSubmitted(proposal.nonce, digest);
     }
 
+    /// @notice Owner burns a nonce. That proposal can never fund.
     function cancel(uint256 nonce) external {
         _onlyOwner();
         VaultLayout.Layout storage s = _s();
@@ -155,6 +159,7 @@ contract PartnerVault is PartnerVaultAdmin {
         advanceId = _fund(proposal);
     }
 
+    /// @notice Pull the full amount still owed. The fee is cleared before principal.
     function repay(uint256 advanceId) external nonReentrant {
         Advance storage a = _s().advances[advanceId];
         if (a.status != AdvanceStatus.Active && a.status != AdvanceStatus.Late) revert BadStatus();
@@ -165,6 +170,7 @@ contract PartnerVault is PartnerVaultAdmin {
         emit AdvanceRepaid(advanceId, msg.sender, due);
     }
 
+    /// @notice After `dueAt` plus the grace stored at funding. Reserve pays the fee first.
     function markLate(uint256 advanceId) external nonReentrant {
         VaultLayout.Layout storage s = _s();
         Advance storage a = s.advances[advanceId];
@@ -199,6 +205,7 @@ contract PartnerVault is PartnerVaultAdmin {
         VaultLayout.Layout storage s = _s();
         s.scheduledImpl = address(0);
         s.scheduledEta = 0;
+        emit UpgradeExecuted(next);
     }
 
     function _requirePartner(VaultLayout.Layout storage s, bytes32 digest, bytes calldata partnerSig) internal view {

@@ -8,8 +8,10 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 /// @notice 6-decimal test USDG. The faucet cap is per call, so a demo can mint again. That is intentional.
 contract MockUSDG is ERC20, Ownable {
     uint8 private constant DECIMALS = 6;
+    /// @notice Largest `faucet` call. 10_000 tokens.
     uint256 public constant FAUCET_MAX = 10_000e6;
 
+    /// @notice True when `account` may call `mint`.
     mapping(address => bool) public minters;
 
     error FaucetCap(uint256 amount);
@@ -21,11 +23,11 @@ contract MockUSDG is ERC20, Ownable {
     event Minted(address indexed to, uint256 amount);
 
     constructor(address owner_) ERC20("test USDG", "USDG") Ownable(owner_) {
-        if (owner_ == address(0)) revert ZeroAddress();
         minters[owner_] = true;
         emit MinterSet(owner_, true);
     }
 
+    /// @notice 6 decimals.
     function decimals() public pure override returns (uint8) {
         return DECIMALS;
     }

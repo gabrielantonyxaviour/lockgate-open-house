@@ -6,7 +6,7 @@ import {IPartnerRouter} from "../../src/partner/interfaces/IPartnerRouter.sol";
 import {PartnerRouter} from "../../src/partner/PartnerRouter.sol";
 import {PartnerVaultAdmin} from "../../src/partner/PartnerVaultAdmin.sol";
 import {AutoApproveModule} from "../../src/partner/AutoApproveModule.sol";
-import {RejectReason} from "../../src/partner/Types.sol";
+import {AdvanceStatus, RejectReason} from "../../src/partner/Types.sol";
 import {VaultFixture} from "./VaultFixture.sol";
 
 contract WideOracle {
@@ -94,14 +94,25 @@ contract PartnerSecurityTest is VaultFixture {
     function test_shorteningGraceDoesNotSlashEarly() public {
         AdvanceProposal memory p = _proposal(100_000 * UNIT, 4);
         uint256 id = _execute(p);
+        assertEq(vault.graceOf(id), 1 days);
         vm.prank(partner);
         vault.setGrace(0);
+        assertEq(vault.grace(), 0);
+        assertEq(vault.graceOf(id), 1 days);
+        uint256 later = _execute(_proposal(100_000 * UNIT, 40));
+        assertEq(vault.graceOf(later), 0);
         vm.warp(p.dueAt);
         vm.expectRevert(PartnerVaultAdmin.TooEarly.selector);
         vault.markLate(id);
         vm.warp(p.dueAt + 1 days);
         vault.markLate(id);
-        assertGt(vault.getAdvance(id).owed, 0);
+        assertEq(vault.getAdvance(id).owed, 50_000 * UNIT);
+        assertEq(uint256(vault.getAdvance(later).status), uint256(AdvanceStatus.Active));
+        assertEq(vault.getAdvance(later).owed, 100_000 * UNIT);
+        assertEq(vault.reserveCash(), 0);
+        assertEq(vault.idle(), 852_000 * UNIT);
+        assertEq(vault.outstandingPrincipal(), 149_000 * UNIT);
+        assertEq(vault.exposureOf(platform), 150_000 * UNIT);
     }
 
     function test_wideOracleFailsClosed() public {
@@ -124,6 +135,16 @@ contract PartnerSecurityTest is VaultFixture {
         p.platform = address(gate);
         p.recipient = address(gate);
         assertEq(uint256(vault.preview(p)), uint256(RejectReason.Gated));
+        uint256 idleBefore = vault.idle();
+        uint256 balBefore = usdg.balanceOf(address(vault));
+        bytes memory sig = _engineSig(vault, p);
+        vm.prank(partner);
+        vm.expectRevert(abi.encodeWithSelector(PartnerVaultAdmin.MandateRejected.selector, RejectReason.Gated));
+        vault.execute(p, sig, "");
+        assertEq(vault.idle(), idleBefore);
+        assertEq(usdg.balanceOf(address(vault)), balBefore);
+        assertEq(vault.advanceCount(), 0);
+        assertFalse(vault.nonceUsed(p.nonce));
     }
 
     function test_moduleCapsTheFee() public {
@@ -157,7 +178,15 @@ contract PartnerSecurityTest is VaultFixture {
         module.execute(almost, almostSig);
         AdvanceProposal memory ok = _proposal(100_000 * UNIT, 9);
         module.execute(ok, _engineSig(vault, ok));
+        assertEq(vault.advanceCount(), 1);
         assertEq(vault.getAdvance(1).recipient, platform);
+        assertEq(vault.getAdvance(1).owed, 100_000 * UNIT);
+        assertEq(vault.getAdvance(1).fee, 1_000 * UNIT);
+        assertEq(vault.getAdvance(1).feeRemaining, 1_000 * UNIT);
+        assertEq(vault.idle(), 901_000 * UNIT);
+        assertEq(vault.reserveCash(), 50_000 * UNIT);
+        assertEq(usdg.balanceOf(platform), 99_000 * UNIT);
+        assertEq(usdg.balanceOf(address(vault)), 951_000 * UNIT);
     }
 
     function test_oneBadVaultDoesNotBlankTheQuote() public {
@@ -177,11 +206,20 @@ contract PartnerSecurityTest is VaultFixture {
             dueAt: uint64(block.timestamp + 7 days),
             exitRef: keccak256("security")
         });
+        uint256 bal = usdg.balanceOf(address(vault));
         IPartnerRouter.Slice[] memory best = router.quote(request, IPartnerRouter.Strategy.BestFee);
         assertEq(best.length, 1);
         assertEq(best[0].vault, address(vault));
+        assertEq(best[0].navValue, 100_000 * UNIT);
+        assertEq(best[0].feeBps, 100);
+        assertEq(best[0].fee, 1_000 * UNIT);
         IPartnerRouter.Slice[] memory parts = router.quote(request, IPartnerRouter.Strategy.ProRata);
         assertEq(parts.length, 1);
         assertEq(parts[0].vault, address(vault));
+        assertEq(parts[0].navValue, 100_000 * UNIT);
+        assertEq(parts[0].feeBps, 100);
+        assertEq(parts[0].fee, 1_000 * UNIT);
+        assertEq(usdg.balanceOf(address(vault)), bal);
+        assertEq(vault.advanceCount(), 0);
     }
 }

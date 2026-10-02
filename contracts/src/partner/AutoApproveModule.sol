@@ -54,12 +54,15 @@ contract AutoApproveModule is ReentrancyGuard {
         emit OwnershipTransferred(address(0), owner_);
     }
 
+    /// @notice Starts a two-step owner change.
     function transferOwnership(address next) external {
-        if (msg.sender != owner || next == address(0)) revert Unauthorized();
+        if (msg.sender != owner) revert Unauthorized();
+        if (next == address(0)) revert ZeroAddress();
         pendingOwner = next;
         emit OwnershipTransferStarted(next);
     }
 
+    /// @notice Pending owner becomes the only address that can change bounds.
     function acceptOwnership() external {
         if (msg.sender != pendingOwner) revert Unauthorized();
         address prev = owner;
@@ -68,17 +71,20 @@ contract AutoApproveModule is ReentrancyGuard {
         emit OwnershipTransferred(prev, msg.sender);
     }
 
+    /// @notice Replace the caps. `maxFeeBps` must sit between `minFeeBps` and 10_000.
     function setBounds(Bounds calldata bounds_) external {
         if (msg.sender != owner) revert Unauthorized();
         _apply(bounds_);
     }
 
+    /// @notice When enabled, `execute` accepts only platforms marked with `setPlatformAllowed`.
     function setAllowlist(bool enabled_) external {
         if (msg.sender != owner) revert Unauthorized();
         allowlistEnabled = enabled_;
         emit AllowlistSet(enabled_);
     }
 
+    /// @notice Allow or drop one platform. Ignored while the allowlist is off.
     function setPlatformAllowed(address platform, bool allowed) external {
         if (msg.sender != owner) revert Unauthorized();
         allowedPlatform[platform] = allowed;
@@ -122,7 +128,7 @@ contract AutoApproveModule is ReentrancyGuard {
             windowStart = uint64(block.timestamp);
             windowUsed = 0;
         }
-        if (windowUsed + navValue > dailyLimit) revert BoundsExceeded();
+        if (navValue > dailyLimit || windowUsed > dailyLimit - navValue) revert BoundsExceeded();
         windowUsed += navValue;
     }
 }

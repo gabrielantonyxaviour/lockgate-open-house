@@ -4,7 +4,7 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 import {AdvanceProposal} from "../../src/interfaces/IAdvanceProposal.sol";
-import {AdvanceStatus} from "../../src/partner/Types.sol";
+import {Advance, AdvanceStatus} from "../../src/partner/Types.sol";
 import {PartnerVault} from "../../src/partner/PartnerVault.sol";
 import {PartnerVaultAdmin} from "../../src/partner/PartnerVaultAdmin.sol";
 import {MockUSDG} from "./mocks/ReenterUSDG.sol";
@@ -19,6 +19,7 @@ contract VaultHandler is Test {
     address public lockgate;
     address public platform;
     uint256 public nonce = 1;
+    bool public mandateBreached;
 
     constructor() {
         address engine = vm.addr(enginePk);
@@ -88,7 +89,7 @@ contract VaultHandler is Test {
         if (n == 0) return;
         uint256 id = bound(idRaw, 1, n);
         if (vault.getAdvance(id).status != AdvanceStatus.Active) return;
-        uint256 when = uint256(vault.getAdvance(id).dueAt) + vault.grace();
+        uint256 when = uint256(vault.getAdvance(id).dueAt) + vault.graceOf(id);
         if (block.timestamp < when) vm.warp(when);
         try vault.markLate(id) {} catch {}
     }
@@ -125,6 +126,38 @@ contract VaultHandler is Test {
         try vault.withdrawReserve(platform, amt, platform) {} catch {}
     }
 
+    function tryRejectUnderpriced(uint96 navRaw) external {
+        uint256 idle = vault.idle();
+        if (idle < 2 * UNIT) return;
+        uint256 nav = bound(navRaw, UNIT, idle);
+        uint256 floorFee = (nav * 100) / 10_000;
+        if (floorFee == 0) return;
+        uint256 beforeCount = vault.advanceCount();
+        AdvanceProposal memory p = _priced(nav, floorFee - 1);
+        vm.prank(partner);
+        try vault.execute(p, _sig(p), "") {} catch {}
+        if (vault.advanceCount() != beforeCount) mandateBreached = true;
+    }
+
+    function tryRejectWhilePaused(uint96 navRaw) external {
+        vm.prank(partner);
+        vault.setPaused(true);
+        uint256 beforeCount = vault.advanceCount();
+        uint256 idle = vault.idle();
+        if (idle >= 2 * UNIT) {
+            uint256 nav = bound(navRaw, UNIT, idle);
+            uint256 fee = (nav * 100) / 10_000;
+            if (fee > 0 && nav - fee <= idle) {
+                AdvanceProposal memory p = _priced(nav, fee);
+                vm.prank(partner);
+                try vault.execute(p, _sig(p), "") {} catch {}
+            }
+        }
+        if (vault.advanceCount() != beforeCount) mandateBreached = true;
+        vm.prank(partner);
+        vault.setPaused(false);
+    }
+
     function lockgateTouches(uint96 navRaw) external {
         vm.startPrank(lockgate);
         try vault.deposit(1) {} catch {}
@@ -138,6 +171,10 @@ contract VaultHandler is Test {
         AdvanceProposal memory p = _proposal(nav, fee);
         vm.prank(lockgate);
         try vault.execute(p, _sig(p), "") {} catch {}
+    }
+
+    function _priced(uint256 nav, uint256 fee) internal returns (AdvanceProposal memory p) {
+        p = _proposal(nav, fee);
     }
 
     function _proposal(uint256 nav, uint256 fee) internal returns (AdvanceProposal memory p) {
@@ -176,14 +213,26 @@ contract VaultInvariantTest is Test {
         MockUSDG usdg = handler.usdg();
         assertEq(usdg.balanceOf(address(vault)), vault.idle() + vault.reserveCash());
         assertEq(vault.totalAssets(), vault.idle() + vault.outstandingPrincipal());
-        uint256 sum;
+        uint256 principalSum;
+        uint256 owedSum;
         uint256 n = vault.advanceCount();
         for (uint256 i = 1; i <= n; ++i) {
-            sum += vault.getAdvance(i).principalRemaining;
+            Advance memory a = vault.getAdvance(i);
+            assertEq(a.owed, a.feeRemaining + a.principalRemaining);
+            assertLe(a.feeRemaining, a.fee);
+            assertLe(a.principalRemaining, a.principal);
+            if (a.feeRemaining > 0) assertEq(a.principalRemaining, a.principal);
+            if (a.status == AdvanceStatus.Repaid || a.status == AdvanceStatus.WrittenOff) assertEq(a.owed, 0);
+            principalSum += a.principalRemaining;
+            owedSum += a.owed;
         }
-        assertEq(sum, vault.outstandingPrincipal());
+        assertEq(principalSum, vault.outstandingPrincipal());
+        assertEq(owedSum, vault.exposureOf(handler.platform()));
+        assertEq(vault.reserveOf(handler.platform()), vault.reserveCash());
+        assertEq(vault.sharesOf(vault.owner()), vault.totalShares());
         assertEq(vault.sharesOf(handler.lockgate()), 0);
         assertTrue(vault.owner() != handler.lockgate());
         assertEq(usdg.balanceOf(handler.lockgate()), 0);
+        assertFalse(handler.mandateBreached());
     }
 }

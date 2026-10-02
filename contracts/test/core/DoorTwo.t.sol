@@ -176,6 +176,26 @@ contract DoorTwoTest is CoreFixture {
         assertEq(boxed.assets(), 0);
     }
 
+    function test_oneUnitDepositRoundsToZeroOnceNavPassesIt() public {
+        _deposit(investor, 1e6);
+        // via IR turns `i * 365 days` into triangular steps and the yield product overflows.
+        uint256 stamp = 1;
+        uint256 step = 365 days;
+        for (uint256 i = 0; i < 321; ++i) {
+            stamp += step;
+            vm.warp(stamp);
+            vault.accrue();
+        }
+        assertGt(vault.nav(), 1e18);
+        _mint(investor, 1);
+        vm.startPrank(investor);
+        usdg.approve(address(vault), 1);
+        vm.expectRevert(OpenCreditVault.ZeroAmount.selector);
+        vault.deposit(1);
+        vm.stopPrank();
+        assertEq(vault.totalSupply(), 1e18);
+    }
+
     function _deposit(address account, uint256 amount) internal returns (uint256 shares) {
         _mint(account, amount);
         vm.startPrank(account);

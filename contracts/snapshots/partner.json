@@ -1,0 +1,15 @@
+{
+  "approve": "423005",
+  "deposit": "111650",
+  "execute": "453218",
+  "markLate": "7347",
+  "moduleExecute": "482707",
+  "postReserve": "102326",
+  "quote": "298804",
+  "relayRepay": "80051",
+  "repay": "12251",
+  "submitProposal": "36757",
+  "withdraw": "31443",
+  "withdrawReserve": "34167",
+  "writeOff": "5172"
+}

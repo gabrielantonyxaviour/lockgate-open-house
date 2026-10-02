@@ -24,8 +24,10 @@ interface IPricingEngine {
         uint64 yearSeconds;
     }
 
+    /// @notice Live curve. `setParams` replaces it. An open advance keeps the fee stored at draw.
     function params() external view returns (Params memory);
 
+    /// @notice Owner. Replaces the live curve. An open advance keeps the fee, principal, due date, and grace stored at draw.
     function setParams(Params calldata next) external;
 
     /// @notice SPEC quote. `platformRiskBps` is treated as zero. Premium inputs are 0–10_000.
@@ -66,6 +68,7 @@ interface IPricingEngine {
         uint16 platformRiskBps
     ) external view returns (bool ok, string memory reason);
 
-    /// @notice Lender-favorable token fee. Rounds up. Reverts nothing; callers must reject `fee >= navValue`.
+    /// @notice Lender-favorable token fee. Rounds up. Reverts when that fee does not fit in uint256.
+    ///         Callers must reject `fee >= navValue`.
     function feeFromBps(uint256 navValue, uint16 bps) external pure returns (uint256);
 }

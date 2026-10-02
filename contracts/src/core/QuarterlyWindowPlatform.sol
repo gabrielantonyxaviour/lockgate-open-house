@@ -10,10 +10,12 @@ import {PlatformConfig} from "./PlatformConfig.sol";
 contract QuarterlyWindowPlatform is PlatformBase {
     constructor(PlatformConfig memory cfg) PlatformBase(cfg) {}
 
+    /// @notice Quarterly window. A closed gate freezes `processWindow`.
     function kind() public pure override returns (QueueKind) {
         return QueueKind.QuarterlyGated;
     }
 
+    /// @notice Reverts `WindowGated` while `gated` is set, then settles like a weekly window.
     function processWindow() external override nonReentrant {
         if (gated) revert WindowGated();
         _process();

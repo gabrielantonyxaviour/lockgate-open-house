@@ -11,18 +11,29 @@ import {UsdgTransfers} from "./UsdgTransfers.sol";
 /// @title OpenCreditVault
 /// @notice sUSDai-style sandbox. Share price starts at 1 USDG and, on MockUSDG, compounds the cash at 9% APR.
 contract OpenCreditVault is ERC20, Ownable, ReentrancyGuard, IOpenCreditVault {
+    /// @notice Mock yield, 900 bps a year. A real-USDG vault sets `mintYield` false.
     uint256 public constant APR_BPS = 900;
+    /// @notice 10_000. One basis point is 1.
     uint256 public constant BPS = 10_000;
+    /// @notice 31_536_000 seconds. Yield uses this day count.
     uint64 public constant YEAR = 31_536_000;
+    /// @notice Share price before the first deposit. 1_000_000.
     uint256 public constant START_NAV = 1_000_000;
 
+    /// @inheritdoc IOpenCreditVault
     address public immutable asset;
+    /// @notice When true, accrual mints yield on the mock token.
     bool public immutable mintYield;
 
+    /// @inheritdoc IOpenCreditVault
     uint64 public cooldown;
+    /// @notice USDG backing shares. A requested withdrawal leaves this and enters `reserved`.
     uint256 public assets;
+    /// @notice USDG owed to withdrawals that are not claimed yet.
     uint256 public reserved;
+    /// @notice Last accrual timestamp. `navUpdatedAt` returns this.
     uint64 public navCheckpoint;
+    /// @notice Highest withdrawal id.
     uint256 public withdrawalCount;
 
     struct Withdrawal {
@@ -33,6 +44,7 @@ contract OpenCreditVault is ERC20, Ownable, ReentrancyGuard, IOpenCreditVault {
         bool claimed;
     }
 
+    /// @notice Stored withdrawal. Id 0 is empty.
     mapping(uint256 => Withdrawal) public withdrawals;
 
     error ZeroAddress();
@@ -50,13 +62,14 @@ contract OpenCreditVault is ERC20, Ownable, ReentrancyGuard, IOpenCreditVault {
     event CooldownSet(uint64 cooldown);
 
     constructor(address owner_, address asset_, bool mintYield_) ERC20("Open credit token", "oUSDG") Ownable(owner_) {
-        if (owner_ == address(0) || asset_ == address(0)) revert ZeroAddress();
+        if (asset_ == address(0)) revert ZeroAddress();
         asset = asset_;
         mintYield = mintYield_;
         cooldown = 5 minutes;
         navCheckpoint = uint64(block.timestamp);
     }
 
+    /// @notice 18 decimals.
     function decimals() public pure override returns (uint8) {
         return 18;
     }

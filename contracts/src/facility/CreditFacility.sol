@@ -18,6 +18,7 @@ contract CreditFacility is FacilityCash {
         _init(init);
     }
 
+    /// @notice Governor admits or drops a lender. A drop does not free a cap slot.
     function approveLender(address lender, bool approved) external {
         _onlyGovernor();
         if (lender == address(0)) revert BadParam();
@@ -25,13 +26,15 @@ contract CreditFacility is FacilityCash {
         emit LenderApproved(lender, approved);
     }
 
+    /// @notice Starts a handover. The current governor stays until `acceptGovernor`.
     function transferGovernor(address next) external {
         _onlyGovernor();
         if (next == address(0)) revert BadParam();
         pendingGovernor = next;
-        emit GovernorSet(next);
+        emit GovernorTransferStarted(next);
     }
 
+    /// @notice Pending governor becomes the only address that can change terms.
     function acceptGovernor() external {
         if (msg.sender != pendingGovernor) revert Unauthorized();
         governor = msg.sender;
@@ -39,6 +42,7 @@ contract CreditFacility is FacilityCash {
         emit GovernorSet(msg.sender);
     }
 
+    /// @notice Lower the advance rate now. A higher rate waits on `scheduleTerms`.
     function tightenAdvanceRate(uint16 bps) external {
         _onlyGovernor();
         if (bps >= acct.advanceRateBps) revert BadParam();
@@ -46,6 +50,7 @@ contract CreditFacility is FacilityCash {
         emit TermsTightened(bps, acct.maxLateBps, acct.minJuniorBps);
     }
 
+    /// @notice Lower the late-receivables cap now.
     function tightenMaxLate(uint16 bps) external {
         _onlyGovernor();
         if (bps >= acct.maxLateBps) revert BadParam();
@@ -53,6 +58,7 @@ contract CreditFacility is FacilityCash {
         emit TermsTightened(acct.advanceRateBps, bps, acct.minJuniorBps);
     }
 
+    /// @notice Raise the junior-capital floor now.
     function tightenMinJunior(uint16 bps) external {
         _onlyGovernor();
         if (bps <= acct.minJuniorBps || bps > BPS) revert BadParam();
@@ -60,6 +66,7 @@ contract CreditFacility is FacilityCash {
         emit TermsTightened(acct.advanceRateBps, acct.maxLateBps, bps);
     }
 
+    /// @notice Queue a full term set. It can be executed after two days.
     function scheduleTerms(PendingTerms calldata next) external {
         _onlyGovernor();
         if (next.advanceRateBps > BPS || next.maxLateBps > BPS || next.minJuniorBps > BPS) revert BadParam();
@@ -67,9 +74,17 @@ contract CreditFacility is FacilityCash {
         pendingTerms = next;
         pendingTerms.eta = uint64(block.timestamp + CHANGE_DELAY);
         pendingTerms.active = true;
-        emit TermsScheduled(pendingTerms.eta);
+        emit TermsScheduled(
+            pendingTerms.advanceRateBps,
+            pendingTerms.maxLateBps,
+            pendingTerms.minJuniorBps,
+            pendingTerms.seniorAprBps,
+            pendingTerms.juniorAprBps,
+            pendingTerms.eta
+        );
     }
 
+    /// @notice Apply the queued terms. Interest accrued so far uses the old rates.
     function executeTerms() external {
         _onlyGovernor();
         if (!pendingTerms.active || block.timestamp < pendingTerms.eta) revert TooEarly();
@@ -80,9 +95,12 @@ contract CreditFacility is FacilityCash {
         acct.seniorAprBps = pendingTerms.seniorAprBps;
         acct.juniorAprBps = pendingTerms.juniorAprBps;
         pendingTerms.active = false;
-        emit TermsExecuted();
+        emit TermsExecuted(
+            acct.advanceRateBps, acct.maxLateBps, acct.minJuniorBps, acct.seniorAprBps, acct.juniorAprBps
+        );
     }
 
+    /// @notice Drop a queued term set. A later execute reverts `TooEarly`.
     function cancelTerms() external {
         _onlyGovernor();
         if (!pendingTerms.active) revert BadParam();
@@ -90,6 +108,7 @@ contract CreditFacility is FacilityCash {
         emit TermsCancelled();
     }
 
+    /// @notice Queue a receivables book. Address zero is allowed and makes the base unreadable.
     function scheduleBook(address book) external {
         _onlyGovernor();
         pendingBook = book;
@@ -97,6 +116,7 @@ contract CreditFacility is FacilityCash {
         emit BookScheduled(book, bookEta);
     }
 
+    /// @notice Point the borrowing base at the queued book.
     function executeBook() external {
         _onlyGovernor();
         if (bookEta == 0 || block.timestamp < bookEta) revert TooEarly();
@@ -105,6 +125,7 @@ contract CreditFacility is FacilityCash {
         emit BookSet(receivables);
     }
 
+    /// @notice Queue a peg oracle, its floor, and its maximum age.
     function scheduleOracle(address next, uint64 minPrice, uint64 maxAge) external {
         _onlyGovernor();
         pendingOracle = next;
@@ -114,6 +135,7 @@ contract CreditFacility is FacilityCash {
         emit OracleScheduled(next, oracleEta);
     }
 
+    /// @notice Apply the queued peg oracle.
     function executeOracle() external {
         _onlyGovernor();
         if (oracleEta == 0 || block.timestamp < oracleEta) revert TooEarly();

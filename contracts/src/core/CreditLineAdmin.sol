@@ -19,32 +19,53 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
 
     uint256 internal constant BPS = 10_000;
 
+    /// @notice USDG this line moves.
     address public immutable token;
+    /// @notice Fee guardrail `quote` and `draw` read.
     IPricingEngine public immutable pricing;
+    /// @notice First-loss reserve. `requiredReserve` and `markLate` read it.
     IPlatformReserve public immutable reserveVault;
 
+    /// @inheritdoc ILockgateCreditLine
     uint64 public grace;
+    /// @notice Draw cap on utilization, in bps. `setCaps` writes this.
     uint16 public maxUtilizationBps;
+    /// @notice Draw cap on one source's share of exposure, in bps.
     uint16 public maxConcentrationBps;
+    /// @inheritdoc ILockgateCreditLine
     uint256 public outstanding;
+    /// @inheritdoc ILockgateCreditLine
     uint256 public earnedFees;
+    /// @notice USDG the owner has deposited with `depositCapital`.
     uint256 public deposited;
+    /// @notice USDG the owner has taken with `withdrawCapital`.
     uint256 public withdrawn;
-    uint256 public totalExposure;
+    /// @inheritdoc ILockgateCreditLine
+    uint256 public override totalExposure;
+    /// @inheritdoc ILockgateCreditLine
     uint256 public override eligibleOutstanding;
+    /// @inheritdoc ILockgateCreditLine
     uint256 public override lateOutstanding;
+    /// @inheritdoc ILockgateCreditLine
     uint256 public advanceCount;
 
+    /// @notice True when `account` may call `registerSource`.
     mapping(address => bool) public registrars;
+    /// @notice True when `source` can draw. Deregister clears this and leaves the address listed.
     mapping(address => bool) public registered;
     mapping(address => bool) internal listed;
+    /// @inheritdoc ILockgateCreditLine
     mapping(address => uint256) public limitOf;
+    /// @inheritdoc ILockgateCreditLine
     mapping(address => uint16) public reserveBpsOf;
+    /// @inheritdoc ILockgateCreditLine
     mapping(address => uint16) public reserveFloorBps;
+    /// @inheritdoc ILockgateCreditLine
     mapping(address => uint16) public riskOf;
     mapping(address => uint256) internal _exposure;
     mapping(uint256 => Advance) internal _advances;
     mapping(uint256 => uint64) internal _graceOf;
+    /// @inheritdoc ILockgateCreditLine
     mapping(uint256 => uint256) public recoveredOf;
     mapping(address => uint256[]) internal _advanceIds;
     address[] internal _sources;
@@ -73,7 +94,9 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
     error AlreadyRegistered();
     error BadParam();
     error StillExposed();
+    error RenounceDisabled();
 
+    /// @inheritdoc ILockgateCreditLine
     function paused() public view override(Pausable, ILockgateCreditLine) returns (bool) {
         return super.paused();
     }
@@ -92,8 +115,9 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
     /// @inheritdoc ILockgateCreditLine
     function registerSource(address source, uint256 limit, uint16 reserveBps_) external whenNotPaused {
         if (msg.sender != owner() && !registrars[msg.sender]) revert NotRegistrar();
-        if (registered[source] && msg.sender != owner()) revert AlreadyRegistered();
-        _setTerms(source, limit, reserveBps_, riskOf[source], true);
+        // `listed` stays set after deregister, so a registrar cannot put that source back.
+        if (msg.sender != owner() && (registered[source] || listed[source])) revert AlreadyRegistered();
+        _setTerms(source, limit, reserveBps_, riskOf[source], !registered[source]);
     }
 
     /// @inheritdoc ILockgateCreditLine
@@ -117,6 +141,11 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
         emit RegistrarSet(registrar, allowed);
     }
 
+    /// @notice The owner stays. Renouncing would leave repaid USDG with nobody who can call `withdrawCapital`.
+    function renounceOwnership() public view override onlyOwner {
+        revert RenounceDisabled();
+    }
+
     /// @inheritdoc ILockgateCreditLine
     function setGrace(uint64 grace_) external onlyOwner {
         grace = grace_;
@@ -131,8 +160,10 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
         emit CapsSet(maxUtil, maxConc);
     }
 
+    /// @inheritdoc ILockgateCreditLine
     function pause() external onlyOwner { _pause(); }
 
+    /// @inheritdoc ILockgateCreditLine
     function unpause() external onlyOwner { _unpause(); }
 
     /// @inheritdoc ILockgateCreditLine
@@ -158,12 +189,16 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
     function postReserve(address source, uint256 amount) external nonReentrant {
         UsdgTransfers.pull(token, msg.sender, address(this), amount);
         reserveVault.post(source, amount);
+        emit ReservePosted(source, msg.sender, amount);
     }
 
+    /// @inheritdoc ILockgateCreditLine
     function capital() public view returns (uint256) { return IERC20(token).balanceOf(address(this)); }
 
+    /// @inheritdoc ILockgateCreditLine
     function exposure(address source) external view returns (uint256) { return _exposure[source]; }
 
+    /// @inheritdoc ILockgateCreditLine
     function requiredReserve(address source) public view returns (uint256) {
         if (_exposure[source] == 0) return 0;
         uint16 bps = _activeReserveBps(source);
@@ -171,8 +206,10 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
         return Math.mulDiv(_exposure[source], bps, BPS, Math.Rounding.Ceil);
     }
 
+    /// @inheritdoc ILockgateCreditLine
     function reserveOf(address source) external view returns (uint256) { return reserveVault.balanceOf(source); }
 
+    /// @inheritdoc ILockgateCreditLine
     function utilizationBps() public view returns (uint16) {
         uint256 denom = capital() + outstanding;
         if (denom == 0) return 0;
@@ -180,20 +217,26 @@ abstract contract CreditLineAdmin is Ownable, Pausable, ReentrancyGuard, ILockga
         return bps > BPS ? uint16(BPS) : uint16(bps);
     }
 
+    /// @inheritdoc ILockgateCreditLine
     function sources() external view returns (address[] memory) { return _sources; }
 
+    /// @inheritdoc ILockgateCreditLine
     function getAdvance(uint256 id) external view returns (Advance memory) { return _advances[id]; }
 
+    /// @inheritdoc ILockgateCreditLine
     function advancesOf(address source) external view returns (uint256[] memory) { return _advanceIds[source]; }
 
+    /// @inheritdoc ILockgateCreditLine
     function remainingOf(uint256 id) external view returns (uint256) { return _remaining(id); }
 
     /// @inheritdoc ILockgateCreditLine
     function graceOf(uint256 id) external view returns (uint64) { return _graceOf[id]; }
 
-    function accountedAssets() external view returns (uint256) { return capital() + outstanding; }
+    /// @inheritdoc ILockgateCreditLine
+    function accountedAssets() external view override returns (uint256) { return capital() + outstanding; }
 
-    function accountedEquity() external view returns (uint256) { return deposited + earnedFees - withdrawn; }
+    /// @inheritdoc ILockgateCreditLine
+    function accountedEquity() external view override returns (uint256) { return deposited + earnedFees - withdrawn; }
 
     function _remaining(uint256 id) internal view returns (uint256) {
         Advance storage advance = _advances[id];

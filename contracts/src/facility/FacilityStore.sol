@@ -6,6 +6,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IPegOracle} from "../partner/interfaces/IPegOracle.sol";
+import {IReceivablesBook} from "./interfaces/IReceivablesBook.sol";
 import {FacilityMath} from "./libraries/FacilityMath.sol";
 
 /// @title FacilityStore
@@ -87,6 +88,7 @@ abstract contract FacilityStore is ReentrancyGuard {
     error TooEarly();
 
     event GovernorSet(address indexed governor);
+    event GovernorTransferStarted(address indexed pending);
     event LenderApproved(address indexed lender, bool approved);
     event Deposited(address indexed lender, Tranche tranche, uint256 assets, uint256 shares);
     event Redeemed(address indexed lender, Tranche tranche, uint256 shares, uint256 assets);
@@ -96,10 +98,15 @@ abstract contract FacilityStore is ReentrancyGuard {
     event RecoveryEntered(uint256 drawnAfter);
     event LossRecognized(uint256 amount);
     event TermsTightened(uint16 advanceRateBps, uint16 maxLateBps, uint16 minJuniorBps);
-    event TermsScheduled(uint64 eta);
-    event TermsExecuted();
+    event TermsScheduled(
+        uint16 advanceRateBps, uint16 maxLateBps, uint16 minJuniorBps, uint64 seniorAprBps, uint64 juniorAprBps, uint64 eta
+    );
+    event TermsExecuted(
+        uint16 advanceRateBps, uint16 maxLateBps, uint16 minJuniorBps, uint64 seniorAprBps, uint64 juniorAprBps
+    );
     event TermsCancelled();
     event ResidualSwept(address indexed to, uint256 amount);
+    event SurplusBooked(uint256 amount);
 
     function _init(Init memory init) internal {
         if (init.governor == address(0) || init.borrower == address(0) || init.asset == address(0)) revert BadParam();
@@ -126,35 +133,59 @@ abstract contract FacilityStore is ReentrancyGuard {
         if (msg.sender != governor) revert Unauthorized();
     }
 
+    /// @dev The token balance must already equal `acct.cash`. A short delivery reverts.
     function _pull(uint256 amount) internal {
         IERC20 token = IERC20(asset);
         uint256 beforeBal = token.balanceOf(address(this));
+        if (beforeBal != acct.cash) revert BadParam();
         token.safeTransferFrom(msg.sender, address(this), amount);
-        if (token.balanceOf(address(this)) - beforeBal != amount) revert BadParam();
+        uint256 afterBal = token.balanceOf(address(this));
+        if (afterBal < beforeBal || afterBal - beforeBal != amount) revert BadParam();
     }
 
+    /// @dev Callers reduce `acct.cash` by `amount` first. The recipient must receive `amount`.
     function _push(address to, uint256 amount) internal {
-        IERC20(asset).safeTransfer(to, amount);
+        IERC20 token = IERC20(asset);
+        if (token.balanceOf(address(this)) != acct.cash + amount) revert BadParam();
+        uint256 beforeTo = token.balanceOf(to);
+        token.safeTransfer(to, amount);
+        uint256 afterTo = token.balanceOf(to);
+        if (afterTo < beforeTo || afterTo - beforeTo != amount) revert BadParam();
+    }
+
+    /// @notice Tokens above tracked cash become residual. A shortfall reverts and nothing is booked.
+    function bookSurplus() external nonReentrant returns (uint256 extra) {
+        uint256 bal = IERC20(asset).balanceOf(address(this));
+        if (bal < acct.cash) revert BadParam();
+        extra = bal - acct.cash;
+        if (extra == 0) return 0;
+        acct.cash += extra;
+        acct.residual += extra;
+        emit SurplusBooked(extra);
     }
 
     function _touch() internal {
         FacilityMath.accrue(acct, block.timestamp);
     }
 
+    /// @notice Cash, drawn principal, interest, and the live terms.
     function accounting() external view returns (FacilityMath.State memory) {
         return acct;
     }
 
+    /// @notice Cash plus drawn equals principal, interest cash, residual, and locked.
     function solvent() public view returns (bool) {
         return FacilityMath.solvent(acct);
     }
 
+    /// @notice Advance rate times eligible receivables. An unreadable book is zero.
     function borrowingBase() public view returns (uint256) {
         (uint256 eligible,, bool ok) = _readBook();
         if (!ok) return 0;
         return Math.mulDiv(eligible, acct.advanceRateBps, BPS);
     }
 
+    /// @notice Room under the borrowing base and the idle cash. Zero while a covenant is open.
     function availableDraw() public view returns (uint256) {
         if (acct.recovery || _breached()) return 0;
         uint256 base = borrowingBase();
@@ -177,9 +208,9 @@ abstract contract FacilityStore is ReentrancyGuard {
 
     function _readBook() internal view returns (uint256 eligible, uint256 late, bool ok) {
         if (receivables == address(0)) return (0, 0, false);
-        (bool okE, uint256 e) = _word(receivables, abi.encodeWithSignature("eligibleOutstanding()"));
+        (bool okE, uint256 e) = _word(receivables, abi.encodeCall(IReceivablesBook.eligibleOutstanding, ()));
         if (!okE) return (0, 0, false);
-        (bool okL, uint256 l) = _word(receivables, abi.encodeWithSignature("lateOutstanding()"));
+        (bool okL, uint256 l) = _word(receivables, abi.encodeCall(IReceivablesBook.lateOutstanding, ()));
         if (!okL) return (0, 0, false);
         return (e, l, true);
     }

@@ -106,7 +106,12 @@ contract PermissionsTest is VaultFixture {
         vault.markLate(id);
         assertEq(usdg.balanceOf(lockgate), lockBal);
         assertEq(usdg.balanceOf(address(vault)), vaultBal);
-        assertGt(vault.getAdvance(id).owed, 0);
+        assertEq(vault.getAdvance(id).owed, 50_000 * UNIT);
+        assertEq(vault.getAdvance(id).feeRemaining, 0);
+        assertEq(vault.getAdvance(id).principalRemaining, 50_000 * UNIT);
+        assertEq(vault.reserveCash(), 0);
+        assertEq(vault.idle(), 951_000 * UNIT);
+        assertEq(vault.outstandingPrincipal(), 50_000 * UNIT);
     }
 
     function _unauth() internal {

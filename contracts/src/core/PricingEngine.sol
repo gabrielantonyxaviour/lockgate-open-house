@@ -8,6 +8,7 @@ import {PricingMath} from "./PricingMath.sol";
 /// @title PricingEngine
 /// @notice On-chain guardrails. Stage 1 charges this quote. Stage 2 may charge more, never less, and never past the max.
 contract PricingEngine is Ownable, IPricingEngine {
+    /// @notice Live curve stored by `setParams`. `params()` returns this.
     Params public stored;
 
     error BadParams(string reason);
@@ -36,6 +37,7 @@ contract PricingEngine is Ownable, IPricingEngine {
         emit ParamsUpdated(initial);
     }
 
+    /// @inheritdoc IPricingEngine
     function params() external view returns (Params memory) {
         return stored;
     }

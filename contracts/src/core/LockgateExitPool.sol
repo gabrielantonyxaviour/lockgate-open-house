@@ -5,6 +5,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ICreditSource} from "../interfaces/ICreditSource.sol";
 import {ILockgateExitPool} from "../interfaces/ILockgateExitPool.sol";
 import {ILockgateCreditLine} from "../interfaces/ILockgateCreditLine.sol";
 import {OpenCreditVault} from "./OpenCreditVault.sol";
@@ -15,11 +16,16 @@ import {OpenCreditVault} from "./OpenCreditVault.sol";
 contract LockgateExitPool is Ownable, ReentrancyGuard, ILockgateExitPool {
     using SafeERC20 for IERC20;
 
+    /// @notice Open vault this pool buys and withdraws.
     OpenCreditVault public immutable vaultContract;
+    /// @notice Credit line `sellToLockgate` draws.
     ILockgateCreditLine public immutable line;
+    /// @notice USDG the vault holds.
     address public immutable token;
 
+    /// @inheritdoc ICreditSource
     bool public gated;
+    /// @inheritdoc ILockgateExitPool
     uint256 public positionCount;
 
     mapping(uint256 => Position) internal _positions;
@@ -46,25 +52,29 @@ contract LockgateExitPool is Ownable, ReentrancyGuard, ILockgateExitPool {
     event Settled(uint256 indexed positionId, uint256 advanceId, uint256 repaid);
 
     constructor(address owner_, address vault_, address line_) Ownable(owner_) {
-        if (owner_ == address(0) || vault_ == address(0) || line_ == address(0)) revert ZeroAddress();
+        if (vault_ == address(0) || line_ == address(0)) revert ZeroAddress();
         vaultContract = OpenCreditVault(vault_);
         line = ILockgateCreditLine(line_);
         token = vaultContract.asset();
         IERC20(token).forceApprove(line_, type(uint256).max);
     }
 
+    /// @inheritdoc ILockgateExitPool
     function vault() external view returns (address) {
         return address(vaultContract);
     }
 
+    /// @inheritdoc ICreditSource
     function nav() external view returns (uint256) {
         return vaultContract.nav();
     }
 
+    /// @notice Vault accrual timestamp. A sale accrues the vault before it draws.
     function navUpdatedAt() external view returns (uint64) {
         return vaultContract.navUpdatedAt();
     }
 
+    /// @inheritdoc ILockgateExitPool
     function setGated(bool isGated) external onlyOwner {
         gated = isGated;
         emit GatedSet(isGated);
@@ -135,10 +145,12 @@ contract LockgateExitPool is Ownable, ReentrancyGuard, ILockgateExitPool {
         emit Settled(positionId, position.advanceId, position.navValue);
     }
 
+    /// @inheritdoc ILockgateExitPool
     function positionsOf(address seller) external view returns (uint256[] memory) {
         return _owned[seller];
     }
 
+    /// @inheritdoc ILockgateExitPool
     function getPosition(uint256 id) external view returns (Position memory) {
         return _positions[id];
     }

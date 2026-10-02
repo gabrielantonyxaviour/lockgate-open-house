@@ -165,4 +165,73 @@ contract CreditLineEdgesTest is CoreFixture {
         tiny.draw(1, investor, type(uint256).max);
         assertEq(line.requiredReserve(address(tiny)), 1);
     }
+
+    /// @dev Outstanding 5000 and capital 5001. The view floors to 4999. The next principal of 1 ceils to 5001.
+    function test_utilizationViewFloorsWhileTheNextUnitCeilsOver() public {
+        _zeroMinFee();
+        StubSource book = _stub(1_000_000e6, 0);
+        (uint256 id, uint256 fee) = book.draw(5_000, investor, type(uint256).max);
+        assertEq(fee, 0);
+        assertEq(line.getAdvance(id).principal, 5_000);
+
+        uint256 idle = line.capital() - 5_001;
+        vm.prank(owner);
+        line.withdrawCapital(idle);
+        vm.prank(owner);
+        line.setCaps(5_000, 10_000);
+
+        assertEq(line.capital(), 5_001);
+        assertEq(line.outstanding(), 5_000);
+        assertEq(line.utilizationBps(), 4_999);
+
+        (uint256 quoted, uint16 bps, bool available, string memory why) = line.quote(address(book), 1);
+        assertEq(quoted, 0);
+        assertEq(bps, 0);
+        assertFalse(available);
+        assertEq(why, "utilization");
+
+        uint256 advances = line.advanceCount();
+        vm.expectRevert(CreditLineAdmin.UtilizationCap.selector);
+        book.draw(1, investor, type(uint256).max);
+        assertEq(line.advanceCount(), advances);
+        assertEq(line.capital(), 5_001);
+        assertEq(line.outstanding(), 5_000);
+
+        vm.prank(owner);
+        line.setCaps(5_001, 10_000);
+        (, uint256 nextFee) = book.draw(1, investor, type(uint256).max);
+        assertEq(nextFee, 0);
+        assertEq(line.outstanding(), 5_001);
+        assertEq(line.capital(), 5_000);
+        assertEq(line.utilizationBps(), 5_000);
+        assertEq(usdg.balanceOf(investor), 5_001);
+    }
+
+    /// @dev Capital 0 and outstanding 5000. The view is 10000. The draw stops on capital before that cap.
+    function test_zeroCapitalReportsFullUtilizationAndQuotesCapital() public {
+        _zeroMinFee();
+        StubSource book = _stub(1_000_000e6, 0);
+        book.draw(5_000, investor, type(uint256).max);
+        uint256 idle = line.capital();
+        vm.prank(owner);
+        line.withdrawCapital(idle);
+        assertEq(line.capital(), 0);
+        assertEq(line.outstanding(), 5_000);
+        assertEq(line.utilizationBps(), 10_000);
+        (,,, string memory why) = line.quote(address(book), 1);
+        assertEq(why, "capital");
+        uint256 advances = line.advanceCount();
+        vm.expectRevert(CreditLineAdmin.CapitalShort.selector);
+        book.draw(1, investor, type(uint256).max);
+        assertEq(line.advanceCount(), advances);
+        assertEq(line.utilizationBps(), 10_000);
+    }
+
+    function _zeroMinFee() internal {
+        IPricingEngine.Params memory p = pricing.params();
+        p.minFeeBps = 0;
+        p.timeScale = 1;
+        vm.prank(owner);
+        pricing.setParams(p);
+    }
 }

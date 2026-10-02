@@ -41,29 +41,57 @@ contract RouterTest is Test {
         IPartnerRouter.Slice[] memory best = router.quote(request, IPartnerRouter.Strategy.BestFee);
         assertEq(best.length, 1);
         assertEq(best[0].vault, address(lowFee));
+        assertEq(best[0].navValue, 100_000 * UNIT);
         assertEq(best[0].feeBps, 50);
-        assertEq(best[0].fee, (100_000 * UNIT * 50) / 10_000);
-        IPartnerRouter.Slice[] memory robin = router.quote(request, IPartnerRouter.Strategy.RoundRobin);
-        assertEq(robin[0].vault, address(highFee));
+        assertEq(best[0].fee, 500 * UNIT);
+        _robin(request, highFee, 100, 1_000 * UNIT);
         _fund(highFee, 100_000 * UNIT, 1);
-        robin = router.quote(request, IPartnerRouter.Strategy.RoundRobin);
-        assertEq(robin[0].vault, address(lowFee));
+        _robin(request, lowFee, 50, 500 * UNIT);
         _fund(lowFee, 100_000 * UNIT, 2);
-        robin = router.quote(request, IPartnerRouter.Strategy.RoundRobin);
-        assertEq(robin[0].vault, address(midFee));
+        _robin(request, midFee, 80, 800 * UNIT);
 
         PartnerVault a = _vault(100, 300_000 * UNIT);
         PartnerVault b = _vault(100, 200_000 * UNIT);
         PartnerVault c = _vault(100, 100_000 * UNIT);
-        IPartnerRouter.Slice[] memory parts = router.quote(_request(500_000 * UNIT), IPartnerRouter.Strategy.ProRata);
-        assertGe(parts.length, 2);
-        uint256 sum;
-        for (uint256 i; i < parts.length; ++i) {
-            sum += parts[i].navValue;
-            assertLe(parts[i].navValue, PartnerVault(parts[i].vault).maxNav(platform, 30, request.dueAt));
-        }
-        assertEq(sum, 500_000 * UNIT);
-        assertTrue(a.idle() > 0 && b.idle() > 0 && c.idle() > 0);
+        IPartnerRouter.ExitRequest memory wide = _request(500_000 * UNIT);
+        IPartnerRouter.Slice[] memory parts = router.quote(wide, IPartnerRouter.Strategy.ProRata);
+        assertEq(parts.length, 6);
+        _slice(parts[0], highFee, 291_666_666_669, 2_916_666_667, 100, wide.dueAt);
+        _slice(parts[1], lowFee, 113_095_238_095, 565_476_190, 50, wide.dueAt);
+        _slice(parts[2], midFee, 59_523_809_523, 476_190_476, 80, wide.dueAt);
+        _slice(parts[3], a, 17_857_142_857, 178_571_429, 100, wide.dueAt);
+        _slice(parts[4], b, 11_904_761_904, 119_047_619, 100, wide.dueAt);
+        _slice(parts[5], c, 5_952_380_952, 59_523_810, 100, wide.dueAt);
+        assertEq(a.idle(), 300_000 * UNIT);
+        assertEq(b.idle(), 200_000 * UNIT);
+        assertEq(c.idle(), 100_000 * UNIT);
+        assertEq(highFee.idle(), 4_901_000 * UNIT);
+        assertEq(lowFee.idle(), 1_900_500 * UNIT);
+        assertEq(midFee.idle(), 1_000_000 * UNIT);
+    }
+
+    function _robin(IPartnerRouter.ExitRequest memory request, PartnerVault v, uint16 bps, uint256 fee) internal view {
+        IPartnerRouter.Slice[] memory robin = router.quote(request, IPartnerRouter.Strategy.RoundRobin);
+        assertEq(robin.length, 1);
+        assertEq(robin[0].vault, address(v));
+        assertEq(robin[0].navValue, request.navValue);
+        assertEq(robin[0].feeBps, bps);
+        assertEq(robin[0].fee, fee);
+    }
+
+    function _slice(
+        IPartnerRouter.Slice memory part,
+        PartnerVault v,
+        uint256 nav,
+        uint256 fee,
+        uint16 bps,
+        uint64 dueAt
+    ) internal view {
+        assertEq(part.vault, address(v));
+        assertEq(part.navValue, nav);
+        assertEq(part.fee, fee);
+        assertEq(part.feeBps, bps);
+        assertLe(nav, v.maxNav(platform, 30, dueAt));
     }
 
     function test_repayReturnsOnlyToTheFundingVault() public {

@@ -17,6 +17,7 @@ contract FacilityMathFuzzTest is FacilityFixture {
         uint256 apr = bound(aprRaw, 0, 10_000);
         uint256 dt = bound(dtRaw, 1, 365 days);
         s.drawn = principal;
+        s.seniorDrawn = principal;
         s.seniorPrincipal = principal;
         s.seniorAprBps = uint64(apr);
         s.lastAccrual = 1;
@@ -61,6 +62,7 @@ contract FacilityMathFuzzTest is FacilityFixture {
         uint256 loss = bound(lossRaw, 0, junior + senior);
         s.juniorPrincipal = junior;
         s.seniorPrincipal = senior;
+        s.seniorDrawn = senior;
         s.drawn = junior + senior;
         uint256 applied = FacilityMath.applyLoss(s, loss);
         uint256 juniorTake = loss < junior ? loss : junior;
@@ -71,6 +73,26 @@ contract FacilityMathFuzzTest is FacilityFixture {
         assertEq(s.seniorDeficit, seniorTake);
         assertEq(applied, juniorTake + seniorTake);
         assertEq(s.drawn, junior + senior - applied);
+        assertEq(s.seniorDrawn, senior - seniorTake);
+        assertTrue(FacilityMath.solvent(s));
+    }
+
+    /// @notice Interest uses the stored senior slice after part of it has already been repaid.
+    function test_mixedDrawAccruesOnTheStoredSlices() public {
+        delete s;
+        s.seniorPrincipal = 100e6;
+        s.juniorPrincipal = 200e6;
+        s.drawn = 200e6;
+        s.seniorDrawn = 40e6;
+        s.cash = 100e6;
+        s.seniorAprBps = 800;
+        s.juniorAprBps = 1_200;
+        s.lastAccrual = 1;
+        FacilityMath.accrue(s, 1 + 365 days);
+        assertEq(s.seniorInterestDue, 3_200_000);
+        assertEq(s.juniorInterestDue, 19_200_000);
+        assertEq(s.seniorDrawn, 40e6);
+        assertEq(s.drawn, 200e6);
         assertTrue(FacilityMath.solvent(s));
     }
 
@@ -83,7 +105,7 @@ contract FacilityMathFuzzTest is FacilityFixture {
         uint256 want = bound(drawRaw, 0, 2_000_000e6);
         if (want == 0 || want > room) {
             vm.prank(borrower);
-            vm.expectRevert(want == 0 ? FacilityStore.Unauthorized.selector : FacilityStore.Covenant.selector);
+            vm.expectRevert(want == 0 ? FacilityStore.BadParam.selector : FacilityStore.Covenant.selector);
             facility.draw(want);
             return;
         }

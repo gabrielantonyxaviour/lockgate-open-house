@@ -10,6 +10,7 @@ import {PlatformConfig} from "./PlatformConfig.sol";
 contract WeeklyCyclePlatform is PlatformBase {
     constructor(PlatformConfig memory cfg) PlatformBase(cfg) {}
 
+    /// @notice Weekly cycle. Unpaid requests roll. A closed gate blocks new exits, and settlement still runs.
     function kind() public pure override returns (QueueKind) {
         return QueueKind.WeeklyCycle;
     }

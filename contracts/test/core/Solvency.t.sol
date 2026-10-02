@@ -122,7 +122,12 @@ contract SolvencyTest is StdInvariant, Test {
     function invariant_bookAndReserveBalance() public view {
         assertEq(line.accountedAssets(), line.accountedEquity());
         assertEq(reserve.tokenBalance(), reserve.totalBalances());
-        assertGe(line.accountedAssets(), line.outstanding());
+        uint256 rebuilt;
+        uint256 n = line.advanceCount();
+        for (uint256 id = 1; id <= n; ++id) {
+            rebuilt += line.remainingOf(id);
+        }
+        assertEq(rebuilt, line.totalExposure());
         assertEq(line.eligibleOutstanding() + line.lateOutstanding(), line.totalExposure());
     }
 

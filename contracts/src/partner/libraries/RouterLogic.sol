@@ -54,7 +54,9 @@ library RouterLogic {
         }
     }
 
-    /// @dev Splits `nav` across candidates in proportion to `maxNav`. Sum of slices equals the filled amount.
+    /// @dev Proportional floor, then leftover units. Fuller slices take them first.
+    ///      A cap the floor skipped still takes a unit once those slices are full.
+    ///      Sum of `navValue` equals the filled amount. The fee is the half-up fee of that final nav.
     function proRata(Candidate[] memory rows, uint256 nav) internal pure returns (Slice[] memory filled) {
         uint256 n = rows.length;
         uint256 total;
@@ -63,38 +65,48 @@ library RouterLogic {
         }
         if (total == 0 || nav == 0) return new Slice[](0);
         uint256 target = nav < total ? nav : total;
-        Slice[] memory tmp = new Slice[](n);
-        uint256 count;
+        uint256[] memory taken = new uint256[](n);
         uint256 used;
         for (uint256 i; i < n; ++i) {
             if (rows[i].maxNav == 0 || rows[i].feeBps >= FeeMath.BPS) continue;
             uint256 part = Math.mulDiv(target, rows[i].maxNav, total);
             if (part > rows[i].maxNav) part = rows[i].maxNav;
-            if (part == 0) continue;
-            tmp[count] = _slice(rows[i].vault, part, rows[i].feeBps);
+            taken[i] = part;
             used += part;
-            ++count;
         }
         uint256 dust = target - used;
-        for (uint256 i; i < count && dust > 0; ++i) {
-            uint256 room = _room(rows, tmp[i].vault, tmp[i].navValue);
-            if (room == 0) continue;
-            uint256 add = dust < room ? dust : room;
-            tmp[i] = _slice(tmp[i].vault, tmp[i].navValue + add, tmp[i].feeBps);
-            dust -= add;
+        dust = _pour(rows, taken, dust, true);
+        if (dust > 0) _pour(rows, taken, dust, false);
+        uint256 count;
+        for (uint256 i; i < n; ++i) {
+            if (taken[i] > 0) ++count;
         }
         filled = new Slice[](count);
-        for (uint256 i; i < count; ++i) filled[i] = tmp[i];
+        uint256 w;
+        for (uint256 i; i < n; ++i) {
+            if (taken[i] == 0) continue;
+            filled[w] = _slice(rows[i].vault, taken[i], rows[i].feeBps);
+            ++w;
+        }
     }
 
-    function _room(Candidate[] memory rows, address vault, uint256 usedNav) private pure returns (uint256) {
+    /// @dev `positive` tops up slices that already have a floor share. The other pass fills caps that rounded to zero.
+    function _pour(Candidate[] memory rows, uint256[] memory taken, uint256 dust, bool positive)
+        private
+        pure
+        returns (uint256)
+    {
         uint256 n = rows.length;
-        for (uint256 i; i < n; ++i) {
-            if (rows[i].vault == vault) {
-                return rows[i].maxNav > usedNav ? rows[i].maxNav - usedNav : 0;
-            }
+        for (uint256 i; i < n && dust > 0; ++i) {
+            if (rows[i].maxNav == 0 || rows[i].feeBps >= FeeMath.BPS) continue;
+            if (positive != (taken[i] > 0)) continue;
+            uint256 room = rows[i].maxNav - taken[i];
+            if (room == 0) continue;
+            uint256 add = dust < room ? dust : room;
+            taken[i] += add;
+            dust -= add;
         }
-        return 0;
+        return dust;
     }
 
     function _slice(address vault, uint256 nav, uint16 bps) private pure returns (Slice memory s) {

@@ -34,9 +34,13 @@ interface IPartnerRouter {
         uint256 fee;
     }
 
+    /// @notice Vault reports an advance it just funded. The caller must be the registered vault.
     function notifyFunded(bytes32 exitRef, uint256 advanceId, address platform, uint256 navValue, uint256 fee)
         external;
 
+    /// @notice Read-only selection. A vault that reverts or reports an absurd nav is skipped.
     function quote(ExitRequest calldata request, Strategy strategy) external view returns (Slice[] memory);
+
+    /// @notice Funding records for one exit, in the order the vaults reported them.
     function recordsOf(bytes32 exitRef) external view returns (Record[] memory);
 }

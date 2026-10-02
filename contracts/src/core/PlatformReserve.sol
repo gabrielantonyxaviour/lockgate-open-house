@@ -12,13 +12,20 @@ import {UsdgTransfers} from "./UsdgTransfers.sol";
 /// @title PlatformReserve
 /// @notice Per-platform first-loss USDG. The owner can name slashers. The owner cannot withdraw platform funds.
 contract PlatformReserve is Ownable, ReentrancyGuard, IPlatformReserve {
+    /// @inheritdoc IPlatformReserve
     address public immutable asset;
+    /// @inheritdoc IPlatformReserve
     address public creditLine;
+    /// @inheritdoc IPlatformReserve
     uint256 public totalBalances;
+    /// @inheritdoc IPlatformReserve
     bool public slashersLocked;
 
+    /// @inheritdoc IPlatformReserve
     mapping(address => uint256) public balanceOf;
+    /// @inheritdoc IPlatformReserve
     mapping(address => address) public adminOf;
+    /// @notice True when `account` may call `slash`.
     mapping(address => bool) public isSlasher;
 
     error ZeroAddress();
@@ -29,6 +36,7 @@ contract PlatformReserve is Ownable, ReentrancyGuard, IPlatformReserve {
     error NotSlasher();
     error SlashersLocked();
     error ShortReserve(uint256 have, uint256 required_);
+    error OverBalance(uint256 amount, uint256 balance);
 
     event Posted(address indexed platform, address indexed from, uint256 amount);
     event Withdrawn(address indexed platform, address indexed to, uint256 amount);
@@ -61,6 +69,7 @@ contract PlatformReserve is Ownable, ReentrancyGuard, IPlatformReserve {
 
     /// @inheritdoc IPlatformReserve
     function lockSlasherSet() external onlyOwner {
+        if (slashersLocked) revert SlashersLocked();
         slashersLocked = true;
         emit SlashersLockedSet();
     }
@@ -86,7 +95,9 @@ contract PlatformReserve is Ownable, ReentrancyGuard, IPlatformReserve {
     function withdraw(address platform, uint256 amount) external nonReentrant {
         if (msg.sender != platform && msg.sender != adminOf[platform]) revert NotAdmin();
         if (amount == 0) revert ZeroAmount();
-        uint256 next = balanceOf[platform] - amount;
+        uint256 bal = balanceOf[platform];
+        if (amount > bal) revert OverBalance(amount, bal);
+        uint256 next = bal - amount;
         uint256 required_ = requiredOf(platform);
         if (next < required_) revert ShortReserve(next, required_);
         balanceOf[platform] = next;
@@ -116,6 +127,7 @@ contract PlatformReserve is Ownable, ReentrancyGuard, IPlatformReserve {
         return ILockgateCreditLine(creditLine).requiredReserve(platform);
     }
 
+    /// @notice USDG held here, including a direct transfer.
     function tokenBalance() external view returns (uint256) {
         return IERC20(asset).balanceOf(address(this));
     }

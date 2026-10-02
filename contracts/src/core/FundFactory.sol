@@ -20,20 +20,34 @@ import {PlatformBase} from "./PlatformBase.sol";
 contract FundFactory is Ownable, IFundFactory {
     using SafeERC20 for IERC20;
 
+    /// @notice Share price `createDemoFund` writes. 1_023_400.
     uint256 public constant DEMO_NAV = 1_023_400;
+    /// @notice USDG of shares minted to the demo issuer. 10_000e6.
     uint256 public constant DEMO_SHARE_VALUE = 10_000e6;
+    /// @notice USDG `createDemoFund` deposits as cash. 2_000e6.
     uint256 public constant DEMO_CASH = 2_000e6;
+    /// @notice Draw limit registered for the demo fund. 25_000e6.
     uint256 public constant DEMO_LIMIT = 25_000e6;
+    /// @notice Reserve rate registered for the demo fund. 750 bps.
     uint16 public constant DEMO_RESERVE_BPS = 750;
+    /// @notice USDG posted to the demo reserve. 1_875e6.
     uint256 public constant DEMO_RESERVE = 1_875e6;
 
+    /// @notice USDG the factory's platforms use.
     address public immutable token;
+    /// @notice Line `createPlatform` registers the new fund on.
     address public immutable creditLine;
+    /// @notice Reserve the demo fund posts to.
     address public immutable reserve;
+    /// @notice Clone target for a weekly platform.
     address public immutable weeklyImpl;
+    /// @notice Clone target for an epoch platform.
     address public immutable epochImpl;
+    /// @notice Clone target for a quarterly platform.
     address public immutable quarterImpl;
+    /// @notice True when the adapter was constructed as MockUSDG.
     bool public immutable mockToken;
+    /// @inheritdoc IFundFactory
     uint64 public demoWindow = 600;
 
     mapping(address => address[]) internal _fundsOf;
@@ -129,10 +143,12 @@ contract FundFactory is Ownable, IFundFactory {
         ILockgateCreditLine(creditLine).registerSource(fund, limit, reserveBps);
     }
 
+    /// @inheritdoc IFundFactory
     function fundsOf(address issuer) external view returns (address[] memory) {
         return _fundsOf[issuer];
     }
 
+    /// @inheritdoc IFundFactory
     function allFunds() external view returns (address[] memory) {
         return _all;
     }

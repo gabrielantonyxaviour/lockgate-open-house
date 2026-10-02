@@ -25,7 +25,6 @@ abstract contract PartnerVaultAdmin is PartnerVaultRead {
     error BadEngineSig();
     error NotApproved();
     error NonceUsed();
-    error WrongVault();
     error NotSubmitted();
     error BadStatus();
 
@@ -43,6 +42,7 @@ abstract contract PartnerVaultAdmin is PartnerVaultRead {
     event PayoutSet(address indexed platform, address indexed to);
     event UpgradeScheduled(address indexed implementation, uint64 eta);
     event UpgradeCancelled();
+    event UpgradeExecuted(address indexed implementation);
     event UpgradeDelayIncreased(uint64 delay);
 
     function _onlyOwner() internal view {
@@ -63,6 +63,7 @@ abstract contract PartnerVaultAdmin is PartnerVaultRead {
         emit GraceSet(grace_);
     }
 
+    /// @notice Starts a two-step owner change. The vault keeps the current owner until `acceptOwnership`.
     function transferOwnership(address next) external {
         _onlyOwner();
         if (next == address(0)) revert ZeroAddress();
@@ -70,6 +71,7 @@ abstract contract PartnerVaultAdmin is PartnerVaultRead {
         emit OwnershipTransferStarted(msg.sender, next);
     }
 
+    /// @notice Pending owner becomes the only address that can move idle cash.
     function acceptOwnership() external {
         VaultLayout.Layout storage s = _s();
         if (msg.sender != s.pendingOwner) revert Unauthorized();
@@ -79,30 +81,35 @@ abstract contract PartnerVaultAdmin is PartnerVaultRead {
         emit OwnershipTransferred(prev, msg.sender);
     }
 
+    /// @notice Engine address whose signature can file a proposal. It cannot move funds by itself.
     function setProposer(address proposer_) external {
         _onlyOwner();
         _s().proposer = proposer_;
         emit ProposerSet(proposer_);
     }
 
+    /// @notice Second partner key that may `execute` or `approve`. Address zero clears it.
     function setPartnerSigner(address signer_) external {
         _onlyOwner();
         _s().partnerSigner = signer_;
         emit PartnerSignerSet(signer_);
     }
 
+    /// @notice Partner-deployed module that may `execute` with an empty partner signature.
     function setAutoModule(address module_) external {
         _onlyOwner();
         _s().autoModule = module_;
         emit AutoModuleSet(module_);
     }
 
+    /// @notice Directory told about each funded exit. Address zero stops those notifications.
     function setRouter(address router_) external {
         _onlyOwner();
         _s().router = router_;
         emit RouterSet(router_);
     }
 
+    /// @notice Peg oracle. Address zero disables the check.
     function setOracle(address oracle_, uint64 minPriceE8_, uint64 maxOracleAge_) external {
         _onlyOwner();
         VaultLayout.Layout storage s = _s();
@@ -112,18 +119,21 @@ abstract contract PartnerVaultAdmin is PartnerVaultRead {
         emit OracleSet(oracle_, minPriceE8_, maxOracleAge_);
     }
 
+    /// @notice Grace the next advance will store. Outstanding advances keep the old value.
     function setGrace(uint64 grace_) external {
         _onlyOwner();
         _s().grace = grace_;
         emit GraceSet(grace_);
     }
 
+    /// @notice Pause blocks new advances. Repay, mark-late, and withdraw still run.
     function setPaused(bool paused_) external {
         _onlyOwner();
         _s().paused = paused_;
         emit PausedSet(paused_);
     }
 
+    /// @notice Global fee floor, tenor, concentration, and mandate expiry. Zero expiry blocks every advance.
     function setMandate(uint16 minFeeBps_, uint64 maxTenor_, uint16 concentrationBps_, uint64 expiry_) external {
         _onlyOwner();
         if (minFeeBps_ > FeeMath.BPS || concentrationBps_ > FeeMath.BPS) revert BadParam();
@@ -135,6 +145,7 @@ abstract contract PartnerVaultAdmin is PartnerVaultRead {
         emit MandateGlobalsSet(minFeeBps_, maxTenor_, concentrationBps_, expiry_);
     }
 
+    /// @notice Approve or revoke a platform. Revocation does not unwind an open advance.
     function setPlatform(
         address platform,
         bool approved,
@@ -161,12 +172,14 @@ abstract contract PartnerVaultAdmin is PartnerVaultRead {
         emit PlatformSet(platform, approved, limit, reserveBps, checkGate, maxNavAge);
     }
 
+    /// @notice Recipient that must match the proposal. Address zero means the platform itself.
     function setPayout(address platform, address to) external {
         _onlyOwner();
         _s().payoutTo[platform] = to;
         emit PayoutSet(platform, to);
     }
 
+    /// @notice Queue an implementation. It can be executed after `upgradeDelay`.
     function scheduleUpgrade(address implementation_) external {
         _onlyOwner();
         if (implementation_.code.length == 0) revert BadParam();
@@ -176,6 +189,7 @@ abstract contract PartnerVaultAdmin is PartnerVaultRead {
         emit UpgradeScheduled(implementation_, s.scheduledEta);
     }
 
+    /// @notice Drop a scheduled implementation. A later execute reverts `UpgradeNotScheduled`.
     function cancelUpgrade() external {
         _onlyOwner();
         VaultLayout.Layout storage s = _s();
@@ -184,6 +198,7 @@ abstract contract PartnerVaultAdmin is PartnerVaultRead {
         emit UpgradeCancelled();
     }
 
+    /// @notice Delay can only increase.
     function increaseUpgradeDelay(uint64 delay_) external {
         _onlyOwner();
         VaultLayout.Layout storage s = _s();
@@ -213,14 +228,27 @@ abstract contract PartnerVaultAdmin is PartnerVaultRead {
         s.approvedIndexPlus[platform] = 0;
     }
 
+    /// @dev The books must already match. A fee-on-transfer or a rebase that moves the vault balance reverts.
     function _pull(address from, uint256 amount) internal {
         IERC20 token = IERC20(_s().asset);
+        VaultLayout.Layout storage s = _s();
         uint256 beforeBal = token.balanceOf(address(this));
+        if (beforeBal != s.idleCash + s.reserveCash) revert BalanceMismatch();
         token.safeTransferFrom(from, address(this), amount);
-        if (token.balanceOf(address(this)) - beforeBal != amount) revert BalanceMismatch();
+        uint256 afterBal = token.balanceOf(address(this));
+        if (afterBal < beforeBal || afterBal - beforeBal != amount) revert BalanceMismatch();
     }
 
+    /// @dev Callers reduce idle or reserve by `amount` first, so the tokens are still here. The recipient must
+    ///      receive `amount`. A short transfer or a balance that left the books reverts.
     function _push(address to, uint256 amount) internal {
-        IERC20(_s().asset).safeTransfer(to, amount);
+        IERC20 token = IERC20(_s().asset);
+        VaultLayout.Layout storage s = _s();
+        uint256 bal = token.balanceOf(address(this));
+        if (bal != s.idleCash + s.reserveCash + amount) revert BalanceMismatch();
+        uint256 beforeTo = token.balanceOf(to);
+        token.safeTransfer(to, amount);
+        uint256 afterTo = token.balanceOf(to);
+        if (afterTo < beforeTo || afterTo - beforeTo != amount) revert BalanceMismatch();
     }
 }

@@ -4,6 +4,7 @@ pragma solidity ^0.8.24;
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {ICreditSource} from "../interfaces/ICreditSource.sol";
 import {IIssuerFund} from "../interfaces/IIssuerFund.sol";
 import {IQueueAdapter, QueueKind} from "../interfaces/IQueueAdapter.sol";
 import {ILockgateCreditLine} from "../interfaces/ILockgateCreditLine.sol";
@@ -15,32 +16,47 @@ import {PlatformShare} from "./PlatformShare.sol";
 abstract contract PlatformStore is ReentrancyGuard, IIssuerFund, IQueueAdapter {
     using SafeERC20 for IERC20;
 
+    /// @notice USDG this fund holds and moves.
     address public token;
+    /// @notice Credit line an exit draws.
     ILockgateCreditLine public line;
+    /// @notice 18-decimal share token. `share()` returns its address.
     PlatformShare public shareToken;
+    /// @inheritdoc IIssuerFund
     address public issuer;
+    /// @inheritdoc IIssuerFund
     uint64 public windowInterval;
     /// @dev Own slot. A packed write must not clear this lock.
     uint256 private configured;
 
     string internal _fundName;
+    /// @inheritdoc ICreditSource
     uint256 public nav;
+    /// @inheritdoc ICreditSource
     uint64 public navUpdatedAt;
+    /// @inheritdoc ICreditSource
     bool public gated;
+    /// @inheritdoc ICreditSource
     uint64 public nextWindow;
+    /// @inheritdoc IQueueAdapter
     uint256 public currentCycleId;
+    /// @inheritdoc IIssuerFund
     uint256 public override(IIssuerFund, IQueueAdapter) queueLength;
+    /// @inheritdoc IIssuerFund
     uint256 public override(IIssuerFund, IQueueAdapter) queuedValue;
-    uint256 public requestCount;
+    /// @inheritdoc IIssuerFund
+    uint256 public override requestCount;
     /// @notice Queued plus advanced requests. Settlement walks this list, not settled history.
     uint256 public constant MAX_OPEN = 128;
+    /// @notice Queued plus advanced requests still on the open list. The cap is `MAX_OPEN`.
     uint256 public openCount;
+    /// @notice Lowest open request id, or 0 when the open list is empty.
     uint256 public firstOpen;
     uint256 internal lastOpen;
 
     mapping(uint256 => Request) internal _requests;
+    /// @notice Next open request after `id`, or 0 at the tail.
     mapping(uint256 => uint256) public nextOpen;
-    mapping(uint256 => uint256) public requestCycle;
     mapping(address => uint256[]) internal _owned;
 
     error NotIssuer();
@@ -55,6 +71,7 @@ abstract contract PlatformStore is ReentrancyGuard, IIssuerFund, IQueueAdapter {
     error BadConfig();
     error QueueFull();
 
+    event Configured(address indexed issuer, uint256 nav, uint64 interval);
     event NavUpdated(uint256 nav);
     event GateSet(bool gated);
     event CashDeposited(address indexed from, uint256 amount);
@@ -111,6 +128,7 @@ abstract contract PlatformStore is ReentrancyGuard, IIssuerFund, IQueueAdapter {
             shareToken.mint(cfg.initialHolder, cfg.initialShares);
         }
         if (cfg.reserve != address(0)) IPlatformReserve(cfg.reserve).setAdmin(address(this), cfg.issuer);
+        emit Configured(cfg.issuer, cfg.nav, cfg.interval);
     }
 
     function _pushOpen(uint256 id) internal {
@@ -137,22 +155,27 @@ abstract contract PlatformStore is ReentrancyGuard, IIssuerFund, IQueueAdapter {
         openCount -= 1;
     }
 
+    /// @inheritdoc IIssuerFund
     function name() public view returns (string memory) {
         return _fundName;
     }
 
+    /// @inheritdoc IIssuerFund
     function share() external view returns (address) {
         return address(shareToken);
     }
 
+    /// @inheritdoc IQueueAdapter
     function cycleLength() external view returns (uint64) {
         return windowInterval;
     }
 
+    /// @inheritdoc IIssuerFund
     function cash() public view override(IIssuerFund, IQueueAdapter) returns (uint256) {
         return IERC20(token).balanceOf(address(this));
     }
 
+    /// @notice Returns `WeeklyCycle`. Epoch and quarterly override this.
     function kind() public pure virtual returns (QueueKind) {
         return QueueKind.WeeklyCycle;
     }

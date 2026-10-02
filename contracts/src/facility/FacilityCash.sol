@@ -8,6 +8,7 @@ import {FacilityStore} from "./FacilityStore.sol";
 /// @title FacilityCash
 /// @notice Lender deposits and the borrower's draw, repay, default and waterfall.
 abstract contract FacilityCash is FacilityStore {
+    /// @notice Approved lender adds cash to one tranche. The first mint is one share per unit.
     function deposit(Tranche tranche, uint256 assets) external nonReentrant returns (uint256 shares) {
         if (assets == 0) revert BadParam();
         _count(msg.sender);
@@ -18,17 +19,18 @@ abstract contract FacilityCash is FacilityStore {
         emit Deposited(msg.sender, tranche, assets, shares);
     }
 
+    /// @notice Lender burns shares for idle principal in that tranche.
     function redeem(Tranche tranche, uint256 shares) external nonReentrant returns (uint256 assets) {
         if (shares == 0) revert BadParam();
         _touch();
         if (tranche == Tranche.Junior && acct.recovery) {
-            uint256 seniorOut = acct.drawn < acct.seniorPrincipal ? acct.drawn : acct.seniorPrincipal;
-            if (seniorOut > 0 || acct.seniorInterestDue > 0) revert SeniorFirst();
+            if (acct.seniorDrawn > 0 || acct.seniorInterestDue > 0) revert SeniorFirst();
         }
         assets = tranche == Tranche.Senior ? _burn(msg.sender, shares, true) : _burn(msg.sender, shares, false);
         emit Redeemed(msg.sender, tranche, shares, assets);
     }
 
+    /// @notice Lender takes interest already credited to their shares.
     function withdrawInterest(Tranche tranche) external nonReentrant returns (uint256 amount) {
         _touch();
         bool senior = tranche == Tranche.Senior;
@@ -47,16 +49,19 @@ abstract contract FacilityCash is FacilityStore {
         emit InterestPaid(msg.sender, tranche, amount);
     }
 
+    /// @notice Borrower pulls idle cash inside the borrowing base. Zero reverts `BadParam`.
     function draw(uint256 amount) external nonReentrant {
-        if (msg.sender != borrower || amount == 0) revert Unauthorized();
+        if (msg.sender != borrower) revert Unauthorized();
+        if (amount == 0) revert BadParam();
         _touch();
         if (amount > availableDraw()) revert Covenant();
         acct.cash -= amount;
-        acct.drawn += amount;
+        FacilityMath.fundDraw(acct, amount);
         _push(borrower, amount);
         emit Drawn(borrower, amount);
     }
 
+    /// @notice Anyone pays the facility. Interest, principal, then residual.
     function repay(uint256 amount) external nonReentrant {
         if (amount == 0) revert BadParam();
         _touch();

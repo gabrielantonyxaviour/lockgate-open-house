@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {FeeMath} from "../../src/partner/libraries/FeeMath.sol";
 import {AdvanceProposal} from "../../src/interfaces/IAdvanceProposal.sol";
+import {Advance} from "../../src/partner/Types.sol";
 import {RejectReason} from "../../src/partner/Types.sol";
 import {PartnerVault} from "../../src/partner/PartnerVault.sol";
 import {PartnerVaultAdmin} from "../../src/partner/PartnerVaultAdmin.sol";
@@ -66,6 +67,31 @@ contract FuzzTest is VaultFixture {
         RejectReason reason = vault.preview(over);
         if (cap == assets) assertEq(uint256(reason), uint256(RejectReason.Cash));
         else assertEq(uint256(reason), uint256(RejectReason.Concentration));
+    }
+
+    /// @dev A reserve slash is the partial payment. It reduces the fee before principal.
+    function testFuzz_slashPaysFeeBeforePrincipal(uint96 navRaw, uint96 coverRaw) public {
+        uint256 nav = bound(navRaw, 10_000 * UNIT, 100_000 * UNIT);
+        AdvanceProposal memory p = _proposal(nav, 11);
+        uint256 id = _execute(p);
+        uint256 fee = p.fee;
+        uint256 principal = p.payout;
+        uint256 cover = bound(coverRaw, 1, nav - 1);
+        _reserve(cover);
+        uint256 assetsBefore = vault.totalAssets();
+        vm.warp(uint256(p.dueAt) + 1 days);
+        vault.markLate(id);
+        Advance memory a = vault.getAdvance(id);
+        uint256 feePay = cover < fee ? cover : fee;
+        uint256 principalPay = cover - feePay;
+        assertEq(a.feeRemaining, fee - feePay);
+        assertEq(a.principalRemaining, principal - principalPay);
+        assertEq(a.owed, a.feeRemaining + a.principalRemaining);
+        if (a.feeRemaining > 0) assertEq(a.principalRemaining, principal);
+        assertEq(vault.outstandingPrincipal(), a.principalRemaining);
+        assertEq(vault.exposureOf(platform), a.owed);
+        assertEq(vault.totalAssets(), assetsBefore + feePay);
+        assertEq(usdg.balanceOf(address(vault)), vault.idle() + vault.reserveCash());
     }
 
     function _at(uint256 nav, uint256 fee, uint256 nonce) internal view returns (AdvanceProposal memory p) {

@@ -21,19 +21,28 @@ contract PricingFuzzTest is Test {
         util = uint16(bound(util, 0, 10_000));
         risk = uint16(bound(risk, 0, 10_000));
         conc = uint16(bound(conc, 0, 10_000));
-        (uint16 bps, bool ok,) = pricing.feeBpsWithRisk(wait, age, false, conc, util, risk);
-        if (!ok) return;
+        (uint16 bps, bool ok, string memory why) = pricing.feeBpsWithRisk(wait, age, false, conc, util, risk);
         IPricingEngine.Params memory p = pricing.params();
+        if (!ok) {
+            assertTrue(_refused(why));
+            assertEq(bps, keccak256(bytes(why)) == keccak256("fee above max") ? p.maxFeeBps : 0);
+            return;
+        }
+        assertEq(why, "");
         assertGe(bps, p.minFeeBps);
         assertLe(bps, p.maxFeeBps);
     }
 
     function testFuzz_longerWaitDoesNotLowerAnOpenFee(uint32 lo, uint32 hi) public view {
-        lo = uint32(bound(lo, 0, 30 days));
-        hi = uint32(bound(hi, lo, 30 days));
-        (uint16 left, bool leftOk,) = pricing.feeBps(lo, 0, false, 0, 0);
-        (uint16 right, bool rightOk,) = pricing.feeBps(hi, 0, false, 0, 0);
-        if (leftOk && rightOk) assertGe(right, left);
+        // Same open cap as PricingTest: past 9128s the default quote is "fee above max".
+        uint256 open = 9128;
+        lo = uint32(bound(lo, 0, open));
+        hi = uint32(bound(hi, lo, open));
+        (uint16 left, bool leftOk, string memory leftWhy) = pricing.feeBps(lo, 0, false, 0, 0);
+        (uint16 right, bool rightOk, string memory rightWhy) = pricing.feeBps(hi, 0, false, 0, 0);
+        assertTrue(leftOk, leftWhy);
+        assertTrue(rightOk, rightWhy);
+        assertGe(right, left);
     }
 
     function testFuzz_gateRejectsEveryInput(uint32 wait, uint32 age, uint16 util) public view {
@@ -58,5 +67,11 @@ contract PricingFuzzTest is Test {
         uint256 floorFee = uint256(nav) * bps / 10_000;
         assertGe(ceilFee, floorFee);
         if (ceilFee != floorFee) assertEq(ceilFee, floorFee + 1);
+    }
+
+    function _refused(string memory why) internal pure returns (bool) {
+        bytes32 tag = keccak256(bytes(why));
+        return tag == keccak256("gated") || tag == keccak256("stale nav") || tag == keccak256("tenor")
+            || tag == keccak256("fee above max");
     }
 }

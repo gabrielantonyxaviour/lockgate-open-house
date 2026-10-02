@@ -12,6 +12,7 @@ library FacilityMath {
     struct State {
         uint256 cash;
         uint256 drawn;
+        uint256 seniorDrawn;
         uint256 seniorPrincipal;
         uint256 juniorPrincipal;
         uint256 seniorDeficit;
@@ -51,7 +52,7 @@ library FacilityMath {
         if (nowTs <= s.lastAccrual) return;
         uint256 dt = nowTs - s.lastAccrual;
         if (!s.recovery && s.drawn > 0 && dt > 0) {
-            uint256 seniorOut = s.drawn < s.seniorPrincipal ? s.drawn : s.seniorPrincipal;
+            uint256 seniorOut = s.seniorDrawn;
             uint256 juniorOut = s.drawn - seniorOut;
             if (seniorOut > 0 && s.seniorAprBps > 0) {
                 s.seniorInterestDue += _interest(seniorOut, s.seniorAprBps, dt);
@@ -64,27 +65,34 @@ library FacilityMath {
     }
 
     function idleSenior(State memory s) internal pure returns (uint256) {
-        uint256 out = s.drawn < s.seniorPrincipal ? s.drawn : s.seniorPrincipal;
-        return s.seniorPrincipal - out;
+        return s.seniorPrincipal - s.seniorDrawn;
     }
 
     function idleJunior(State memory s) internal pure returns (uint256) {
-        uint256 seniorOut = s.drawn < s.seniorPrincipal ? s.drawn : s.seniorPrincipal;
-        return s.juniorPrincipal - (s.drawn - seniorOut);
+        return s.juniorPrincipal - (s.drawn - s.seniorDrawn);
+    }
+
+    /// @notice New borrowing uses idle senior cash first, then idle junior cash.
+    function fundDraw(State storage s, uint256 amount) internal {
+        uint256 room = s.seniorPrincipal - s.seniorDrawn;
+        uint256 toSenior = amount < room ? amount : room;
+        s.seniorDrawn += toSenior;
+        s.drawn += amount;
     }
 
     function drawable(State memory s) internal pure returns (uint256) {
         return idleSenior(s) + idleJunior(s);
     }
 
-    /// @dev In recovery, junior's undeployed cash pays senior drawn before junior can leave.
+    /// @dev Junior idle pays `seniorDrawn`. The senior slice falls, so a second call shifts nothing.
     function subordinate(State storage s) internal {
-        if (!s.recovery) return;
-        uint256 seniorOut = s.drawn < s.seniorPrincipal ? s.drawn : s.seniorPrincipal;
+        if (!s.recovery || s.seniorDrawn == 0) return;
         uint256 juniorIdle = idleJunior(s);
-        uint256 shift = juniorIdle < seniorOut ? juniorIdle : seniorOut;
+        uint256 shift = juniorIdle < s.seniorDrawn ? juniorIdle : s.seniorDrawn;
+        if (shift == 0) return;
         s.juniorPrincipal -= shift;
         s.juniorDeficit += shift;
+        s.seniorDrawn -= shift;
         s.drawn -= shift;
     }
 
@@ -105,6 +113,9 @@ library FacilityMath {
         s.seniorPrincipal -= seniorTake;
         s.seniorDeficit += seniorTake;
         applied = juniorTake + seniorTake;
+        uint256 juniorSlice = s.drawn - s.seniorDrawn;
+        uint256 fromSenior = applied > juniorSlice ? applied - juniorSlice : 0;
+        s.seniorDrawn -= fromSenior;
         s.drawn -= applied;
     }
 
@@ -115,8 +126,8 @@ library FacilityMath {
         (split.seniorInterest, left) = _take(s.seniorInterestDue, left);
         s.seniorInterestDue -= split.seniorInterest;
         s.seniorInterestCash += split.seniorInterest;
-        uint256 seniorOut = s.drawn < s.seniorPrincipal ? s.drawn : s.seniorPrincipal;
-        (split.seniorPrincipalPay, left) = _take(seniorOut, left);
+        (split.seniorPrincipalPay, left) = _take(s.seniorDrawn, left);
+        s.seniorDrawn -= split.seniorPrincipalPay;
         s.drawn -= split.seniorPrincipalPay;
         (split.seniorRestore, left) = _take(s.seniorDeficit, left);
         s.seniorDeficit -= split.seniorRestore;
@@ -124,7 +135,7 @@ library FacilityMath {
         (split.juniorInterest, left) = _take(s.juniorInterestDue, left);
         s.juniorInterestDue -= split.juniorInterest;
         s.juniorInterestCash += split.juniorInterest;
-        (split.juniorPrincipalPay, left) = _take(s.drawn, left);
+        (split.juniorPrincipalPay, left) = _take(s.drawn - s.seniorDrawn, left);
         s.drawn -= split.juniorPrincipalPay;
         (split.juniorRestore, left) = _take(s.juniorDeficit, left);
         s.juniorDeficit -= split.juniorRestore;

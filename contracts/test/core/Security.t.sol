@@ -11,6 +11,7 @@ import {UsdgAdapter} from "../../src/core/UsdgAdapter.sol";
 import {UsdgTransfers} from "../../src/core/UsdgTransfers.sol";
 import {WeeklyCyclePlatform} from "../../src/core/WeeklyCyclePlatform.sol";
 import {ILockgateCreditLine} from "../../src/interfaces/ILockgateCreditLine.sol";
+import {IPricingEngine} from "../../src/interfaces/IPricingEngine.sol";
 import {QueueKind} from "../../src/interfaces/IQueueAdapter.sol";
 
 /// @notice Pays 90% of `transfer`. `transferFrom` is exact, so capital can still be deposited.
@@ -60,6 +61,53 @@ contract SecurityTest is CoreFixture {
         vm.warp(dueLater);
         line.markLate(later);
         assertEq(uint8(line.getAdvance(later).status), uint8(ILockgateCreditLine.AdvanceStatus.Late));
+    }
+
+    /// @notice No proxy and no timelock. A new curve applies to the next draw. The open advance keeps its stored terms.
+    function test_paramChangeLeavesTheOpenAdvance() public {
+        StubSource stub = _stub(1_000_000e6, 750);
+        _post(address(stub), 20e6);
+        (uint256 id, uint256 fee) = stub.draw(100e6, investor, type(uint256).max);
+        assertEq(fee, 990_000);
+        ILockgateCreditLine.Advance memory open = line.getAdvance(id);
+        assertEq(open.principal, 99_010_000);
+        assertEq(open.dueAt, uint64(block.timestamp) + 600);
+        assertEq(line.graceOf(id), 1 days);
+        assertEq(line.remainingOf(id), 100e6);
+
+        IPricingEngine.Params memory p = pricing.params();
+        p.minFeeBps = 0;
+        p.timeScale = 1;
+        vm.prank(owner);
+        pricing.setParams(p);
+
+        ILockgateCreditLine.Advance memory still = line.getAdvance(id);
+        assertEq(still.fee, 990_000);
+        assertEq(still.principal, open.principal);
+        assertEq(still.dueAt, open.dueAt);
+        assertEq(still.drawnAt, open.drawnAt);
+        assertEq(uint8(still.status), uint8(ILockgateCreditLine.AdvanceStatus.Active));
+        assertEq(line.graceOf(id), 1 days);
+        assertEq(line.remainingOf(id), 100e6);
+        assertEq(line.exposure(address(stub)), 100e6);
+        assertEq(line.earnedFees(), 0);
+
+        (uint256 nextFee, uint16 bps, bool available, string memory why) = line.quote(address(stub), 40e6);
+        assertTrue(available, why);
+        assertEq(bps, 0);
+        assertEq(nextFee, 0);
+        (uint256 later, uint256 laterFee) = stub.draw(40e6, investor, type(uint256).max);
+        assertEq(laterFee, 0);
+        assertEq(line.getAdvance(id).fee, 990_000);
+        assertEq(line.remainingOf(id), 100e6);
+
+        _mint(address(stub), 100e6);
+        line.repay(id);
+        assertEq(line.earnedFees(), 990_000);
+        assertEq(line.remainingOf(id), 0);
+        assertEq(uint8(line.getAdvance(id).status), uint8(ILockgateCreditLine.AdvanceStatus.Repaid));
+        assertEq(line.getAdvance(later).fee, 0);
+        assertEq(line.remainingOf(later), 40e6);
     }
 
     function test_registrarCannotRewriteAnOpenSource() public {

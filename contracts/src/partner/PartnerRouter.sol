@@ -34,22 +34,25 @@ contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
     error Duplicate();
     error BalanceMismatch();
     error Empty();
+    error UnknownRecord();
 
     event VaultRegistered(address indexed vault, address indexed partner);
     event VaultRemoved(address indexed vault);
     event ExitFunded(bytes32 indexed exitRef, address indexed vault, uint256 indexed advanceId, uint256 navValue, uint256 fee);
     event ExitRepaid(bytes32 indexed exitRef, address indexed vault, uint256 advanceId, uint256 amount);
 
+    /// @notice Partner lists a vault they own. A second listing reverts `Registered`.
     function register(address vault) external {
         if (indexPlusOne[vault] != 0) revert Registered();
-        if (IPartnerVault(vault).owner() != msg.sender) revert NotOwner();
+        if (_owner(vault) != msg.sender) revert NotOwner();
         vaultList.push(vault);
         indexPlusOne[vault] = vaultList.length;
         emit VaultRegistered(vault, msg.sender);
     }
 
+    /// @notice Owner takes the vault off the directory. Recorded repayments stay readable.
     function remove(address vault) external {
-        if (IPartnerVault(vault).owner() != msg.sender) revert NotOwner();
+        if (_owner(vault) != msg.sender) revert NotOwner();
         uint256 idxPlus = indexPlusOne[vault];
         if (idxPlus == 0) revert UnknownVault();
         uint256 idx = idxPlus - 1;
@@ -64,6 +67,7 @@ contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
         emit VaultRemoved(vault);
     }
 
+    /// @notice Number of vaults currently listed.
     function vaultCount() external view returns (uint256) {
         return vaultList.length;
     }
@@ -94,7 +98,8 @@ contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
         external
     {
         if (indexPlusOne[msg.sender] == 0) revert UnknownVault();
-        Advance memory advance = IPartnerVault(msg.sender).getAdvance(advanceId);
+        (bool okAdvance, Advance memory advance) = _advance(msg.sender, advanceId);
+        if (!okAdvance) revert Mismatch();
         if (
             advance.exitRef != exitRef || advance.platform != platform || advance.navValue != navValue
                 || advance.fee != fee || advance.status != AdvanceStatus.Active
@@ -109,20 +114,33 @@ contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
 
     /// @notice Pull `owed` from the caller and repay that exact advance. Keeps no balance.
     function relayRepay(bytes32 exitRef, uint256 recordIndex) external nonReentrant {
-        Record memory record = _records[exitRef][recordIndex];
-        uint256 owed = IPartnerVault(record.vault).owedOf(record.advanceId);
+        Record[] storage rows = _records[exitRef];
+        if (recordIndex >= rows.length) revert UnknownRecord();
+        Record memory record = rows[recordIndex];
+        (bool okOwed, uint256 owed) =
+            _uint256Call(record.vault, abi.encodeWithSignature("owedOf(uint256)", record.advanceId));
+        if (!okOwed) revert Mismatch();
         if (owed == 0) revert Empty();
-        IERC20 token = IERC20(IPartnerVault(record.vault).asset());
-        uint256 beforeBal = token.balanceOf(address(this));
+        (bool okAsset, address asset) = _addressCall(record.vault, abi.encodeWithSignature("asset()"));
+        if (!okAsset) revert Mismatch();
+        IERC20 token = IERC20(asset);
+        (bool okBefore, uint256 beforeBal) =
+            _uint256Call(address(token), abi.encodeWithSignature("balanceOf(address)", address(this)));
+        if (!okBefore) revert BalanceMismatch();
         token.safeTransferFrom(msg.sender, address(this), owed);
-        if (token.balanceOf(address(this)) - beforeBal != owed) revert BalanceMismatch();
+        (bool okAfter, uint256 afterBal) =
+            _uint256Call(address(token), abi.encodeWithSignature("balanceOf(address)", address(this)));
+        if (!okAfter || afterBal < beforeBal || afterBal - beforeBal != owed) revert BalanceMismatch();
         token.forceApprove(record.vault, owed);
         IPartnerVault(record.vault).repay(record.advanceId);
-        if (token.balanceOf(address(this)) != beforeBal) revert BalanceMismatch();
+        (bool okEnd, uint256 endBal) =
+            _uint256Call(address(token), abi.encodeWithSignature("balanceOf(address)", address(this)));
+        if (!okEnd || endBal != beforeBal) revert BalanceMismatch();
         token.forceApprove(record.vault, 0);
         emit ExitRepaid(exitRef, record.vault, record.advanceId, owed);
     }
 
+    /// @notice Funding records for one exit, in the order the vaults reported them.
     function recordsOf(bytes32 exitRef) external view returns (Record[] memory) {
         return _records[exitRef];
     }
@@ -165,10 +183,32 @@ contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
         return (true, uint16(word));
     }
 
+    /// @dev `owner()` capped at `PROBE_GAS`. A state change, a short or long word, or dirty high bits is address zero.
+    function _owner(address vault) private view returns (address owner_) {
+        (bool ok, address account) = _addressCall(vault, abi.encodeWithSignature("owner()"));
+        return ok ? account : address(0);
+    }
+
+    /// @dev One address word. Dirty high bits fail the read instead of panicking the caller.
+    function _addressCall(address vault, bytes memory data) private view returns (bool ok, address account) {
+        (bool success, uint256 word) = _uint256Call(vault, data);
+        if (!success || word > type(uint160).max) return (false, address(0));
+        return (true, address(uint160(word)));
+    }
+
+    /// @dev `Advance` is 13 static words. Any other shape, or a state change inside the probe, is a mismatch.
+    function _advance(address vault, uint256 advanceId) private view returns (bool ok, Advance memory advance) {
+        bytes memory ret;
+        (ok, ret) = vault.staticcall{gas: PROBE_GAS}(abi.encodeCall(IPartnerVault.getAdvance, (advanceId)));
+        if (!ok || ret.length != 416) return (false, advance);
+        advance = abi.decode(ret, (Advance));
+    }
+
     function _uint256Call(address vault, bytes memory data) private view returns (bool ok, uint256 value) {
         bytes memory ret;
         (ok, ret) = vault.staticcall{gas: PROBE_GAS}(data);
-        if (!ok || ret.length < 32) return (false, 0);
+        // One word. A short or long return drops this vault instead of aborting the quote.
+        if (!ok || ret.length != 32) return (false, 0);
         value = abi.decode(ret, (uint256));
     }
 
@@ -197,6 +237,7 @@ contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
     }
 
     /// @dev Drops slices the vault itself would reject, including a mismatched payout recipient.
+    ///      A preview return that is not one word, or whose word is not `RejectReason.None`, drops that vault.
     function _accepted(address vault, Slice memory slice, ExitRequest calldata request) private view returns (bool) {
         AdvanceProposal memory proposal = AdvanceProposal({
             platform: request.platform,
@@ -212,7 +253,7 @@ contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
             quoteId: request.exitRef
         });
         (bool ok, bytes memory ret) = vault.staticcall{gas: PROBE_GAS}(abi.encodeCall(IPartnerVault.preview, (proposal)));
-        if (!ok || ret.length < 32) return false;
-        return abi.decode(ret, (uint8)) == uint8(RejectReason.None);
+        if (!ok || ret.length != 32) return false;
+        return abi.decode(ret, (uint256)) == uint256(RejectReason.None);
     }
 }

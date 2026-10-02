@@ -18,5 +18,6 @@ struct AdvanceProposal {
 }
 
 interface IAdvanceProposal {
+    /// @notice Partner-vault entry. The stage-1 credit line does not implement this.
     function submitProposal(AdvanceProposal calldata proposal, bytes calldata proposerSignature) external;
 }

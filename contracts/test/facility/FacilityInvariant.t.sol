@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {CreditFacility} from "../../src/facility/CreditFacility.sol";
+import {FacilityMath} from "../../src/facility/libraries/FacilityMath.sol";
 import {FacilityStore} from "../../src/facility/FacilityStore.sol";
 import {MockUSDG} from "../partner/mocks/ReenterUSDG.sol";
 import {MockBook} from "./mocks/MockBook.sol";
@@ -13,6 +14,7 @@ contract FacilityHandler is Test {
     address public governor;
     address public borrower;
     address[4] public lenders;
+    bool public orderBroken;
 
     constructor() {
         governor = makeAddr("governor");
@@ -72,10 +74,20 @@ contract FacilityHandler is Test {
 
     function repay(uint96 amount) external {
         uint256 amt = bound(amount, 1, 200_000e6);
+        FacilityMath.State memory before = facility.accounting();
         usdg.mint(borrower, amt);
         vm.startPrank(borrower);
         usdg.approve(address(facility), amt);
-        try facility.repay(amt) {} catch {}
+        try facility.repay(amt) {
+            FacilityMath.State memory next = facility.accounting();
+            if (!before.recovery && next.seniorInterestDue > 0) {
+                if (next.drawn != before.drawn || next.seniorDeficit != before.seniorDeficit) orderBroken = true;
+            }
+            // Index dust can move one unit per tranche into residual. A real skip moves more.
+            bool open = next.seniorInterestDue != 0 || next.seniorDeficit != 0 || next.drawn != 0
+                || next.juniorInterestDue != 0 || next.juniorDeficit != 0;
+            if (open && next.residual > before.residual + 2) orderBroken = true;
+        } catch {}
         vm.stopPrank();
     }
 
@@ -106,5 +118,6 @@ contract FacilityInvariantTest is Test {
         assertEq(handler.usdg().balanceOf(address(facility)), facility.accounting().cash);
         assertLe(facility.lenderCount(), facility.MAX_LENDERS());
         assertLe(facility.availableDraw(), facility.accounting().cash);
+        assertFalse(handler.orderBroken());
     }
 }

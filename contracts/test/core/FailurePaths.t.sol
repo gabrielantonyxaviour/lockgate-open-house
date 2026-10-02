@@ -143,6 +143,9 @@ contract FailurePathsTest is CoreFixture {
         epoch.requestRedeem(1);
         vm.prank(issuer);
         epoch.requestRedeem(1);
+        (,, uint256 dustPayable, uint256 dustShort) = epoch.previewSettlement();
+        assertEq(dustPayable, 0);
+        assertEq(dustShort, 4);
         uint64 window = epoch.nextWindow();
         vm.warp(window);
         epoch.processWindow();
@@ -170,6 +173,59 @@ contract FailurePathsTest is CoreFixture {
         quarter.processWindow();
         assertEq(uint256(quarter.getRequest(1).status), uint256(IIssuerFund.RequestStatus.Paid));
         assertEq(usdg.balanceOf(investor), 5e6);
+    }
+
+    /// @dev Two claims of 3 against cash 5. Each floor payment is 2. The leftover unit stays, and the next epoch still pays 0.
+    function test_epochProRataLeavesOneUnitAndBothStayQueued() public {
+        vm.prank(issuer);
+        EpochQueuePlatform epoch = EpochQueuePlatform(
+            factory.createPlatform(QueueKind.Epoch, "Epoch leftover", 600, 1e6, 1_000_000e6, 0)
+        );
+        _deposit(epoch, investor, 3);
+        _deposit(epoch, issuer, 2);
+        vm.prank(issuer);
+        epoch.setNav(2e6);
+        uint256 slice = 3 * 1e18 / 2e6;
+        vm.prank(investor);
+        uint256 first = epoch.requestRedeem(slice);
+        vm.prank(issuer);
+        uint256 second = epoch.requestRedeem(slice);
+        assertEq(epoch.getRequest(first).navValue, 3);
+        assertEq(epoch.getRequest(second).navValue, 3);
+        assertEq(epoch.queuedValue(), 6);
+        assertEq(epoch.cash(), 5);
+        (uint256 cashBalance, uint256 repayFirst, uint256 payable_, uint256 shortfall) = epoch.previewSettlement();
+        assertEq(cashBalance, 5);
+        assertEq(repayFirst, 0);
+        assertEq(payable_, 4);
+        assertEq(shortfall, 2);
+
+        uint64 window = epoch.nextWindow();
+        vm.warp(window);
+        epoch.processWindow();
+        assertEq(epoch.cash(), 1);
+        assertEq(epoch.queuedValue(), 2);
+        assertEq(epoch.queueLength(), 2);
+        assertEq(epoch.currentCycleId(), 2);
+        assertEq(usdg.balanceOf(investor), 2);
+        assertEq(usdg.balanceOf(issuer), 2);
+        assertEq(uint256(epoch.getRequest(first).status), uint256(IIssuerFund.RequestStatus.Queued));
+        assertEq(uint256(epoch.getRequest(second).status), uint256(IIssuerFund.RequestStatus.Queued));
+        assertEq(epoch.getRequest(first).navValue, 1);
+        assertEq(epoch.getRequest(second).navValue, 1);
+        assertEq(epoch.getRequest(first).shares, 5e11);
+        assertEq(epoch.getRequest(second).shares, 5e11);
+
+        uint64 later = epoch.nextWindow();
+        vm.warp(later);
+        epoch.processWindow();
+        assertEq(epoch.cash(), 1);
+        assertEq(epoch.queuedValue(), 2);
+        assertEq(epoch.currentCycleId(), 3);
+        assertEq(usdg.balanceOf(investor), 2);
+        assertEq(usdg.balanceOf(issuer), 2);
+        assertEq(epoch.getRequest(first).navValue, 1);
+        assertEq(epoch.getRequest(second).navValue, 1);
     }
 
     function test_shareNeedsAllowlistAndFactoryRejectsBadConfig() public {
@@ -207,6 +263,14 @@ contract FailurePathsTest is CoreFixture {
         vm.startPrank(account);
         usdg.approve(address(epoch), 1);
         epoch.deposit(1);
+        vm.stopPrank();
+    }
+
+    function _deposit(EpochQueuePlatform epoch, address account, uint256 amount) internal {
+        _mint(account, amount);
+        vm.startPrank(account);
+        usdg.approve(address(epoch), amount);
+        epoch.deposit(amount);
         vm.stopPrank();
     }
 }

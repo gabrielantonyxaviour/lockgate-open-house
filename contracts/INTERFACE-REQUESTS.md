@@ -157,3 +157,80 @@ Door 2 is in the local Anvil demo, after stage 1 and before stage 2. The pool is
 ## 2026-10-02 · G6 · reserve floor
 
 `reserveFloorBps(source)` is new. `requiredReserve` uses the higher of that floor and the live `reserveBpsOf`. Lowering the live rate, including `setSourceTerms(..., 0, ...)`, does not reduce the floor while exposure is open. A full recovery sets the floor back to the live rate. `ReserveFloorSet` fires when the floor changes. Existing calls do not need a new argument.
+
+## 2026-10-02 · G8 · clean-build cross-check
+
+Clean `forge clean && forge build --skip test` compiled 119 files with Solc 0.8.28. `forge inspect` covered `PartnerVault`, `IPartnerVault`, `IAdvanceProposal`, `LockgateCreditLine`, and `ILockgateCreditLine`. `test_digestAndQuoteIdMatchViem` passed on that build.
+
+The engine digest for the `Advance.t.sol` vector (chain 31337, verifying contract `0xBEEF`) is `0x1a3fcca79eaf0386f59802c2b5b79c1a4c6335711b63e12c3afc9ba60dd9d2c3`. `makeQuoteId` for that weekly vector is `0x5d2baa95fcb98c34735273acce48b8e68e79063aaa932a1685ce582e634b8b1b`. `submitProposal` calldata matches both `PartnerVault` and `IAdvanceProposal`. Selector `0xe7c1fee8`. `repay` is `0x371fd8e6` and `markLate` is `0x184f24db` on the credit line and on the partner vault. The engine still sends those only to the named own-book credit line. The pin lives in `engine/test/interface.test.ts`.
+
+Vault reads `mandate`, `platformConfig`, `preview`, `nonceUsed`, and `proposalHashOf` match the compiled `PartnerVault` tuple order. `preview` returns `uint8` in `RejectReason` order.
+
+### Mismatch
+
+`IPartnerVault` does not declare `payoutTo(address) returns (address)`. `PartnerVaultRead.payoutTo` does. Compiled selector `0x63aec9af`. The engine reads that selector in `propose --rpc` before it signs. A contract that implements only `IPartnerVault` has no such function.
+
+`IAdvanceProposal.submitProposal` declares no return value. `IPartnerVault.submitProposal` and `PartnerVault.submitProposal` return `bytes32 digest`. The calldata is the same. The engine ABI follows the vault.
+
+`IQueueAdapter.QueueKind` is `None` 0, `WeeklyCycle` 1, `Epoch` 2, `QuarterlyGated` 3. Engine `kindCode` writes 1, 2, and 3 for those three, and 4 for `fifo-open`. `AdvanceProposalLib.quoteId` takes `uint8`, so a fifo quote id still hashes. The three on-chain kinds match.
+
+### Ask
+
+Please add `payoutTo(address platform) external view returns (address)` to `IPartnerVault`, matching `PartnerVaultRead`. The engine will keep reading selector `0x63aec9af`. No digest change is asked.
+
+## 2026-10-02 · G6 · event and error names
+
+Reviewed core events and custom errors against `engine/src/sweep/sweep.ts`, `engine/test/interface.test.ts`, `engine/test/anvil/flows.test.ts`, and `harness/src/actions`. The names those callers compare already match this tree. No core rename. The inventory is the "Names the engine and the harness match" section in `INTERFACES.md`. `test/core/InterfaceNames.t.sol` locks `repay` `0x371fd8e6`, `markLate` `0x184f24db`, the harness revert names (`WindowClosed`, `TooEarly`, `Gated`, `NotReady`, `FaucetCap`, `OwnableUnauthorizedAccount`), the quote strings `gated` and `paused`, and every core event topic listed in that section.
+
+The open `payoutTo` ask above is unchanged. It is a partner-interface view, outside this core list.
+
+## 2026-10-02 · G6 · shipping sizes
+
+The factory byte counts in "door 2 and a factory that deploys" are an earlier `forge inspect` of that day's clone factory (creation code 5539, plus 224 bytes of constructor arguments, runtime 4729). The shipping measurement for this tree is `FOUNDRY_PROFILE=core forge build --sizes --offline` on 2026-10-02: factory runtime 4952, init code 5825, before constructor arguments. The full table, coverage, and the `--ir-minimum` size failure are in `AUDIT.md`. No interface change.
+
+## 2026-10-02 · G6 · access and events
+
+Two events were added. `ILockgateCreditLine.ReservePosted(address,address,uint256)` is the payer on `postReserve`. The reserve's `Posted` still names the credit line. `PlatformStore.Configured(address,uint256,uint64)` fires from `initialize`. No rename of an event the engine or the harness already matches. `test/core/AccessEvents.t.sol` locks the new topics and the owner-only calls. A registrar still cannot revive a source the owner deregistered. An issuer `setAllowlist(account, false)` stays blocked on the next deposit.
+
+## 2026-10-02 · G6 · G7 and G8 re-check
+
+Read G7 (`contracts/src/partner`, `contracts/src/facility`, and their tests that call this line) and G8 (`engine/src`, `engine/test/interface.test.ts`, `engine/test/anvil/flows.test.ts`, `engine/test/anvil/deploy.ts`). No function those callers encode has moved.
+
+`CreditLineBook` calls `eligibleOutstanding()` and `lateOutstanding()`. `cast sig` gives `0x94f98c87` and `0xb7c7cc20`. `test/partner/CoreLink.t.sol` equates `repay` `0x371fd8e6`, `markLate` `0x184f24db`, and `graceOf` `0x69043c09` with `ILockgateCreditLine`. `Lifecycle.t.sol` reads `ILockgateCreditLine.Advance.dueAt` and `graceOf`. `totalExposure()` remains the public getter on `CreditLineAdmin`.
+
+G8 pins in `engine/test/interface.test.ts` match `cast sig` on this tree: `submitProposal` `0xe7c1fee8`, `repay` `0x371fd8e6`, `markLate` `0x184f24db`, `payoutTo` `0x63aec9af`, and the other vault reads in that file (`paused` `0x5c975abb`, `idle` `0x3192164f`, `totalAssets` `0x01e1d114`, `mandate` `0x39b1b96d`, `platformConfig` `0x27c86ce4`, `nonceUsed` `0x94d0d3a6`, `proposalHashOf` `0x4628a956`, `preview` `0x4422dd8b`). `AdvanceProposal` field order matches `engine/src/proposal/typed.ts` and `AdvanceProposalLib`. `flows.test.ts` calls `createPlatform(uint8,string,uint64,uint256,uint256,uint16)`, `quote(address,uint256)` as `(uint256,uint16,bool,string)`, `feeBps(uint256,uint256,bool,uint16,uint16)` as `(uint16,bool,string)`, `postReserve(address,uint256)`, `exitNow(uint256,uint256)`, and `getAdvance` fields `principal` and `fee`. `deploy.ts` passes `FundFactory`'s seven constructor addresses in order, `PlatformConfig`'s nine fields by name, `PartnerVault.initialize(address,address,uint64,uint64)`, and `FacilityStore.Init` in declared order. Queue kind `1` is weekly, matching `kindCode("weekly-cycle")`.
+
+`ReservePosted(address,address,uint256)` has the same topic `PartnerVault` already emits. `test/partner/Events.t.sol` filters that topic by the vault address. The engine does not decode logs. `Configured(address,uint256,uint64)` is new on `initialize`. The engine loads call ABIs from the compiled artifacts and does not assert an event list. An owner `registerSource` on a source that is still registered emits `SourceUpdated` only. Neither consumer asserts a second `SourceRegistered` on that path. `PlatformShare.Blocked` is new. `IIssuerFund.deposit(uint256)` is unchanged, and the engine calls `deposit`. A first deposit still joins the allowlist. The engine calls `setSlasher` once in `deploy.ts` and does not call `lockSlasherSet`.
+
+### Still open
+
+`IPartnerVault` does not declare `payoutTo(address) returns (address)`. `PartnerVaultRead.payoutTo` does. Selector `0x63aec9af`. The ask above stands.
+
+On-chain `feeFromBps` ceils. `engine/src/quote.ts` uses `mulDivRoundHalfUp`. `feeFromBps(10001, 1) = 2` here and `1` in the engine. Unchanged.
+
+`QueueKind` stops at `QuarterlyGated` `3`. Engine `kindCode` writes `4` for `fifo-open`. `quoteId` accepts that `uint8`. Unchanged.
+
+No core edit came out of this re-check.
+
+## 2026-10-02 · G6 · caller views
+
+Reviewed the partner and engine call sites against core. Four views were already public on the contracts. They are now on the interfaces. Selectors are unchanged. `test/core/CallerViews.t.sol` calls them through the interface types.
+
+- `ILockgateCreditLine.totalExposure()` is `0x79f883da`. `e2e/src/stage3.ts` `bookMatches` reads it. It equals `eligibleOutstanding + lateOutstanding`. The sentence above that left `totalExposure` as the public getter on `CreditLineAdmin` is superseded by this note. The getter is still that storage variable. The interface now names it.
+- `ILockgateCreditLine.accountedAssets()` is `0xd4347f25`. It returns `capital() + outstanding`.
+- `ILockgateCreditLine.accountedEquity()` is `0x744274cc`. It returns `deposited + earnedFees - withdrawn`. `test/partner/Lifecycle.t.sol` reads `accountedEquity() - outstanding()` as idle equity.
+- `IIssuerFund.requestCount()` is `0x5badbe4c`. The harness stage-1 and weekly actions read it after `requestRedeem`. It is the highest request id. Cancelled and paid ids stay in the count.
+
+`gated()` `0x907cf318` and `navUpdatedAt()` `0xfc11cdd6` were already on `ICreditSource`. `PartnerVaultRead._gateReason` staticcalls both and decodes a `uint256` word. Weekly, epoch, and quarterly platforms inherit them. `OpenCreditVault` exposes `navUpdatedAt()`. It has no `gated()`.
+
+`src/partner/interfaces/IPartnerVault.sol` now declares `payoutTo(address platform) external view returns (address)`. Selector `0x63aec9af` matches `PartnerVaultRead.payoutTo`. The "Still open" paragraph above is the earlier ask. G7 closed it on the partner interface. Core interfaces leave `payoutTo` on that partner file. The engine reads the partner vault.
+
+`feeFromBps` still ceils. The engine token fee is still half-up. `feeFromBps(10001, 1) = 2` here and `1` in the engine.
+
+`QueueKind` still stops at `QuarterlyGated` `3`. Engine `kindCode` still writes `4` for `fifo-open`. Unchanged.
+
+This pass adds no event. The engine does not decode logs.
+
+Getters reviewed and left as contract state, off these interfaces: `registered(address)`, `token()`, `pricing()`, `reserveVault()`, `maxUtilizationBps`, `maxConcentrationBps`, `deposited`, `withdrawn`, `registrars`, `openCount`, `firstOpen`, `nextOpen`, `MAX_OPEN`, `isSlasher`, `tokenBalance`, `IOpenCreditVault.getWithdrawal`, `withdrawals(uint256)`. `kind()` stays on `IQueueAdapter`.
+
+Core profile after `CallerViews.t.sol`: 30 suites, 152 passed, 0 failed, 0 skipped, in 500.42ms (2.65s CPU). Solc 0.8.28 compiled 102 files in 69.89s. The three core invariants each stayed at 64 runs, depth 40, 2560 calls, 0 reverts. The invariant directory was not re-run. Sizes were not remeasured.

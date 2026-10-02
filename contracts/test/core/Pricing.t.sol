@@ -61,14 +61,20 @@ contract PricingTest is CoreFixture {
 
         (bps, ok, why) = pricing.feeBps(600, 7 days, false, 0, 0);
         assertTrue(ok);
+        assertEq(why, "");
+        assertEq(bps, 123);
         (bps, ok, why) = pricing.feeBps(600, 7 days + 1, false, 0, 0);
         assertFalse(ok);
         assertEq(why, "stale nav");
         assertEq(bps, 0);
 
-        (,, why) = pricing.feeBps(600, 0, true, 0, 0);
+        (bps, ok, why) = pricing.feeBps(600, 0, true, 0, 0);
+        assertFalse(ok);
+        assertEq(bps, 0);
         assertEq(why, "gated");
-        (,, why) = pricing.feeBps(366 days + 1, 0, false, 0, 0);
+        (bps, ok, why) = pricing.feeBps(366 days + 1, 0, false, 0, 0);
+        assertFalse(ok);
+        assertEq(bps, 0);
         assertEq(why, "tenor");
     }
 
@@ -88,6 +94,7 @@ contract PricingTest is CoreFixture {
         assertEq(why, "");
         (ok, why) = pricing.validate(100, 600, 0, false, 0, 0, 0);
         assertTrue(ok);
+        assertEq(why, "");
         (ok, why) = pricing.validate(98, 600, 0, false, 0, 0, 0);
         assertFalse(ok);
         assertEq(why, "below model");
@@ -131,17 +138,22 @@ contract PricingTest is CoreFixture {
     }
 
     function testFuzz_timeAndUtilMonotone(uint32 lo, uint32 hi, uint16 utilLo, uint16 utilHi) public view {
-        uint256 cap = 366 days;
-        lo = uint32(bound(lo, 0, cap));
-        hi = uint32(bound(hi, lo, cap));
-        (uint16 a, bool aOk,) = pricing.feeBps(lo, 0, false, 0, 0);
-        (uint16 b, bool bOk,) = pricing.feeBps(hi, 0, false, 0, 0);
-        if (aOk && bOk) assertGe(b, a);
+        // 9128s is the last default quote at or under 1500 bps. 9129 quotes "fee above max".
+        uint256 open = 9128;
+        lo = uint32(bound(lo, 0, open));
+        hi = uint32(bound(hi, lo, open));
+        (uint16 a, bool aOk, string memory aWhy) = pricing.feeBps(lo, 0, false, 0, 0);
+        (uint16 b, bool bOk, string memory bWhy) = pricing.feeBps(hi, 0, false, 0, 0);
+        assertTrue(aOk, aWhy);
+        assertTrue(bOk, bWhy);
+        assertGe(b, a);
 
         utilLo = uint16(bound(utilLo, 0, 10_000));
         utilHi = uint16(bound(utilHi, utilLo, 10_000));
-        (a, aOk,) = pricing.feeBps(600, 0, false, 0, utilLo);
-        (b, bOk,) = pricing.feeBps(600, 0, false, 0, utilHi);
-        if (aOk && bOk) assertGe(b, a);
+        (a, aOk, aWhy) = pricing.feeBps(600, 0, false, 0, utilLo);
+        (b, bOk, bWhy) = pricing.feeBps(600, 0, false, 0, utilHi);
+        assertTrue(aOk, aWhy);
+        assertTrue(bOk, bWhy);
+        assertGe(b, a);
     }
 }

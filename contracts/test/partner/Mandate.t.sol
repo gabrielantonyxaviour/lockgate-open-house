@@ -130,6 +130,23 @@ contract MandateTest is VaultFixture {
         assertEq(uint256(vault.preview(_proposal(100_000 * UNIT, 22))), uint256(RejectReason.None));
     }
 
+    /// @notice A reserve rate of 0 still funds, and the platform can withdraw the posted reserve while exposure is open.
+    function test_zeroReserveRateStillFundsAndReleasesTheReserve() public {
+        vm.prank(partner);
+        vault.setPlatform(platform, true, 10_000_000 * UNIT, 0, false, 1 days);
+        uint256 posted = vault.reserveOf(platform);
+        assertEq(posted, 100_000 * UNIT);
+        _execute(_proposal(100_000 * UNIT, 40));
+        assertGt(vault.exposureOf(platform), 0);
+        uint256 beforeBal = usdg.balanceOf(platform);
+        vm.prank(platform);
+        vault.withdrawReserve(platform, posted, platform);
+        assertEq(vault.reserveOf(platform), 0);
+        assertEq(usdg.balanceOf(platform), beforeBal + posted);
+        assertGt(vault.exposureOf(platform), 0);
+        assertEq(uint256(vault.preview(_proposal(100_000 * UNIT, 41))), uint256(RejectReason.None));
+    }
+
     function _reject(AdvanceProposal memory p, RejectReason reason) internal {
         assertEq(uint256(vault.preview(p)), uint256(reason));
         bytes memory sig = _engineSig(vault, p);

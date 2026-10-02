@@ -12,10 +12,16 @@ library PricingMath {
         return Math.mulDiv(navValue, bps, BPS, Math.Rounding.Ceil);
     }
 
-    /// @dev Half away from zero, matching engine/src/money.ts `mulDivRoundHalfUp` for the APR and bps steps.
+    /// @dev Half away from zero, matching engine/src/money.ts `mulDivRoundHalfUp`.
+    ///      The product is 512 bits wide, so a result that still fits does not revert.
+    ///      A zero denominator reverts, including when `x` or `y` is zero.
     function halfUp(uint256 x, uint256 y, uint256 den) internal pure returns (uint256) {
-        if (x == 0 || y == 0) return 0;
-        return (x * y + den / 2) / den;
+        uint256 floor = Math.mulDiv(x, y, den);
+        uint256 rem = mulmod(x, y, den);
+        if (rem == 0) return floor;
+        uint256 mid = den / 2;
+        if (rem > mid || (den % 2 == 0 && rem == mid)) return floor + 1;
+        return floor;
     }
 
     function lerp(uint256 start, uint256 end, uint256 num, uint256 den) internal pure returns (uint256) {

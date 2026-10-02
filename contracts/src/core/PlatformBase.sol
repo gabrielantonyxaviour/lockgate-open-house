@@ -2,7 +2,8 @@
 pragma solidity ^0.8.24;
 
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
-import {QueueKind} from "../interfaces/IQueueAdapter.sol";
+import {IIssuerFund} from "../interfaces/IIssuerFund.sol";
+import {IQueueAdapter} from "../interfaces/IQueueAdapter.sol";
 import {PlatformConfig} from "./PlatformConfig.sol";
 import {PlatformStore} from "./PlatformStore.sol";
 import {UsdgTransfers} from "./UsdgTransfers.sol";
@@ -12,47 +13,46 @@ import {UsdgTransfers} from "./UsdgTransfers.sol";
 ///         while an advance is still unpaid, so a later cash deposit can finish the same cycle.
 contract PlatformBase is PlatformStore {
     constructor(PlatformConfig memory cfg) PlatformStore(cfg) {}
-
+    /// @inheritdoc IIssuerFund
     function setNav(uint256 newNav) external onlyIssuer {
         if (newNav == 0) revert ZeroAmount();
         nav = newNav;
         navUpdatedAt = uint64(block.timestamp);
         emit NavUpdated(newNav);
     }
-
+    /// @inheritdoc IIssuerFund
     function setGated(bool isGated) external onlyIssuer {
         gated = isGated;
         emit GateSet(isGated);
     }
-
+    /// @inheritdoc IIssuerFund
     function setAllowlist(address account, bool allowed) external onlyIssuer {
         shareToken.setAllowlist(account, allowed);
     }
-
+    /// @inheritdoc IIssuerFund
     function deposit(uint256 usdgAmount) external nonReentrant returns (uint256 sharesOut) {
         if (usdgAmount == 0) revert ZeroAmount();
         sharesOut = usdgAmount * 1e18 / nav;
         if (sharesOut == 0) revert ZeroAmount();
-        if (!shareToken.allowlist(msg.sender)) shareToken.setAllowlist(msg.sender, true);
-        shareToken.mint(msg.sender, sharesOut);
+        shareToken.mintDepositor(msg.sender, sharesOut);
         UsdgTransfers.pull(token, msg.sender, address(this), usdgAmount);
         emit SharesDeposited(msg.sender, sharesOut, usdgAmount);
     }
-
+    /// @inheritdoc IIssuerFund
     function depositCash(uint256 usdgAmount) external nonReentrant {
         if (usdgAmount == 0) revert ZeroAmount();
         UsdgTransfers.pull(token, msg.sender, address(this), usdgAmount);
         emit CashDeposited(msg.sender, usdgAmount);
     }
-
+    /// @inheritdoc IIssuerFund
     function requestRedeem(uint256 shares_) external nonReentrant returns (uint256 requestId) {
         return _queue(msg.sender, shares_);
     }
-
+    /// @inheritdoc IIssuerFund
     function exitEarly(uint256 requestId, uint256 minUsdgOut) external nonReentrant returns (uint256 usdgOut) {
         return _exit(msg.sender, requestId, minUsdgOut);
     }
-
+    /// @inheritdoc IIssuerFund
     function exitNow(uint256 shares_, uint256 minUsdgOut)
         external
         nonReentrant
@@ -61,7 +61,7 @@ contract PlatformBase is PlatformStore {
         requestId = _queue(msg.sender, shares_);
         usdgOut = _exit(msg.sender, requestId, minUsdgOut);
     }
-
+    /// @inheritdoc IIssuerFund
     function cancel(uint256 requestId) external nonReentrant {
         Request storage request = _requests[requestId];
         if (request.owner != msg.sender) revert NotOwner();
@@ -73,11 +73,11 @@ contract PlatformBase is PlatformStore {
         shareToken.pull(address(this), request.owner, request.shares);
         emit RequestCancelled(requestId);
     }
-
+    /// @inheritdoc IIssuerFund
     function processWindow() external virtual nonReentrant {
         _process();
     }
-
+    /// @inheritdoc IIssuerFund
     function quoteExit(uint256 shares_)
         external
         view
@@ -85,7 +85,7 @@ contract PlatformBase is PlatformStore {
     {
         return _quote(Math.mulDiv(shares_, nav, 1e18));
     }
-
+    /// @inheritdoc IIssuerFund
     function quoteRequest(uint256 requestId)
         external
         view
@@ -95,29 +95,29 @@ contract PlatformBase is PlatformStore {
         if (request.status != RequestStatus.Queued) return (request.navValue, 0, 0, false, "not queued");
         return _quote(request.navValue);
     }
-
+    /// @inheritdoc IIssuerFund
     function getRequest(uint256 id) external view returns (Request memory) {
         return _requests[id];
     }
-
+    /// @inheritdoc IIssuerFund
     function requestsOf(address owner_) external view returns (uint256[] memory) {
         return _owned[owner_];
     }
-
+    /// @inheritdoc IQueueAdapter
     function lockgateOwed() public view returns (uint256 owed) {
         for (uint256 id = firstOpen; id != 0; id = nextOpen[id]) {
             uint256 advanceId = _requests[id].advanceId;
             if (advanceId != 0) owed += line.remainingOf(advanceId);
         }
     }
-
+    /// @inheritdoc IQueueAdapter
     function headRequestId() external view returns (uint256) {
         for (uint256 id = firstOpen; id != 0; id = nextOpen[id]) {
             if (_requests[id].status == RequestStatus.Queued) return id;
         }
         return 0;
     }
-
+    /// @inheritdoc IQueueAdapter
     function previewSettlement()
         external
         view
@@ -127,7 +127,7 @@ contract PlatformBase is PlatformStore {
         repayFirst = lockgateOwed();
         uint256 room = cashBalance > repayFirst ? cashBalance - repayFirst : 0;
         if (room == 0 || queuedValue == 0) return (cashBalance, repayFirst, 0, queuedValue);
-        queuePayable = kind() == QueueKind.Epoch ? (room < queuedValue ? room : queuedValue) : _fifoFit(room);
+        queuePayable = _previewPayable(room);
         queueShortfall = queuedValue - queuePayable;
     }
 
@@ -163,7 +163,6 @@ contract PlatformBase is PlatformStore {
             status: RequestStatus.Queued,
             advanceId: 0
         });
-        requestCycle[id] = currentCycleId;
         _owned[owner_].push(id);
         queuedValue += navValue;
         queueLength += 1;
@@ -287,7 +286,8 @@ contract PlatformBase is PlatformStore {
         }
     }
 
-    function _fifoFit(uint256 room) internal view returns (uint256 pay) {
+    /// @dev Whole queued requests that fit in `room`, in open-list order. Epoch overrides this.
+    function _previewPayable(uint256 room) internal view virtual returns (uint256 pay) {
         for (uint256 id = firstOpen; id != 0; id = nextOpen[id]) {
             if (_requests[id].status != RequestStatus.Queued) continue;
             if (room < _requests[id].navValue) break;

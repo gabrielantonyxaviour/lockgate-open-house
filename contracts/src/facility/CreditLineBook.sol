@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import {ILockgateCreditLine} from "../interfaces/ILockgateCreditLine.sol";
 import {IReceivablesBook} from "./interfaces/IReceivablesBook.sol";
-
-/// @title ILockgateCreditLineBook
-/// @notice Views G7 asks G6 to expose on the stage-1 credit line.
-interface ILockgateCreditLineBook {
-    function eligibleOutstanding() external view returns (uint256);
-    function lateOutstanding() external view returns (uint256);
-}
 
 /// @title CreditLineBook
 /// @notice Read-only adapter from Lockgate's own credit line into the facility borrowing base.
@@ -23,11 +17,13 @@ contract CreditLineBook is IReceivablesBook {
         line = line_;
     }
 
+    /// @notice Performing exposure on the stage-1 credit line.
     function eligibleOutstanding() external view returns (uint256) {
-        return ILockgateCreditLineBook(line).eligibleOutstanding();
+        return ILockgateCreditLine(line).eligibleOutstanding();
     }
 
+    /// @notice Past-due exposure on the stage-1 credit line.
     function lateOutstanding() external view returns (uint256) {
-        return ILockgateCreditLineBook(line).lateOutstanding();
+        return ILockgateCreditLine(line).lateOutstanding();
     }
 }

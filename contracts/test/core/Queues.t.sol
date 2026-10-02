@@ -155,6 +155,54 @@ contract QueuesTest is CoreFixture {
         assertEq(platform.shareToken().balanceOf(address(platform)), 100e18);
     }
 
+    function test_firstAdvanceClearsAndTheNextShortfallHoldsTheWindow() public {
+        WeeklyCyclePlatform platform = _direct(QueueKind.WeeklyCycle, issuer, 300e18);
+        _post(address(platform), 15e6);
+        vm.startPrank(issuer);
+        (uint256 firstRequest, uint256 firstOut) = platform.exitNow(100e18, 0);
+        (uint256 secondRequest, uint256 secondOut) = platform.exitNow(100e18, 0);
+        uint256 queued = platform.requestRedeem(100e18);
+        vm.stopPrank();
+        assertEq(firstOut, 99_010_000);
+        assertEq(secondOut, 99_010_000);
+        uint256 firstId = platform.getRequest(firstRequest).advanceId;
+        uint256 secondId = platform.getRequest(secondRequest).advanceId;
+
+        _mint(stranger, 100e6 + 1);
+        vm.startPrank(stranger);
+        usdg.approve(address(platform), 100e6 + 1);
+        platform.depositCash(100e6 + 1);
+        vm.stopPrank();
+        uint256 lineCash = line.capital();
+        uint64 window = platform.nextWindow();
+        vm.warp(window);
+        platform.processWindow();
+
+        assertEq(platform.currentCycleId(), 1);
+        assertEq(platform.nextWindow(), window);
+        assertEq(platform.cash(), 1);
+        assertEq(line.capital(), lineCash + 100e6);
+        assertEq(reserve.balanceOf(address(platform)), 15e6);
+        assertEq(line.requiredReserve(address(platform)), 7_500_000);
+        assertEq(line.remainingOf(firstId), 0);
+        assertEq(line.earnedFees(), 990_000);
+        assertEq(uint256(line.getAdvance(firstId).status), uint256(ILockgateCreditLine.AdvanceStatus.Repaid));
+        assertEq(platform.getRequest(firstRequest).shares, 0);
+        assertEq(line.remainingOf(secondId), 100e6);
+        assertEq(uint256(line.getAdvance(secondId).status), uint256(ILockgateCreditLine.AdvanceStatus.Active));
+        assertEq(line.eligibleOutstanding(), 100e6);
+        assertEq(platform.getRequest(secondRequest).shares, 100e18);
+        assertEq(uint256(platform.getRequest(queued).status), uint256(IIssuerFund.RequestStatus.Queued));
+        assertEq(platform.openCount(), 2);
+        assertEq(usdg.balanceOf(issuer), firstOut + secondOut);
+        (uint256 cash, uint256 repayFirst, uint256 payable_, uint256 shortfall) = platform.previewSettlement();
+        assertEq(cash, 1);
+        assertEq(repayFirst, 100e6);
+        assertEq(payable_, 0);
+        assertEq(shortfall, 100e6);
+        assertEq(line.accountedAssets(), line.accountedEquity());
+    }
+
     function test_cancelReturnsSharesAndSlippage() public {
         WeeklyCyclePlatform platform = _direct(QueueKind.WeeklyCycle, alice, 10e18);
         vm.prank(alice);

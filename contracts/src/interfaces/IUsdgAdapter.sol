@@ -8,13 +8,18 @@ interface IUsdgAdapter {
     /// @notice Arbitrum Sepolia Paxos USDG proxy. Mainnet USDG is a different address and is out of scope.
     function ARBITRUM_SEPOLIA_USDG() external view returns (address);
 
+    /// @notice USDG this adapter points at. The adapter holds none of it.
     function token() external view returns (address);
 
+    /// @notice Always 6. The constructor rejects any other token.
     function decimals() external view returns (uint8);
 
+    /// @notice True when this deployment was constructed as the test token.
     function isMock() external view returns (bool);
 
+    /// @notice True when `token` is the Arbitrum Sepolia USDG proxy.
     function isCanonicalSepoliaUsdg() external view returns (bool);
 
+    /// @notice `token` balance of `account`. This contract holds none of that balance.
     function balanceOf(address account) external view returns (uint256);
 }

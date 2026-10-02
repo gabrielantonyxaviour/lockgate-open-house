@@ -81,6 +81,107 @@ contract CreditLineTest is CoreFixture {
         assertEq(line.accountedAssets(), line.accountedEquity());
     }
 
+    /// @notice Recovery equal to principal earns nothing. The next unit earns 1. The rest of the fee waits.
+    function test_feeStartsOnTheUnitPastPrincipal() public {
+        _post(address(stub), 79_010_000);
+        assertEq(reserve.balanceOf(address(stub)), 99_010_000);
+        (uint256 exact, uint256 fee) = stub.draw(100e6, investor, type(uint256).max);
+        assertEq(fee, 990_000);
+        assertEq(line.getAdvance(exact).principal, 99_010_000);
+        vm.warp(uint256(line.getAdvance(exact).dueAt) + line.graceOf(exact));
+        line.markLate(exact);
+
+        assertEq(line.recoveredOf(exact), 99_010_000);
+        assertEq(line.earnedFees(), 0);
+        assertEq(line.outstanding(), 0);
+        assertEq(line.remainingOf(exact), fee);
+        assertEq(line.lateOutstanding(), fee);
+        assertEq(line.eligibleOutstanding(), 0);
+        assertEq(line.requiredReserve(address(stub)), 74_250);
+        assertEq(reserve.balanceOf(address(stub)), 0);
+        assertEq(uint256(line.getAdvance(exact).status), uint256(ILockgateCreditLine.AdvanceStatus.Late));
+        assertEq(line.accountedAssets(), line.accountedEquity());
+
+        StubSource other = _stub(1_000_000e6, 750);
+        _post(address(other), 99_010_001);
+        (uint256 over, uint256 overFee) = other.draw(100e6, investor, type(uint256).max);
+        assertEq(overFee, 990_000);
+        vm.warp(uint256(line.getAdvance(over).dueAt) + line.graceOf(over));
+        line.markLate(over);
+        assertEq(line.recoveredOf(over), 99_010_001);
+        assertEq(line.earnedFees(), 1);
+        assertEq(line.outstanding(), 0);
+        assertEq(line.remainingOf(over), overFee - 1);
+        assertEq(line.lateOutstanding(), fee + overFee - 1);
+        assertEq(line.requiredReserve(address(other)), 74_250);
+        assertEq(line.capital(), 500_000e6 + 1);
+        assertEq(line.accountedAssets(), line.accountedEquity());
+
+        _mint(address(stub), fee);
+        line.repay(exact);
+        assertEq(line.earnedFees(), fee + 1);
+        assertEq(line.remainingOf(exact), 0);
+        assertEq(line.remainingOf(over), overFee - 1);
+        assertEq(uint256(line.getAdvance(exact).status), uint256(ILockgateCreditLine.AdvanceStatus.Late));
+        assertEq(line.exposure(address(stub)), 0);
+        assertEq(line.requiredReserve(address(stub)), 0);
+        assertEq(line.accountedAssets(), line.accountedEquity());
+    }
+
+    function test_emptyReserveStillMarksTheWholeFaceLate() public {
+        StubSource bare = _stub(1_000_000e6, 0);
+        (uint256 id, uint256 fee) = bare.draw(100e6, investor, type(uint256).max);
+        assertEq(fee, 990_000);
+        assertEq(line.requiredReserve(address(bare)), 0);
+        assertEq(reserve.balanceOf(address(bare)), 0);
+        vm.warp(uint256(line.getAdvance(id).dueAt) + line.graceOf(id));
+        line.markLate(id);
+        assertEq(line.earnedFees(), 0);
+        assertEq(line.outstanding(), 99_010_000);
+        assertEq(line.remainingOf(id), 100e6);
+        assertEq(line.lateOutstanding(), 100e6);
+        assertEq(line.eligibleOutstanding(), 0);
+        assertEq(line.requiredReserve(address(bare)), 0);
+        assertEq(reserve.balanceOf(address(bare)), 0);
+        assertEq(uint256(line.getAdvance(id).status), uint256(ILockgateCreditLine.AdvanceStatus.Late));
+        assertEq(line.accountedAssets(), line.accountedEquity());
+    }
+
+    /// @notice Idle cash is withdrawable while the fee is still unearned. One more unit reverts.
+    function test_ownerWithdrawsIdleWhileTheFeeIsUnrealized() public {
+        (uint256 id, uint256 fee) = stub.draw(100e6, investor, type(uint256).max);
+        assertEq(fee, 990_000);
+        assertEq(line.earnedFees(), 0);
+        assertEq(line.outstanding(), 99_010_000);
+        uint256 idle = line.capital();
+        assertEq(idle, 500_000e6 - 99_010_000);
+        assertEq(idle, line.accountedEquity() - line.outstanding());
+        uint256 ownerBefore = usdg.balanceOf(owner);
+        vm.prank(owner);
+        line.withdrawCapital(idle);
+        assertEq(line.capital(), 0);
+        assertEq(line.earnedFees(), 0);
+        assertEq(line.remainingOf(id), 100e6);
+        assertEq(usdg.balanceOf(owner) - ownerBefore, idle);
+        assertEq(line.accountedAssets(), line.accountedEquity());
+        vm.prank(owner);
+        vm.expectRevert(CreditLineAdmin.CapitalShort.selector);
+        line.withdrawCapital(1);
+        (,, bool ok, string memory why) = line.quote(address(stub), 100e6);
+        assertFalse(ok);
+        assertEq(why, "capital");
+        vm.expectRevert(CreditLineAdmin.CapitalShort.selector);
+        stub.draw(100e6, investor, type(uint256).max);
+
+        _mint(address(stub), 100e6);
+        line.repay(id);
+        assertEq(line.earnedFees(), fee);
+        assertEq(line.capital(), 100e6);
+        assertEq(line.outstanding(), 0);
+        assertEq(line.remainingOf(id), 0);
+        assertEq(line.accountedAssets(), line.accountedEquity());
+    }
+
     function test_graceBoundaryAndFullSlash() public {
         (uint256 id,) = stub.draw(100e6, investor, type(uint256).max);
         uint64 due = line.getAdvance(id).dueAt;

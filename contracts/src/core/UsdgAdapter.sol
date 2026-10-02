@@ -10,7 +10,9 @@ contract UsdgAdapter {
     /// @notice Paxos USDG proxy on Arbitrum Sepolia (chain 421614). Not the Arbitrum One token.
     address public constant ARBITRUM_SEPOLIA_USDG = 0xFFC95faa3d63Cde504a05B567C600B78C0b41892;
 
+    /// @notice USDG this adapter points at. The adapter holds none of it.
     address public immutable token;
+    /// @notice True when this deployment was constructed as the test token.
     bool public immutable isMock;
 
     error ZeroAddress();
@@ -26,14 +28,17 @@ contract UsdgAdapter {
         isMock = isMock_;
     }
 
+    /// @notice Always 6. The constructor rejects any other token.
     function decimals() external pure returns (uint8) {
         return 6;
     }
 
+    /// @notice True when `token` is the Arbitrum Sepolia USDG proxy.
     function isCanonicalSepoliaUsdg() external view returns (bool) {
         return token == ARBITRUM_SEPOLIA_USDG;
     }
 
+    /// @notice `token` balance of `account`. This contract holds none of that balance.
     function balanceOf(address account) external view returns (uint256) {
         return IERC20(token).balanceOf(account);
     }

@@ -21,46 +21,83 @@ abstract contract PartnerVaultRead is Initializable, UUPSUpgradeable, Reentrancy
         return VaultLayout.layout();
     }
 
+    /// @notice Partner who can move cash and set terms.
     function owner() public view returns (address) { return _s().owner; }
+    /// @notice Nominee for a two-step ownership transfer. Address zero means none.
     function pendingOwner() external view returns (address) { return _s().pendingOwner; }
+    /// @notice Token the vault holds.
     function asset() public view returns (address) { return _s().asset; }
+    /// @notice Address whose signature must match the engine digest.
     function proposer() public view returns (address) { return _s().proposer; }
+    /// @notice Extra partner signer. Address zero means the owner signs.
     function partnerSigner() public view returns (address) { return _s().partnerSigner; }
+    /// @notice Module that may authorise an execute. Address zero means none.
     function autoModule() public view returns (address) { return _s().autoModule; }
+    /// @notice Directory that records funded exits. Address zero means none.
     function router() external view returns (address) { return _s().router; }
+    /// @notice Peg source. Address zero disables the price check.
     function pegOracle() external view returns (address) { return _s().pegOracle; }
+    /// @notice Grace the next funded advance will store.
     function grace() external view returns (uint64) { return _s().grace; }
+
+    /// @notice Grace stored when `advanceId` was funded. `grace()` is the value the next advance will store.
+    ///         An id that was never funded returns 0, which is also a real pin, so read `getAdvance` first.
+    function graceOf(uint256 advanceId) external view returns (uint64) {
+        return _s().graceAtFunding[advanceId];
+    }
+    /// @notice When true, a new advance is rejected. Repayment still runs.
     function paused() public view returns (bool) { return _s().paused; }
+    /// @notice Minimum wait after an upgrade is scheduled.
     function upgradeDelay() external view returns (uint64) { return _s().upgradeDelay; }
+    /// @notice Implementation waiting out the delay. Address zero means none is scheduled.
     function scheduledImpl() external view returns (address) { return _s().scheduledImpl; }
+    /// @notice Timestamp when the scheduled upgrade can run. Zero means none is scheduled.
     function scheduledEta() external view returns (uint64) { return _s().scheduledEta; }
+    /// @notice Cash the owner can withdraw. Outstanding advances are not included.
     function idle() public view returns (uint256) { return _s().idleCash; }
+    /// @notice First-loss cash posted across platforms.
     function reserveCash() public view returns (uint256) { return _s().reserveCash; }
+    /// @notice Cash that has left the vault and is not yet back.
     function outstandingPrincipal() public view returns (uint256) { return _s().outstandingPrincipal; }
+    /// @notice Shares minted to the partner.
     function totalShares() public view returns (uint256) { return _s().totalShares; }
+    /// @notice Idle cash plus outstanding principal. Posted reserves are not included.
     function totalAssets() public view returns (uint256) { return _s().idleCash + _s().outstandingPrincipal; }
+    /// @notice Unpaid nav for this platform.
     function exposureOf(address platform) public view returns (uint256) { return _s().exposureOf[platform]; }
+    /// @notice First-loss posted for this platform.
     function reserveOf(address platform) public view returns (uint256) { return _s().reserveOfPlatform[platform]; }
 
+    /// @notice Total shares for the current owner, and zero for everyone else.
     function sharesOf(address account) external view returns (uint256) {
         return account == _s().owner ? _s().totalShares : 0;
     }
 
+    /// @notice Number of advances funded. Cancelled nonces are not included.
     function advanceCount() public view returns (uint256) { return _s().advanceSeq; }
+    /// @notice Recipient that must match the proposal. Address zero means the platform itself.
     function payoutTo(address platform) external view returns (address) { return _s().payoutTo[platform]; }
+    /// @notice Approved platforms, in the order they were approved.
     function approvedPlatforms() external view returns (address[] memory) { return _s().approvedList; }
+    /// @notice True after execute, approve, or cancel of this nonce.
     function nonceUsed(uint256 nonce) external view returns (bool) { return _s().nonceUsed[nonce]; }
+    /// @notice Engine digest filed for this nonce. Zero means none is filed.
     function proposalHashOf(uint256 nonce) external view returns (bytes32) { return _s().proposalHash[nonce]; }
+    /// @notice Stored advance. An unknown id is an empty struct.
     function getAdvance(uint256 id) public view returns (Advance memory) { return _s().advances[id]; }
+    /// @notice Amount still owed. Zero when the id is unknown or already cleared.
     function owedOf(uint256 id) public view returns (uint256) { return _s().advances[id].owed; }
+    /// @notice EIP-712 domain separator for this vault and chain.
     function domainSeparator() external view returns (bytes32) {
         return AdvanceProposalLib.domainSeparator(block.chainid, address(this));
     }
 
+    /// @notice Engine digest for this vault. Domain `LockgateAdvance`, version `1`.
     function hashTypedProposal(AdvanceProposal calldata proposal) external view returns (bytes32) {
         return AdvanceHash.digest(proposal);
     }
 
+    /// @notice Fee floor, tenor cap, concentration, expiry, and the signer.
     function mandate() public view returns (MandateView memory m) {
         VaultLayout.Layout storage s = _s();
         m.partner = s.owner;
@@ -71,12 +108,15 @@ abstract contract PartnerVaultRead is Initializable, UUPSUpgradeable, Reentrancy
         m.expiry = s.expiry;
     }
 
+    /// @notice Approval, limit, reserve rate, and gate for this platform.
     function platformConfig(address platform) public view returns (PlatformConfig memory) {
         return _s().platformOf[platform];
     }
 
+    /// @notice Implementation version. This build returns 1.
     function vaultVersion() external pure virtual returns (uint256) { return 1; }
 
+    /// @notice Mandate result for this proposal. `None` means the terms would fund.
     function preview(AdvanceProposal calldata proposal) external view returns (RejectReason) {
         return _preview(proposal);
     }
@@ -96,6 +136,7 @@ abstract contract PartnerVaultRead is Initializable, UUPSUpgradeable, Reentrancy
         return lo;
     }
 
+    /// @notice Rounds down. An empty vault mints one share per unit of assets.
     function convertToShares(uint256 assets) public view returns (uint256) {
         uint256 supply = _s().totalShares;
         uint256 base = totalAssets();
@@ -103,12 +144,14 @@ abstract contract PartnerVaultRead is Initializable, UUPSUpgradeable, Reentrancy
         return Math.mulDiv(assets, supply, base);
     }
 
+    /// @notice Rounds down. Withdraw burns shares rounded up, so the vault keeps the dust.
     function convertToAssets(uint256 shares) public view returns (uint256) {
         uint256 supply = _s().totalShares;
         if (supply == 0) return shares;
         return Math.mulDiv(shares, totalAssets(), supply);
     }
 
+    /// @notice Idle the owner can withdraw. Zero for every other account.
     function maxWithdraw(address account) external view returns (uint256) {
         return account == _s().owner ? _s().idleCash : 0;
     }
