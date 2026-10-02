@@ -4,6 +4,7 @@ import { loadCtx } from "./chain.js";
 import { failureBody, HarnessError } from "./errors.js";
 import { parseCliEnv, parseFlags } from "./input.js";
 import { manifestPath, readManifest } from "./manifest.js";
+import { runReported } from "./summary.js";
 
 function flags(argv: string[]): Record<string, string> {
   const out: Record<string, string> = {};
@@ -33,7 +34,7 @@ async function main(): Promise<void> {
   const manifest = readManifest(path);
   if (env.rpc) manifest.rpc = env.rpc;
   const ctx = await loadCtx(manifest, path);
-  const result = await action.run(ctx, flags(rest));
+  const result = await runReported(ctx, () => action.run(ctx, flags(rest)));
   process.stdout.write(`${JSON.stringify(result, (_key, value) => typeof value === "bigint" ? value.toString() : value, 2)}\n`);
 }
 

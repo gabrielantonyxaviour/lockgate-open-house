@@ -4,6 +4,9 @@ export const ANVIL_CHAIN_ID = 31337;
 export const ARBITRUM_ONE = 42161;
 export const ARBITRUM_SEPOLIA = 421614;
 
+/** One JSON-RPC attempt. A hang becomes `RPC` after this, with no retry. */
+export const RPC_TIMEOUT_MS = 2_000;
+
 /** Paxos Global Dollar on Arbitrum Sepolia, 6 decimals. */
 export const PAXOS_USDG_SEPOLIA = "0xFFC95faa3d63Cde504a05B567C600B78C0b41892";
 

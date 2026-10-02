@@ -7,6 +7,7 @@ import { loadCtx, type Ctx } from "./chain.js";
 import { failureBody, HarnessError } from "./errors.js";
 import { parseActBody, parseServerEnv } from "./input.js";
 import { manifestPath, readManifest } from "./manifest.js";
+import { runReported } from "./summary.js";
 import { inOrder } from "./turnstile.js";
 
 const webRoot = fileURLToPath(new URL("../web", import.meta.url));
@@ -60,7 +61,8 @@ export function startServer(ctx: Ctx, port: number): Promise<{ url: string; clos
       }
       if (req.method === "GET" && url.pathname === "/api/status") {
         const action = findAction("read.status");
-        sendJson(res, 200, await action?.run(ctx, {}));
+        if (!action) throw new HarnessError("Unknown action", "UNKNOWN_ACTION");
+        sendJson(res, 200, await runReported(ctx, () => action.run(ctx, {})));
         return;
       }
       if (req.method === "POST" && url.pathname === "/api/act") {
@@ -68,7 +70,7 @@ export function startServer(ctx: Ctx, port: number): Promise<{ url: string; clos
           const body = parseActBody(await readBody(req));
           const action = findAction(body.action);
           if (!action) throw new HarnessError("Unknown action", "UNKNOWN_ACTION");
-          sendJson(res, 200, { ok: true, result: await action.run(ctx, body.input) });
+          sendJson(res, 200, { ok: true, result: await runReported(ctx, () => action.run(ctx, body.input)) });
         });
         return;
       }

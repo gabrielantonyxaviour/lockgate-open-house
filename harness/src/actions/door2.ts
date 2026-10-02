@@ -1,4 +1,3 @@
-import { type Address } from "viem";
 import { read, send, warpTo, type Ctx } from "../chain.js";
 import { feeFromBps, modelFeeBps } from "../model.js";
 import { ROLES } from "../roles.js";
@@ -11,19 +10,50 @@ type Position = { navValue: bigint; fee: bigint; advanceId: bigint; readyAt: big
 /** Door 2. Lockgate buys open-token shares from its own book. The partner vault is not touched. */
 export async function door2Cycle(ctx: Ctx, input: Record<string, string> = {}): Promise<unknown> {
   const amount = parseUsdg(input.amountUsdg ?? "1000");
-  const pool = ctx.binding("LockgateExitPool").address;
   const idleBefore = await read<bigint>(ctx, "PartnerVaultA", "idle");
-  await send(ctx, "lockgate", "LockgateCreditLine", "registerSource", [
-    pool, parseUsdg(input.limitUsdg ?? "25000"), 0,
-  ]);
-  const reserveBps = await read<number>(ctx, "LockgateCreditLine", "reserveBpsOf", [pool]);
-  expect(Number(reserveBps) === 0, "exit pool reserve bps was not 0", reserveBps);
-
+  await registerPool(ctx, input.limitUsdg ?? "25000");
   await approve(ctx, "investor", "OpenCreditVault", amount);
   await send(ctx, "investor", "OpenCreditVault", "deposit", [amount]);
   const shares = await read<bigint>(ctx, "OpenCreditVault", "balanceOf", [ROLES.investor.address]);
   expect(shares > 0n, "open vault minted no shares");
+  return sellHeldShares(ctx, shares, idleBefore);
+}
 
+/**
+ * Finish a sale already on this chain. Undefined means nothing has started, so the caller may open one.
+ * `door2.cycle` does not call this. A second cycle still deposits and sells.
+ */
+export async function continueDoor2(ctx: Ctx): Promise<unknown | undefined> {
+  const count = await read<bigint>(ctx, "LockgateExitPool", "positionCount");
+  if (count > 0n) {
+    const position = asPosition(await read(ctx, "LockgateExitPool", "getPosition", [count]));
+    const remaining = await read<bigint>(ctx, "LockgateCreditLine", "remainingOf", [position.advanceId]);
+    if (position.settled && remaining === 0n) {
+      return {
+        positionId: count.toString(),
+        nav: position.navValue.toString(),
+        fee: position.fee.toString(),
+        feeBps: modelFeeBps(300n),
+      };
+    }
+    if (!position.settled) return settlePosition(ctx, count, position);
+  }
+  const shares = await read<bigint>(ctx, "OpenCreditVault", "balanceOf", [ROLES.investor.address]);
+  if (shares === 0n) return undefined;
+  const idleBefore = await read<bigint>(ctx, "PartnerVaultA", "idle");
+  await registerPool(ctx, "25000");
+  return sellHeldShares(ctx, shares, idleBefore);
+}
+
+async function registerPool(ctx: Ctx, limitUsdg: string): Promise<void> {
+  const pool = ctx.binding("LockgateExitPool").address;
+  await send(ctx, "lockgate", "LockgateCreditLine", "registerSource", [pool, parseUsdg(limitUsdg), 0]);
+  const reserveBps = await read<number>(ctx, "LockgateCreditLine", "reserveBpsOf", [pool]);
+  expect(Number(reserveBps) === 0, "exit pool reserve bps was not 0", reserveBps);
+}
+
+async function sellHeldShares(ctx: Ctx, shares: bigint, idleBefore: bigint): Promise<unknown> {
+  const pool = ctx.binding("LockgateExitPool").address;
   await send(ctx, "lockgate", "LockgateExitPool", "setGated", [true]);
   await expectRevert(() => send(ctx, "investor", "LockgateExitPool", "sellToLockgate", [shares, 0n]), "Gated");
   await send(ctx, "lockgate", "LockgateExitPool", "setGated", [false]);
@@ -44,21 +74,33 @@ export async function door2Cycle(ctx: Ctx, input: Record<string, string> = {}): 
   expect(sellerAfter - sellerBefore === position.navValue - position.fee, "seller did not receive nav minus fee");
   expect(position.fee === feeFromBps(position.navValue, bps), "sold fee diverged", position);
   expect(!position.settled, "position settled in the sell block");
+  return settlePosition(ctx, positionId, position, idleBefore);
+}
 
-  await expectRevert(() => send(ctx, "lockgate", "LockgateExitPool", "settle", [positionId]), "NotReady");
-  await warpTo(ctx, position.readyAt);
+async function settlePosition(ctx: Ctx, positionId: bigint, position: Position, idleBefore?: bigint): Promise<unknown> {
+  const before = idleBefore ?? await read<bigint>(ctx, "PartnerVaultA", "idle");
   const block = await ctx.publicClient.getBlock();
-  if (block.timestamp < position.readyAt) await warpTo(ctx, position.readyAt + 1n);
+  if (block.timestamp < position.readyAt) {
+    await expectRevert(() => send(ctx, "lockgate", "LockgateExitPool", "settle", [positionId]), "NotReady");
+    await warpTo(ctx, position.readyAt);
+    const after = await ctx.publicClient.getBlock();
+    if (after.timestamp < position.readyAt) await warpTo(ctx, position.readyAt + 1n);
+  }
   await send(ctx, "lockgate", "LockgateExitPool", "settle", [positionId]);
   const settled = asPosition(await read(ctx, "LockgateExitPool", "getPosition", [positionId]));
   const remaining = await read<bigint>(ctx, "LockgateCreditLine", "remainingOf", [position.advanceId]);
   const idleAfter = await read<bigint>(ctx, "PartnerVaultA", "idle");
   expect(settled.settled, "position was not settled");
   expect(remaining === 0n, "door 2 advance was not repaid", remaining.toString());
-  expect(idleAfter === idleBefore, "door 2 moved partner cash", {
-    idleBefore: idleBefore.toString(), idleAfter: idleAfter.toString(),
+  expect(idleAfter === before, "door 2 moved partner cash", {
+    idleBefore: before.toString(), idleAfter: idleAfter.toString(),
   });
-  return { positionId: positionId.toString(), nav: position.navValue.toString(), fee: position.fee.toString(), feeBps: bps };
+  return {
+    positionId: positionId.toString(),
+    nav: position.navValue.toString(),
+    fee: position.fee.toString(),
+    feeBps: modelFeeBps(300n),
+  };
 }
 
 function asQuote(value: unknown): Quote {

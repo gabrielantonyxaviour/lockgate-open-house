@@ -39,6 +39,54 @@ export async function withAnvil<T>(run: (rpc: string, manifestFile: string) => P
   }
 }
 
+/** Start one Anvil. Pass a port to bind again after `stop`. Never uses 8545. */
+export async function openAnvil(fixedPort?: number, chainId = 31337): Promise<{ rpc: string; port: number; stop: () => Promise<void> }> {
+  const port = fixedPort ?? await freePort();
+  if (port === 8545 || port < 1024 || port > 65535) throw new Error("refusing this Anvil port");
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const child = spawn("anvil", ["--host", "127.0.0.1", "--port", String(port), "--chain-id", String(chainId), "--silent"], {
+      stdio: "ignore",
+    });
+    children.add(child);
+    const rpc = `http://127.0.0.1:${port}`;
+    if (await answers(rpc, child)) {
+      return {
+        rpc,
+        port,
+        stop: async () => {
+          child.kill("SIGTERM");
+          await exited(child);
+          children.delete(child);
+        },
+      };
+    }
+    child.kill("SIGTERM");
+    await exited(child);
+    children.delete(child);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error(`Anvil did not answer on ${port}`);
+}
+
+async function answers(rpc: string, child: ChildProcess): Promise<boolean> {
+  const started = Date.now();
+  while (Date.now() - started < 5_000) {
+    if (child.exitCode !== null) return false;
+    try {
+      const response = await fetch(rpc, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_chainId", params: [] }),
+      });
+      if (response.ok) return true;
+    } catch {
+      // The port is still closing, or Anvil has not bound yet.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  return false;
+}
+
 async function waitForRpc(rpc: string): Promise<void> {
   const started = Date.now();
   while (Date.now() - started < 10_000) {

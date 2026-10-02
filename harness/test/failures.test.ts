@@ -25,13 +25,19 @@ test("the act route rejects a bad body before it touches a chain", async () => {
     const broken = await post(server.url, "{");
     assert.equal(broken.status, 400);
     assert.equal(broken.body.code, "VALIDATION");
+    assert.equal(broken.body.error, "body is not JSON");
     const missing = await post(server.url, JSON.stringify({ input: {} }));
     assert.equal(missing.status, 400);
+    assert.equal(missing.body.code, "VALIDATION");
+    assert.equal(missing.body.error, "action body is invalid");
     const nested = await post(server.url, JSON.stringify({ action: "read.status", input: { role: { nested: true } } }));
     assert.equal(nested.status, 400);
+    assert.equal(nested.body.code, "VALIDATION");
+    assert.equal(nested.body.error, "action body is invalid");
     const unknown = await post(server.url, JSON.stringify({ action: "missing" }));
     assert.equal(unknown.status, 422);
     assert.equal(unknown.body.code, "UNKNOWN_ACTION");
+    assert.equal(unknown.body.error, "Unknown action");
   } finally {
     await server.close();
   }
@@ -134,13 +140,13 @@ test("failure paths keep cash identity and fail closed", { timeout: 180_000 }, a
   });
 });
 
-async function post(url: string, body: string): Promise<{ status: number; body: { code?: string } }> {
+async function post(url: string, body: string): Promise<{ status: number; body: { code?: string; error?: string } }> {
   const response = await fetch(`${url}/api/act`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body,
   });
-  return { status: response.status, body: await response.json() as { code?: string } };
+  return { status: response.status, body: await response.json() as { code?: string; error?: string } };
 }
 
 function flip(sig: Hex): Hex {

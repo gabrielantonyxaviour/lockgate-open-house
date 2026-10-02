@@ -63,7 +63,7 @@ test("stage-1 bps follows the constructor curve and does not clamp", () => {
     const later = modelFeeBps(seconds + 1n);
     assert.ok(later >= again);
   }
-  assert.ok(modelFeeBps(86_400n) > 1_500);
+  assert.equal(modelFeeBps(86_400n), 14_203);
 });
 
 test("USDG text round-trips across 256 amounts and rejects the boundaries", () => {

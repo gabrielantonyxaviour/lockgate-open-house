@@ -12,10 +12,11 @@ import {
 import { privateKeyToAccount } from "viem/accounts";
 import { foundry } from "viem/chains";
 import { loadArtifact, type Artifact } from "./artifacts.js";
-import { HarnessError, publicMessage } from "./errors.js";
-import { ANVIL_CHAIN_ID, assertHarnessWrite, assertLocalRpc } from "./guards.js";
+import { HarnessError, isNonceConflict, isTimeout, isUnreachable, publicMessage } from "./errors.js";
+import { ANVIL_CHAIN_ID, assertHarnessWrite, assertLocalRpc, RPC_TIMEOUT_MS } from "./guards.js";
 import { type Manifest } from "./manifest.js";
 import { ROLES, type RoleName } from "./roles.js";
+import { noteGas, type Meter } from "./summary.js";
 
 export type Ctx = {
   manifest: Manifest;
@@ -25,17 +26,27 @@ export type Ctx = {
   testClient: ReturnType<typeof makeTestClient>;
   wallet: (role: RoleName) => WalletClient;
   binding: (logical: string) => { abi: Artifact["abi"]; address: Address };
+  meter: Meter;
 };
 
+function rpcTransport(rpc: string) {
+  return http(rpc, { retryCount: 0, timeout: RPC_TIMEOUT_MS });
+}
+
 function makeTestClient(rpc: string) {
-  return createTestClient({ chain: foundry, mode: "anvil", transport: http(rpc) }).extend(publicActions);
+  return createTestClient({ chain: foundry, mode: "anvil", transport: rpcTransport(rpc) }).extend(publicActions);
 }
 
 export async function loadCtx(manifest: Manifest, manifestFile = ""): Promise<Ctx> {
   assertLocalRpc(manifest.rpc);
-  const transport = http(manifest.rpc);
+  const transport = rpcTransport(manifest.rpc);
   const publicClient = createPublicClient({ chain: foundry, transport });
-  const chainId = await publicClient.getChainId();
+  let chainId: number;
+  try {
+    chainId = await publicClient.getChainId();
+  } catch (err) {
+    throw explain(err);
+  }
   if (chainId !== manifest.chainId) {
     throw new HarnessError(`RPC chain ${chainId} does not match manifest ${manifest.chainId}`, "CHAIN_REFUSED");
   }
@@ -47,6 +58,7 @@ export async function loadCtx(manifest: Manifest, manifestFile = ""): Promise<Ct
     chainId,
     publicClient,
     testClient,
+    meter: { gas: 0n },
     wallet(role) {
       const cached = wallets.get(role);
       if (cached) return cached;
@@ -77,7 +89,7 @@ export async function deployNew(ctx: Ctx, role: RoleName, logical: string, args:
       account: wallet.account,
       chain: foundry,
     } as never);
-    const receipt = await ctx.publicClient.waitForTransactionReceipt({ hash });
+    const receipt = await takeReceipt(ctx, hash);
     if (!receipt.contractAddress) {
       throw new HarnessError(`${logical} deploy returned no address`, "DEPLOY_FAILED");
     }
@@ -87,7 +99,14 @@ export async function deployNew(ctx: Ctx, role: RoleName, logical: string, args:
   }
 }
 
-export async function send(ctx: Ctx, role: RoleName, logical: string, functionName: string, args: readonly unknown[]): Promise<Hex> {
+export async function send(
+  ctx: Ctx,
+  role: RoleName,
+  logical: string,
+  functionName: string,
+  args: readonly unknown[],
+  nonce?: number,
+): Promise<Hex> {
   assertHarnessWrite(ctx.chainId);
   const { abi, address } = ctx.binding(logical);
   const wallet = ctx.wallet(role);
@@ -100,12 +119,19 @@ export async function send(ctx: Ctx, role: RoleName, logical: string, functionNa
       args,
       account: wallet.account,
       chain: foundry,
+      ...(nonce === undefined ? {} : { nonce }),
     } as never);
-    await ctx.publicClient.waitForTransactionReceipt({ hash });
+    await takeReceipt(ctx, hash);
     return hash;
   } catch (err) {
     throw explain(err);
   }
+}
+
+async function takeReceipt(ctx: Ctx, hash: Hex) {
+  const receipt = await ctx.publicClient.waitForTransactionReceipt({ hash });
+  noteGas(ctx.meter, receipt.gasUsed);
+  return receipt;
 }
 
 export async function read<T>(ctx: Ctx, logical: string, functionName: string, args: readonly unknown[] = []): Promise<T> {
@@ -133,6 +159,10 @@ export async function warpTo(ctx: Ctx, timestamp: bigint): Promise<void> {
 
 export function explain(err: unknown): HarnessError {
   if (err instanceof HarnessError) return err;
+  // Both of these carry a shortMessage. A later rule would call them reverts.
+  if (isTimeout(err)) return new HarnessError("RPC timed out", "RPC");
+  if (isUnreachable(err)) return new HarnessError("RPC is unreachable", "RPC");
+  if (isNonceConflict(err)) return new HarnessError("Transaction nonce conflict", "NONCE");
   const anyErr = err as { shortMessage?: string; message?: string; walk?: (fn: (e: unknown) => boolean) => unknown };
   const names: string[] = [];
   const shorts: string[] = [];

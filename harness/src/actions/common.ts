@@ -48,6 +48,19 @@ export async function balanceOf(ctx: Ctx, account: Address): Promise<bigint> {
   return read<bigint>(ctx, "MockUSDG", "balanceOf", [account]);
 }
 
+/** Share-token balance. The token is not MockUSDG; `balanceOf` is the same selector. */
+export async function shareBalance(ctx: Ctx, logical: string): Promise<bigint> {
+  const token = await read<Address>(ctx, logical, "share");
+  const { abi } = ctx.binding("MockUSDG");
+  const balance: unknown = await ctx.publicClient.readContract({
+    address: token,
+    abi,
+    functionName: "balanceOf",
+    args: [ROLES.investor.address],
+  } as never);
+  return BigInt(balance as bigint);
+}
+
 export const PLATFORM_NAMES = ["", "WeeklyQueuePlatform", "EpochQueuePlatform", "QuarterlyGatedPlatform"] as const;
 
 export function platformLogical(kind: number): string {

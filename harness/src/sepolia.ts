@@ -5,6 +5,7 @@ import { protocolPlan, type ProtocolOwners } from "./deploy.js";
 import { HarnessError } from "./errors.js";
 import { ARBITRUM_ONE, ARBITRUM_SEPOLIA, PAXOS_USDG_SEPOLIA, assertSepoliaBroadcast } from "./guards.js";
 import { parseSepoliaEnv, type SepoliaEnv } from "./input.js";
+import { preflight } from "./preflight.js";
 import { writeManifest, type Manifest } from "./manifest.js";
 import { usdg } from "./units.js";
 
@@ -26,6 +27,15 @@ export async function broadcastSepolia(env: NodeJS.ProcessEnv, manifestFile: str
   const transport = http(rpc);
   const publicClient = createPublicClient({ chain, transport });
   const wallet = createWalletClient({ account, chain, transport });
+  await preflight({
+    target: "sepolia",
+    deployer: account.address,
+    probe: {
+      chainId: async () => chainId,
+      balanceOf: (address) => publicClient.getBalance({ address }),
+    },
+    skipMockUsdg: parsed.paxos,
+  });
   const nonce = await publicClient.getTransactionCount({ address: account.address });
   const factory = getContractAddress({ from: account.address, nonce: BigInt(nonce) });
   const owners = ownersFrom(parsed, account.address);

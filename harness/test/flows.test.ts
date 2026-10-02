@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { test } from "node:test";
 import { createPublicClient, createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { foundry } from "viem/chains";
 import { demoAll } from "../src/actions/demo.js";
-import { loadCtx } from "../src/chain.js";
+import { books } from "../src/actions/stage3.js";
+import { loadCtx, read, type Ctx } from "../src/chain.js";
+import { cursorPath } from "../src/progress.js";
 import { deployProtocol } from "../src/deploy.js";
 import { HarnessError } from "../src/errors.js";
 import { readManifest } from "../src/manifest.js";
@@ -77,10 +79,39 @@ test("demo flows and the test console run on local Anvil", { timeout: 300_000 },
       });
       assert.equal(refused.status, 422);
       const result = await demoAll(ctx);
-      assert.ok(result);
+      const report = result as {
+        stage1: { lateAdvance: string };
+        stage2: { funded: string; roundRobin: string[] };
+        stage3: { base: string; juniorAfter: string };
+      };
+      assert.equal(report.stage1.lateAdvance, "2");
+      assert.equal(report.stage2.funded, "PartnerVaultA");
+      assert.deepEqual(report.stage2.roundRobin, ["PartnerVaultB", "PartnerVaultA"]);
+      assert.match(report.stage3.base, /^[1-9][0-9]+$/);
+      assert.match(report.stage3.juniorAfter, /^[1-9][0-9]+$/);
       assert.equal(manifest.chainId, 31337);
+      const block = await ctx.publicClient.getBlockNumber();
+      const again = await demoAll(ctx);
+      assert.deepEqual(again, result);
+      assert.equal(await ctx.publicClient.getBlockNumber(), block);
+      const picture = await economics(ctx);
+      unlinkSync(cursorPath(manifestFile));
+      await demoAll(ctx);
+      assert.equal(await ctx.publicClient.getBlockNumber(), block);
+      assert.deepEqual(await economics(ctx), picture);
     } finally {
       await server.close();
     }
   });
 });
+
+async function economics(ctx: Ctx): Promise<{ capital: string; requests: string; idle: string; drawn: string; recovery: boolean }> {
+  const state = await books(ctx);
+  return {
+    capital: (await read<bigint>(ctx, "LockgateCreditLine", "capital")).toString(),
+    requests: (await read<bigint>(ctx, "WeeklyQueuePlatform", "requestCount")).toString(),
+    idle: (await read<bigint>(ctx, "PartnerVaultA", "idle")).toString(),
+    drawn: state.drawn.toString(),
+    recovery: state.recovery,
+  };
+}

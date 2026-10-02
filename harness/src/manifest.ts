@@ -1,4 +1,4 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { z } from "zod";
 import { repoRoot } from "./artifacts.js";
@@ -31,7 +31,20 @@ export function readManifest(path: string): Manifest {
   }
 }
 
-export function writeManifest(manifest: Manifest, path = manifestPath(manifest.chainId)): void {
+/** Replace `path` by rename. A failed write removes the temp file and leaves the previous bytes. */
+export function writeAtomic(path: string, body: string): void {
   mkdirSync(dirname(path), { recursive: true });
-  writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`);
+  const tmp = `${path}.${process.pid}.tmp`;
+  try {
+    writeFileSync(tmp, body);
+    renameSync(tmp, path);
+  } catch (err) {
+    rmSync(tmp, { force: true });
+    if (err instanceof HarnessError) throw err;
+    throw new HarnessError("Could not write the manifest", "INTERNAL");
+  }
+}
+
+export function writeManifest(manifest: Manifest, path = manifestPath(manifest.chainId)): void {
+  writeAtomic(path, `${JSON.stringify(manifest, null, 2)}\n`);
 }

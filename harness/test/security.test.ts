@@ -46,7 +46,7 @@ test("stage-1 fee stays on the ceiling and the curve is not clamped", () => {
   assert.equal(feeFromBps(10_001n, 1), 2n);
   assert.equal(feeFromBps(1n, 1), 1n);
   assert.equal(modelFeeBps(300n), 49);
-  assert.ok(modelFeeBps(86_400n) > 1_500);
+  assert.equal(modelFeeBps(86_400n), 14_203);
 });
 
 test("acts run one at a time", async () => {

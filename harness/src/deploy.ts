@@ -15,12 +15,20 @@ import { HarnessError } from "./errors.js";
 import { ANVIL_CHAIN_ID, assertHarnessWrite, assertLocalRpc } from "./guards.js";
 import { manifestPath, writeManifest, type Manifest } from "./manifest.js";
 import { DEMO } from "./params.js";
+import { fetchProbe, preflight } from "./preflight.js";
 import { ROLES, type RoleName } from "./roles.js";
 import { usdg } from "./units.js";
 
 const DAY = 86_400n;
 
-export type Planned = { logical: string; from: RoleName; salt: Hex; init: Hex; address: Address };
+export type Planned = {
+  logical: string;
+  from: RoleName;
+  salt: Hex;
+  init: Hex;
+  address: Address;
+  args: readonly unknown[];
+};
 
 export type ProtocolOwners = { owner: Address; governor: Address; partnerA: Address; partnerB: Address };
 
@@ -48,6 +56,7 @@ function initOf(logical: string, args: readonly unknown[]): Hex {
 
 export async function deployProtocol(rpc: string, manifestFile?: string): Promise<Manifest> {
   assertLocalRpc(rpc);
+  await preflight({ target: "local", deployer: ROLES.lockgate.address, probe: fetchProbe(rpc) });
   const factory = getContractAddress({ from: ROLES.lockgate.address, nonce: 0n });
   const planned = protocolPlan(factory);
   const contracts: Record<string, Address> = { Create2Factory: factory };
@@ -109,7 +118,7 @@ async function wire(ctx: Awaited<ReturnType<typeof loadCtx>>): Promise<void> {
 
 export function protocolPlan(factory: Address, owners: ProtocolOwners = anvilOwners(), externalAsset?: Address): Planned[] {
   const usdg = externalAsset
-    ? { logical: "MockUSDG", from: "lockgate" as RoleName, salt: saltFor("MockUSDG"), init: "0x" as Hex, address: externalAsset }
+    ? { logical: "MockUSDG", from: "lockgate" as RoleName, salt: saltFor("MockUSDG"), init: "0x" as Hex, address: externalAsset, args: [] }
     : predict(factory, "MockUSDG", [owners.owner]);
   const adapter = predict(factory, "UsdgAdapter", [usdg.address, !externalAsset]);
   const pricing = predict(factory, "PricingEngine", [owners.owner]);
@@ -180,7 +189,7 @@ function facilityInit(governor: Address, borrower: Address, asset: Address, book
 function predict(factory: Address, logical: string, args: readonly unknown[], from: RoleName = "lockgate"): Planned {
   const init = initOf(logical, args);
   const salt = saltFor(logical);
-  return { logical, from, salt, init, address: getCreate2Address({ from: factory, salt, bytecode: init }) };
+  return { logical, from, salt, init, args, address: getCreate2Address({ from: factory, salt, bytecode: init }) };
 }
 
 function predictProxy(factory: Address, logical: string, impl: Address, owner: Address, asset: Address): Planned {
@@ -191,7 +200,8 @@ function predictProxy(factory: Address, logical: string, impl: Address, owner: A
     args: [owner, asset, 2n * DAY, BigInt(DEMO.grace)],
   });
   const from: RoleName = logical === "PartnerVaultA" ? "partnerA" : "partnerB";
-  const init = initOf("ERC1967Proxy", [impl, data]);
+  const args = [impl, data];
+  const init = initOf("ERC1967Proxy", args);
   const salt = saltFor(logical);
-  return { logical, from, salt, init, address: getCreate2Address({ from: factory, salt, bytecode: init }) };
+  return { logical, from, salt, init, args, address: getCreate2Address({ from: factory, salt, bytecode: init }) };
 }
