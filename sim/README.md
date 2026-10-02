@@ -75,7 +75,7 @@ flowchart LR
   equity --> senior[Senior]
 ```
 
-Utilization in the tables is cash principal over cash principal plus idle. It can sit below owed-nav exposure once fees are unpaid. The long-horizon book calls the curve with time scale 1, so a wait is calendar days. The 10-minute demo scale, 4320, is a separate quote. `src/pricing.ts` floors the zero-risk 600s × 4320 case to 98 bps and clamps to 25–1500. On-chain `PricingMath` half-up of that case is 99 bps and refuses a fee above the max. `test/pricing.test.ts` pins the simulator figure. The two are different numbers.
+Utilization in the tables is cash principal over cash principal plus idle. It can sit below owed-nav exposure once fees are unpaid. The long-horizon book calls the curve with time scale 1, so a wait is calendar days. The 10-minute demo scale, 4320, is a separate quote. Since 2026-10-02 `src/pricing.ts` is an exact BigInt port of `PricingMath.quoteCode`: kinked utilization APR plus risk APR plus NAV-age APR plus concentration APR, `halfUp(apr * seconds, timeScale, year)`, a minimum floor, and a fee above the max is refused with reason `fee-above-max`. `riskBps` is a 0..10000 platform risk score like `LockgateCreditLine.riskOf` (the world uses 0, 2500, and 5000), not a flat multiplier. The sim, the engine, and the chain agree on the compare quote.
 
 The identity checked on every line is `balance + principal + creditLossEquity + interestExpense = equity + seniorDebt + juniorDebt + reserve + realizedFees`. Scenario sizes, arrival rates, and the stage-3 coupons are labeled as assumptions in `RESULTS.md`. The published senior-impairment count is the output of those sizes.
 
@@ -90,3 +90,7 @@ flowchart LR
   idle[First draw takes idle] --> short[Next platform is capital-short]
   mandate[Unapproved, cheap, or late] --> refuse[No advance]
 ```
+
+The grief actor reproduces the router behavior found before 2026-10-02. The router now lists only Lockgate-approved vaults (`contracts/test/partner/RouterGrief.t.sol`).
+
+- 2026-10-02: the pricing port above replaced the old floor and flat-premium formula. `RESULTS.md`, `CONCURRENT.md`, `ORACLE.md`, and `HORIZON.md` were regenerated. For example ORACLE default coverage is now 2223/646/2223 and CONCURRENT is 1549/603/1549. Older numbers quoted in dated lines above are history.

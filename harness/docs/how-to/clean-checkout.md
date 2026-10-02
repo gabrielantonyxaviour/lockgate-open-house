@@ -1,5 +1,7 @@
 # Rehearse the harness from a clean tree
 
+> Record note: this record predates the 2026-10-02 fixes. Door 2 is no longer deployed (16 contracts), platform creation is Lockgate-only, and router listing needs Lockgate approval.
+
 Install, build, deploy, and run every harness action from a tree that has no generated state. On 2 Oct 2026 that rehearsal exited 0 on Node v24.14.0. No command needed a leftover `node_modules`, `out`, `cache`, `broadcast`, `deployments`, or `.anvil.pid`, so the harness source stayed as it was.
 
 Leave port 8545 alone. Quote `fee` and `feeBps`, `received`, `juniorAfter`, unix timestamps, `capital`, `outstanding`, `earnedFees`, balances, and `lockgateEth` move with the clock. The figures below are this run. The stable command list and the earlier pass live in [run-on-anvil.md](run-on-anvil.md).

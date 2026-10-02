@@ -20,10 +20,11 @@ Local Anvil only (chain 31337, `http://127.0.0.1:8545`). Deploys stage 1, two pa
 - 2026-10-02: this file now records how the runner is wired, which account does what, and why the three fee numbers differ.
 - 2026-10-02: security pass. `npm test` is 6 tests. `npm run e2e` exited 0. `chainFeeBps` was 99 and the draw fee was 98e6, same as the previous green run. Cross-vault execute of the Harbour signature reverted and Keppel idle did not move.
 - 2026-10-02: `npm test` (3 tests) and `npm run e2e` both exited 0 against the shared Anvil (chain 31337). `PricingEngine.feeBps` at exactly 600 seconds returned 99 bps, and that is the credit-line quote recorded as `chainFeeBps`. The draw charged the fee for `dueAt - drawnAt`: fee 98e6 on 10,000e6, investor paid 9,902e6, outstanding 0, earned fees 98e6. The engine quote on that clock was 101 bps. Stage 2 calls `propose --rpc`, which reads the vault and will not sign a mandate that disagrees with it. Harbour executed the signature. Keppel used `submitProposal` (no cash moved) and then `approve`. Lockgate's `approve` reverted. Harbour idle after repay was 80,101e6. Keppel's advance stayed open at 9,899e6. Router balance 0. Lockgate balance 0. A gated propose with `--sign-env` returns `signature: null`. The facility governor is not the borrower. Available draw 600,000e6, then senior principal went from 500,000e6 to 400,000e6 after junior was exhausted. `CreditLineBook` matched the repaid stage-1 line.
+- 2026-10-02: Anvil key #5 in `src/chain.ts` corrected to the published `...872092edffba` key, and the RPC can be overridden with `E2E_RPC`. Stage 2 has Lockgate approve each vault on the router before the partner registers. Door 2 is removed (not deployed, superseded).
 
 # Run
 
-Anvil must already be the shared process on port 8545. This script does not start, reset, or kill it.
+Anvil must already be the shared process on port 8545, or set `E2E_RPC` to another loopback node. This script does not start, reset, or kill it.
 
 ```
 cd lockgate/repo/e2e
@@ -47,7 +48,7 @@ Anvil's published development keys, in order. They are not secrets. Account 3 is
 | 0 | deployer | Deploys, mints the mock token, deposits facility senior and junior |
 | 1 | harbour | Owns the first partner vault and executes the engine signature |
 | 2 | keppel | Owns the second vault, files through `submitProposal`, then `approve` |
-| 3 | lockgate | Proposes. `approve` and `withdraw` on a partner vault must revert |
+| 3 | lockgate | Proposes. Owns the router and approves each vault (`approveVault`) before the partner registers. Creates platforms (`createPlatform` is `onlyOwner`). `approve` and `withdraw` on a partner vault must revert |
 | 4 | platform | Receives the advance and repays Harbour through the router |
 | 5 | investor | Receives nav minus fee on the stage-1 draw |
 
@@ -76,4 +77,4 @@ Contracts under `src/` are read from a private `forge inspect` in `/tmp/lockgate
 
 `reverts` calls `publicClient.simulateContract` with the caller's account. Only a contract revert counts. A transport error fails the run with `rpc`. Amounts parsed from the engine are a bigint or a decimal string. A JSON number is rejected because `JSON.parse` rounds integers past 2^53.
 
-Three fee figures appear on purpose. `PricingEngine.feeBps` at 600 seconds, zero utilization, is 99, and that view is `chainFeeBps`. The draw charges `ceil(nav * bps / 10000)` for `dueAt - drawnAt`, which was 98e6 on 10,000e6. The engine adds a risk score with half-up rounding, so its bps on that clock was 101. The simulator's 98 bps clamp is a third figure and is not what this runner asserts. `npm run compare` funds that engine fee on a vault and writes the four measured gaps to `DIVERGENCE.md`.
+Three fee figures appear on purpose. `PricingEngine.feeBps` at 600 seconds, zero utilization, is 99, and that view is `chainFeeBps`. The draw charges `ceil(nav * bps / 10000)` for `dueAt - drawnAt`, which was 98e6 on 10,000e6. The engine adds a risk score with half-up rounding, so its bps on that clock was 101. The simulator's 98 bps clamp is a third figure and is not what this runner asserts. `npm run compare` funds that engine fee on a vault and writes the four measured gaps to `DIVERGENCE.md`. Update 2026-10-02: the three clocks now agree. The engine curve and ceil rounding equal `PricingEngine`/`PricingMath`, the sim is an exact BigInt port, and the compare feeds all three legs the same NAV age and risk score: sim, engine, chain 100 bps, fee 100000000, 0 divergences, 0 breaks. The 99/101/98 figures above are the earlier record.

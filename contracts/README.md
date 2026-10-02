@@ -2,7 +2,7 @@
 
 ## SUMMARY
 
-Stage-1 contracts cover both doors in `lockgate/SPEC.md`: the restricted-fund credit line (weekly, epoch, and quarterly queues) and the open token (`OpenCreditVault` plus `LockgateExitPool`). MockUSDG, the 6-decimal adapter, pricing guardrails, and the first-loss reserve sit underneath. Gate: `FOUNDRY_PROFILE=core forge test` from this directory.
+Stage-1 contracts cover the restricted-fund credit line (weekly, epoch, and quarterly queues) from `lockgate/SPEC.md`. Door 2 (`OpenCreditVault` plus `LockgateExitPool`) is removed: not deployed, superseded, kept only for its unit tests. MockUSDG, the 6-decimal adapter, pricing guardrails, and the first-loss reserve sit underneath. Gate: `FOUNDRY_PROFILE=core forge test` from this directory.
 
 ## PROGRESS
 
@@ -41,7 +41,7 @@ Stage-1 contracts cover both doors in `lockgate/SPEC.md`: the restricted-fund cr
 - 2026-10-02: Developer notes below: how to run the core suite, the decisions that the code will not relax, and the advance, window, and door-2 diagrams. An open advance keeps its reserve floor if `setSourceTerms` lowers the live rate. The floor follows the live rate again when that source's exposure hits 0.
 - 2026-10-02: Security review of the stage-1 book. Grace is stored on the advance. A registrar cannot rewrite an open source. Utilization and concentration round up. Settlement walks at most 128 open requests. `push` rejects a short delivery. Notes are in `../docs/SECURITY-NOTES-contracts.md`.
 - 2026-10-02: The factory constructor other sessions call is the seven-argument form. `PricingMath` is unchanged: 600 seconds is 99 bps, and 599 or 596 seconds is 98. A later Anvil block prices the seconds left in that block.
-- 2026-10-02: Door 2 is in `src/core`. The open vault accrues 9% a year on MockUSDG. The exit pool pays `nav − fee` and `settle` claims the cooldown and repays the line. Core fuzz is 512 runs. Invariants run 64 times at depth 40. Added failure-path coverage for caps, windows, escrow dust, and factory config.
+- 2026-10-02 (superseded: door 2 is no longer deployed): Door 2 is in `src/core`. The open vault accrues 9% a year on MockUSDG. The exit pool pays `nav − fee` and `settle` claims the cooldown and repays the line. Core fuzz is 512 runs. Invariants run 64 times at depth 40. Added failure-path coverage for caps, windows, escrow dust, and factory config.
 - 2026-10-02: Published `src/interfaces`, `INTERFACES.md`, and the core contracts. Accepted G7's book views `eligibleOutstanding` and `lateOutstanding` (owed-nav units). On-chain pricing refuses a fee above the max. The engine clamps. Token fee here is ceil. The engine's is half-up. Both are recorded in `INTERFACE-REQUESTS.md`. EIP-712 stays `AdvanceProposalLib` (`LockgateAdvance` / `1`).
 
 ## Handoff
@@ -102,7 +102,7 @@ The full list, each tied to a test, is in `SECURITY-NOTES.md`. These stay open:
 
 - `draw` does not check an `AdvanceProposal` signature. The digest test is `test_typehashAndDigestMatchCast`.
 - `setParams`, `setNav`, and `setGrace` have no delay. `setParams` does not rewrite an open advance. `test_paramChangeLeavesTheOpenAdvance` `test_graceIsFixedAtDraw`
-- `feeFromBps` rounds up. The engine's token fee is half-up. Do not retune either clock. A 600-second quote stays 99 bps.
+- `feeFromBps` rounds up, and since 2026-10-02 the engine's token fee rounds up too. Do not retune either clock. A 600-second quote stays 99 bps.
 - `requestWithdraw` still contains `Insolvent`. After accrual, `shares * nav / 1e18` cannot exceed `assets` while the caller holds at most the supply, so no honest call reaches it. Dust rounds to 0 and reverts `ZeroAmount`. A full 100e6 redeem still succeeds. `test_vaultClaimWaitsAndFullRedeemFits`
 - `PricingMath.halfUp` and `feeFromBps` still panic. A zero denominator is panic `0x12`. A product that does not fit is panic `0x11`. `test_halfUpRevertsOnZeroDenominator` `test_halfUpRevertsWhenTheRoundedQuotientDoesNotFit` `test_feeFromBpsRevertsWhenCeilDoesNotFit`
 - The credit line's final `BadParam()` runs only for a quote code outside 1–15. Codes 1–15 each revert their own error.
@@ -110,7 +110,7 @@ The full list, each tied to a test, is in `SECURITY-NOTES.md`. These stay open:
 - A slash can leave the posted reserve under `requiredReserve`. `invariant_reserveMatchesAdvances` allows that. `test_missedWindowSlashesReserveAndHoldsTheQueue` pins required reserve at 6,937,500 against a 0 balance.
 - A 1-unit cash balance leaves a weekly window unsettled and holds the queued investor. Cash that later fills the shortfall is pulled in full, dust included, before that investor is paid. One roll leaves the next quote `"window due"`. `test_lateCashRepaysTheLineThenPaysTheQueue`
 - `processWindow` repays a prefix of the open advances and stops at the first face that does not fit. A later smaller face stays open. Faces 30e6, 25e6, and 5e6 against cash 35e6 repay only the 30e6 face. Cash left is 5e6, the cycle stays 1, and the 5e6 advance stays `Active`. `test_laterSmallerAdvanceDoesNotJumpTheShortfall` `testFuzz_windowRepaysAPrefixAndDoesNotSkip` `testFuzz_aLaterFitDoesNotJumpAShortfall`
-- Once the factory is a registrar, `createPlatform` is permissionless and posts no cash. `repay` is permissionless.
+- `createPlatform` and `createDemoFund` are `onlyOwner` (owner is Lockgate), so every limit and reserve bps the factory registers is Lockgate-set. They post no cash. `repay` is permissionless.
 - The utilization view floors. The draw gate rounds up. Outstanding 5000 and capital 5001 is view 4999 under a 5000 cap, and a principal of 1 reverts `UtilizationCap`. A cap of 5001 draws that unit and the view is 5000. Capital 0 with that outstanding reports 10000, and the quote is `"capital"`. `test_utilizationViewFloorsWhileTheNextUnitCeilsOver` `test_zeroCapitalReportsFullUtilizationAndQuotesCapital`
 - Epoch pro-rata floors can leave a unit the next epoch still cannot pay. Two claims of 3 against cash 5 preview as payable 4 and shortfall 2. Each holder receives 2. Cash left is 1, both stay queued at nav 1, and the next epoch pays 0. Two 1-share claims at nav 2 against cash 2 preview as payable 0 and shortfall 4. The window rolls and the dust stays queued. `test_epochProRataLeavesOneUnitAndBothStayQueued` `test_epochDustRollsAndQuarterlyUngatePays`
 - `withdrawCapital` can take the line's remaining token balance after a draw, while `earnedFees` is still 0. On a 100e6 advance that balance is 500,000e6 minus the 99,010,000 principal. One more unit reverts `CapitalShort`, and the next draw quotes `"capital"`. A later repay of the face realizes the 990,000 fee. `test_ownerWithdrawsIdleWhileTheFeeIsUnrealized`
@@ -122,7 +122,7 @@ The full list, each tied to a test, is in `SECURITY-NOTES.md`. These stay open:
 The full model, each claim tied to a test, is in `SECURITY-NOTES.md`. This book assumes the following.
 
 - You trust the credit-line owner with capital, caps, grace, registrars, and pause. `renounceOwnership` on the line reverts `RenounceDisabled`. A stranger still repays a 100e6 face after a registrar and a slasher are granted and revoked. `test_grantRevokeAndRenounceLeaveRepayAndCashReachable`
-- You trust the factory once the owner has enabled it as a registrar. `createPlatform` stores the caller's limit and leaves the fund's token balance and reserve balance at 0. `test_createPlatformDoesNotSeedCash`
+- You trust the factory once the owner has enabled it as a registrar. Only the owner can call it. `createPlatform` stores the limit and reserve bps the owner passes, takes the issuer as an argument (a zero issuer reverts `ZeroAddress`), and leaves the fund's token balance and reserve balance at 0. `test_createPlatformDoesNotSeedCash`
 - You trust a registered source's reported face. A 100e6 stub draw pays the investor 99,010,000 and books exposure of 100e6. The fee stays unearned until repayment. `test_drawPaysNetAndOwesFace`
 - You trust the source's nav timestamp and window. A future timestamp, a stale nav, a due window, and a gate each refuse the draw. `test_quoteAndDrawGuards`
 - You trust the sandbox issuer with the live nav and the gate. A queued request keeps the nav stored at request time. `setNav(0)` reverts `ZeroAmount`. `test_gateBlocksRedeemNotDepositAndNavDoesNotRewriteTheQueue`
@@ -193,22 +193,22 @@ FOUNDRY_PROFILE=core forge snapshot --offline --check --match-contract GasFlowsT
 | `sellToLockgate` | 786318 |
 | `settle` | 97583 |
 
-`draw` is 100e6 on a stub with 7,500,000 reserve posted. `exitNow` and `processWindow` are one 10,000e6 weekly exit that the deposited cash then repays. Door 2 sells 100e6 and settles after the 5-minute cooldown. Solc 0.8.28, optimizer 200, via IR.
+`draw` is 100e6 on a stub with 7,500,000 reserve posted. `exitNow` and `processWindow` are one 10,000e6 weekly exit that the deposited cash then repays. Solc 0.8.28, optimizer 200, via IR.
 
 `src/partner`, `src/facility`, `engine`, `harness`, `sim`, and `e2e` are other sessions. A failure there is not a core failure. The trust model is `SECURITY-NOTES.md`. The findings list and the Slither triage are `../docs/SECURITY-NOTES-contracts.md`.
 
 ## Decisions
 
-- One credit line serves both doors. A registered source calls `draw`. The payee receives `navValue - fee`. The source owes `navValue`. The fee is earned only as recovery passes the principal. `outstanding` is unpaid principal. `exposure` is unpaid nav.
+- One credit line serves the platforms. A registered source calls `draw`. The payee receives `navValue - fee`. The source owes `navValue`. The fee is earned only as recovery passes the principal. `outstanding` is unpaid principal. `exposure` is unpaid nav.
 - `graceOf(id)` is the grace stored at draw. `grace()` is what the next draw stores. `markLate` waits until `dueAt + graceOf(id)`. Repay on an `Active` advance sets `Repaid`. Repay on a `Late` advance leaves it `Late`. A full slash still marks the advance `Late`.
 - `reserveFloorBps` is the highest reserve rate that still applies. `requiredReserve` and the next draw use the higher of that floor and the live `reserveBpsOf`. Lowering the live rate does not release first-loss cash while exposure is open. When exposure hits 0, the floor becomes the live rate.
-- The on-chain bps quote is half-up. The token fee is ceil. A quote above `maxFeeBps` (1500) is refused, not clamped. The engine clamps, and its token fee is half-up. `PricingMath` stays on the constructor curve: 600 seconds is 99 bps. 599 or 596 seconds is 98. Do not flatten that so a stale view matches a later block.
+- The on-chain bps quote is half-up. The token fee is ceil. A quote above `maxFeeBps` (1500) is refused, not clamped. Since 2026-10-02 the engine also refuses above max (block `max-fee`) and rounds its fee up. `PricingMath` stays on the constructor curve: 600 seconds is 99 bps. 599 or 596 seconds is 98. Do not flatten that so a stale view matches a later block.
 - Stage 1 does not verify `AdvanceProposalLib` and does not check a peg. The issuer's `setNav` is the NAV. A future `navUpdatedAt` is refused. Age past `maxNavAge` is stale. Peg checks stay in the engine and the facility.
 - `processWindow` repays every open advance, in request order, before it pays investors. An advance whose remaining fits is repaid even when the next one does not. Cash one unit above that first remaining stays in the platform. The line pulls only the first remaining. If the next repayment does not fit, the window does not roll. Weekly and quarterly then pay whole queued requests FIFO and stop at the first shortfall. Epoch pays pro-rata of the cash it snapshotted, and uses FIFO when cash covers the queue. The preview counts the same floors, and a slice that burns no shares adds nothing. Two claims of 3 against cash 5 each receive 2. The preview payable is 4 and the shortfall is 2. One unit stays in cash, both requests stay queued, and the next epoch pays 0. A quarterly gate also freezes `processWindow`. A weekly gate does not.
 - The open list holds at most `MAX_OPEN` (128) queued plus advanced requests. Request 129 reverts `QueueFull`. Settlement does not walk paid history.
 - `UsdgTransfers.pull` and `push` revert unless the recipient balance rises by the full amount.
 - The factory clones locked implementations. It does not embed platform bytecode. EIP-170 caps deployed bytecode at 24576 bytes (<https://eips.ethereum.org/EIPS/eip-170>). EIP-3860 caps init code at 49152 bytes (<https://eips.ethereum.org/EIPS/eip-3860>). Measured on 2026-10-02 with `FOUNDRY_PROFILE=core forge build --sizes` (solc 0.8.28, optimizer 200, via IR): factory init code 5825 bytes, deployed runtime 4952. The full table is in `AUDIT.md`. Direct `new` with a real token still initializes in the constructor. A zero-token constructor locks `initialize` on that copy.
-- `createPlatform` registers the caller as issuer with the caller's limit and reserve bps, including 0, once the factory is a registrar. That is the sandbox path. Door 2 registers the exit pool at reserve bps 0 on purpose.
+- `createPlatform(uint8,string,uint64,uint256,address,uint256,uint16)` is `onlyOwner`. It registers the given issuer with the owner's limit and reserve bps once the factory is a registrar. A non-owner call reverts `OwnableUnauthorizedAccount`. The issuer can still set NAV on its own platform, bounded by that limit and reserve. Regression: `test/core/FactoryDrain.t.sol`. Door 2 is no longer registered.
 
 ## Glossary
 
@@ -219,7 +219,7 @@ Short names for the stage-1 book. The diagrams below use the same words.
 | Owner | Credit-line owner. Deposits and withdraws line capital, sets grace, caps, and source terms, pauses, and names registrars. Reserve owner names the credit line once and names slashers. That owner cannot withdraw a platform's reserve. |
 | Registrar | May `registerSource` on a source that is still unlisted. The factory is a registrar. After the owner deregisters a source, only the owner can register it again. |
 | Issuer | The address on the clone. Calls `setNav`, `setGated`, and `setAllowlist`. The factory names that address as the reserve admin. |
-| Source | Whoever calls `draw`. A queue clone or the exit pool. The source owes the face. `repay` pulls from the source. |
+| Source | Whoever calls `draw`. A queue clone. The source owes the face. `repay` pulls from the source. |
 | Payee | The `to` argument of `draw`. Receives `navValue - fee` from line capital. On a queue exit, that is the holder. |
 | Anyone | May `repay`, `markLate`, `processWindow`, `settle`, `depositCash`, and `post` or `postReserve`. |
 | Face | `navValue`. Principal plus fee. This is what `remainingOf` starts at. |
@@ -290,16 +290,12 @@ flowchart LR
     reserve[PlatformReserve]
     factory[FundFactory]
     platform[Queue clone]
-    pool[LockgateExitPool]
-    vault[OpenCreditVault]
     owner -->|capital, caps, grace| line
     owner -->|names the slasher| reserve
     factory -->|clone and registerSource| platform
     platform -->|draw, then repay at the window| line
     platform -->|first-loss post| reserve
     line -->|markLate slash| reserve
-    pool -->|sell draws, settle repays| line
-    pool -->|holds shares through cooldown| vault
 ```
 
 The issuer address on a clone calls `setNav`, `setGated`, and `setAllowlist`. The factory names that issuer as the reserve admin. The reserve owner cannot withdraw platform funds.
@@ -337,23 +333,7 @@ sequenceDiagram
 
 ## Door 2
 
-```mermaid
-sequenceDiagram
-    participant Seller
-    participant Pool as LockgateExitPool
-    participant Vault as OpenCreditVault
-    participant Line as Credit line
-    Seller->>Pool: sellToLockgate
-    Pool->>Vault: accrue
-    Pool->>Line: draw, maxFee is the quoted fee
-    Line->>Seller: nav minus fee
-    Pool->>Vault: requestWithdraw
-    Note over Pool: readyAt and dueAt are that cooldown
-    Pool->>Vault: settle claims into the pool
-    Pool->>Line: repay the face amount
-```
-
-A later `setCooldown` does not move `readyAt` or `dueAt`. On MockUSDG the vault must be a minter and `mintYield` is true. Real USDG uses `mintYield = false`. A 5-minute cooldown is 49 bps on the default curve. The arithmetic is in `INTERFACES.md`.
+Removed: not deployed, superseded. See the Money section.
 
 ## Layout
 
@@ -378,10 +358,10 @@ Use the command in [Run](#run). Handlers call the public book and the weekly que
 
 A registered platform draws. The payee receives `navValue - fee`. The platform owes `navValue`. When its window runs, cash repays Lockgate before any investor in the queue. If that repayment does not fit, the window does not roll and the queue is not paid. After `dueAt + graceOf(id)`, anyone may mark the advance late. `graceOf(id)` is the grace stored at draw. The reserve is slashed into the line, up to the unpaid amount. The platform posted that reserve. The owner of the reserve cannot take it back below the required floor.
 
-Demo pricing is about 1% on a 10-minute window because `timeScale` 4320 treats that wait as 30 days on a 12% base APR (99 bps, half-up). A 90-day window needs `timeScale` 1 or the fee is above the 1500 bps max and the draw is refused. Details and the 99 bps arithmetic are in `INTERFACES.md`.
+Demo pricing is about 1% on a 10-minute window because `timeScale` 4320 treats that wait as 30 days on a 12% base APR (99 bps). A 90-day window needs `timeScale` 1 or the fee is above the 1500 bps max and the draw is refused. Details and the 99 bps arithmetic are in `INTERFACES.md`.
 
 Sepolia USDG used by the adapter: `0xFFC95faa3d63Cde504a05B567C600B78C0b41892`, 6 decimals, named Global Dollar on the token page fetched 2026-10-02 (<https://sepolia.arbiscan.io/token/0xFFC95faa3d63Cde504a05B567C600B78C0b41892>). The adapter does not hold tokens. Swap mocks for that token by deploying a second adapter with `isMock = false`. `createDemoFund` mints only on a mock adapter.
 
-Door 2 uses the same credit line with `reserveBps` 0. `OpenCreditVault` is an 18-decimal token. A 5-minute cooldown is the demo default from `lockgate/SPEC.md`. On MockUSDG the vault must be a minter, and a full year of the 9% APR (`900` bps, ACT/365) mints `9%` of assets. `sellToLockgate` accrues, pays the seller, and queues the withdrawal. `settle` is anyone, after `readyAt`. Real USDG does not auto-mint yield (`mintYield = false`).
+Door 2 is removed: not deployed, superseded. It moves investor positions, which contradicts "investor positions never move" (`briefs/grok/PRODUCT.md`). The `.sol` sources carry `@custom:status NOT DEPLOYED, SUPERSEDED` and stay only for their unit tests.
 
 `FundFactory` clones locked implementations. It does not embed platform bytecode. EIP-170 caps deployed bytecode at 24576 bytes (<https://eips.ethereum.org/EIPS/eip-170>). EIP-3860 caps init code at 49152 bytes (<https://eips.ethereum.org/EIPS/eip-3860>). Measured on 2026-10-02 with `FOUNDRY_PROFILE=core forge build --sizes` (solc 0.8.28, optimizer 200, via IR): factory init code 5825 bytes, deployed runtime 4952. The full table is in `AUDIT.md`. The constructor takes the three implementation addresses after the reserve. Deploy order is in `INTERFACES.md`.

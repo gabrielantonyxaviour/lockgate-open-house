@@ -73,7 +73,7 @@ The verify fuzz passed all three of these compiles, 256 runs each. `g10-deploy.t
 | Gap | Why it is open |
 |---|---|
 | Excluded-moneylender and MAS custody sentences | Legal statements. No test asserts them. |
-| Door 2 on the shared Anvil | Settle needs a time jump. `npm run e2e` leaves it out. Time jumps are in `FacilityTime`. |
+| Door 2 | Removed: not deployed, superseded. `npm run e2e` never ran it. Time jumps are in `FacilityTime`. |
 | `SepoliaFacility` book | The book is `MockBook`, not the credit line. |
 | `FlowConservation` | Passed 1 test: 32 runs, depth 20, 640 calls, 0 reverts. Facility APR is 0. The handler does not warp. |
 | Named sim `depeg` | Window cash times 0.92. It does not call `latest()`. Default-path coverage on seed 20261001 stays 2239 / 652 / 2287 under the separate USDC shock at 98999999. That price is the floor minus one, not a market print. |
@@ -83,17 +83,17 @@ The verify fuzz passed all three of these compiles, 256 runs each. `g10-deploy.t
 
 # Open findings
 
-A passing P0 test means the break still reproduces. Full repro text is `FINDINGS.md`.
+The P0 and the fee-clock P1 are FIXED as of 2026-10-02 (see `FINDINGS.md`). The rows below are the original repros. A P0 test that passes on the old repro no longer means the break reproduces: the router lists only Lockgate-approved vaults (`contracts/test/partner/RouterGrief.t.sol`).
 
 | Rank | Finding | Repro |
 |---|---|---|
-| P0 | Two vaults can fund one `quoteId`. `relayRepay` of index 0 pays grief 100000000. Honest principal stays 990000000. Platform ends at 989000000. Router and Lockgate stay 0. A second call reverts `Empty`. | `cd lockgate/repo/sim && npm test`. `cd lockgate/repo/contracts && FOUNDRY_TEST=test/invariant forge test --match-contract Adversarial --offline` |
-| P1 | 600-second window: sim 98 bps, engine 101, chain 99. Full utilization, unfunded: 598 / 150 / 148. Nav 1000001: sim 9901, engine half-up 9900, chain 9901. Compare recorded 4 divergences and 0 integration breaks. The vault stored the engine fee. | `cd lockgate/repo/e2e && npm test` stays offline. `npm run compare` rewrites `DIVERGENCE.md` and uses the shared Anvil. |
+| P0 (FIXED) | Two vaults can fund one `quoteId`. `relayRepay` of index 0 pays grief 100000000. Honest principal stays 990000000. Platform ends at 989000000. Router and Lockgate stay 0. A second call reverts `Empty`. | `cd lockgate/repo/sim && npm test`. `cd lockgate/repo/contracts && FOUNDRY_TEST=test/invariant forge test --match-contract Adversarial --offline` |
+| P1 (FIXED: sim, engine, chain 100 bps, 0 divergences) | 600-second window, as found: sim 98 bps, engine 101, chain 99. Full utilization, unfunded: 598 / 150 / 148. Nav 1000001: sim 9901, engine half-up 9900, chain 9901. Compare recorded 4 divergences and 0 integration breaks. The vault stored the engine fee. | `cd lockgate/repo/e2e && npm test` stays offline. `npm run compare` rewrites `DIVERGENCE.md` and uses the shared Anvil. |
 | P1 | The 0.92 cash factor and the facility peg are different checks. The USDC shock does not move default-path coverage bps. | `cd lockgate/repo/sim && npm test`. `FOUNDRY_TEST=test/invariant forge test --match-contract FacilityTime --offline` |
 | P1 | Sim daily interest floor versus the facility one-shot year. Gap 105 on the draw above. | Same two commands. |
 | Verify | `testFuzz_unpaidDrawBecomesDeficitAndRepayRestoresSeniorFirst` failed once: `32728340926 != 32729340929`, run 6 of the fuzz. The three completed compiles passed it for 256 runs. `test_tinyRepaysDoNotBlockAnotherLender` passed on the verify compile. | `cd lockgate/repo/contracts && FOUNDRY_TEST=test/facility forge test --match-test testFuzz_unpaidDrawBecomesDeficitAndRepayRestoresSeniorFirst --offline` |
-| Flaky | Exit 1. 12 outcomes differed. Sim was 79, offline e2e was 8, Anvil passed, and compare passed 1. Two `LossSymmetry` tests were pass, fail, pass. The other 10 names were files saved during the runs. Fee rows matched. | `cd lockgate/repo/e2e && npm run flaky` |
+| Flaky | Exit 1. 12 outcomes differed. Sim was 79, offline e2e was 8, Anvil passed, and compare passed 1. Two `LossSymmetry` tests were pass, fail, pass. The recorded counterexample now passes and is pinned as `test_recordedCounterexampleHolds`; the earlier failure coincided with the file being edited mid-run. The other 10 names were files saved during the runs. Fee rows matched. | `cd lockgate/repo/e2e && npm run flaky` |
 
-Accepted residuals in the other security notes stay in those files: unrealized fee cash can be withdrawn, `createPlatform` after `setRegistrar`, an `autoModule` with an empty partner signature, a quote skip above 2500000 gas, a digest stored before preview, a lied snapshot without `--rpc`, the 256-entry scan cap, the unauthenticated harness console on `127.0.0.1:18910`, and `LOCKGATE_ALLOW_SEPOLIA_DEPLOY=1`. Slither's other 116 results are recorded in `docs/SECURITY-NOTES-contracts.md` as false positives or accepted timing checks.
+Accepted residuals in the other security notes stay in those files: unrealized fee cash can be withdrawn, `createPlatform` is now owner-only so the issuer's NAV is bounded by Lockgate's limit and reserve, an `autoModule` with an empty partner signature, a quote skip above 2500000 gas, a digest stored before preview, a lied snapshot without `--rpc`, the 256-entry scan cap, the unauthenticated harness console on `127.0.0.1:18910`, and `LOCKGATE_ALLOW_SEPOLIA_DEPLOY=1`. Slither's other 116 results are recorded in `docs/SECURITY-NOTES-contracts.md` as false positives or accepted timing checks.
 
 T-1 through T-8 are fixed. Partner source was not changed for the shared `quoteId`.

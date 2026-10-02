@@ -38,4 +38,4 @@ The closing lines are `tests 1`, `pass 1`, and `fail 0`. The test stops the Anvi
 
 A call that begins while the process is down is `RPC`. A call after a fresh process, before you deploy, is `NOT_DEPLOYED`. After that deploy, a finished stage is recognized from the new chain and from the new cursor. The old chain's partial register is not continued.
 
-The same `runStep` rule covers `demo.stage2`, `demo.stage3`, and door 2. One-shot action ids are not stored in the cursor. The click-through on a chain you do not restart is in [run-on-anvil.md](run-on-anvil.md).
+The same `runStep` rule covers `demo.stage2`, and `demo.stage3`. One-shot action ids are not stored in the cursor. The click-through on a chain you do not restart is in [run-on-anvil.md](run-on-anvil.md).

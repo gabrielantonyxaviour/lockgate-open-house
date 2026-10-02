@@ -2,7 +2,7 @@
 
 ## SUMMARY
 
-The engine prices an exit as a fee in basis points of face (`navValue`), then builds an unsigned EIP-712 `AdvanceProposal`. It does not move funds and does not hold a partner key. A 30-day epoch at 12% APR with the worked book below charges **109 bps** (109 USDG on 10,000 USDG). The time-only piece of that quote is **99 bps**. A busy book (utilization 6,667) charges **146 bps**. A full book charges **159 bps**. A 5-day Kasu-style week and a covered Maple-style day both hit the **25 bps** floor. Numbers below are outputs of `src/examples.ts` under `DEFAULT_PARAMS`, not market observations.
+The engine prices an exit as a fee in basis points of face (`navValue`), then builds an unsigned EIP-712 `AdvanceProposal`. It does not move funds and does not hold a partner key. A 30-day epoch at 12% APR with the worked book below charges **101 bps** (101 USDG on 10,000 USDG). The time-only piece of that quote is **99 bps**. A busy book (utilization 9,000, utilization APR 1,620) and a full book charge more; `src/examples.ts` prints them. A 5-day Kasu-style week and a covered Maple-style day both hit the **25 bps** floor. Numbers below are outputs of `src/examples.ts` under `DEFAULT_PARAMS`, not market observations.
 
 ## What is priced
 
@@ -14,7 +14,7 @@ Lockgate advances USDG to the platform. The platform pays the investor. The inve
 |---|---|---|
 | `baseAprBps` | 1,200 | "about 1% per month ≈ 12% a year" (`lockgate/ideation/DECISIONS.md`, 28 Sep 2026) |
 | `kinkUtilBps` | 6,667 | two-thirds, same decision note |
-| `aprAtKinkBps` | 1,650 | [design] midpoint of the note's 15–18% band |
+| `aprAtKinkBps` | 1,200 | equals the `PricingEngine` constructor (curve is flat to the kink) |
 | `aprAtFullBps` | 1,800 | [design] top of that band. Nothing above 18% is invented |
 | `minFeeBps` / `maxFeeBps` | 25 / 1,500 | `lockgate/SPEC.md` fee band |
 | `SECONDS_PER_YEAR` | 31,536,000 | [design] ACT/365. SPEC does not name a day count |
@@ -23,7 +23,7 @@ Lockgate advances USDG to the platform. The platform pays the investor. The inve
 | Risk weights | 3,500 / 2,500 / 1,500 / 1,500 / 1,000 | [design] repayment, queue, gating, NAV, concentration. Sum 10,000 |
 | `maxRiskPremiumAprBps` | 600 | [design] |
 | NAV warn / max | 86,400 / 604,800 s | [design] 1 day / 7 days. Premium up to 300 APR bps between them |
-| Concentration cap / premium | 2,500 bps / 200 APR bps | [design] |
+| Concentration cap / premium | 10,000 bps / 0 APR bps | equals the `PricingEngine` constructor |
 | `maxTenorSeconds` | 366 days | [design] tenor uses wall-clock seconds |
 | `proposalTtlSeconds` | 600 | [design] |
 | `graceSeconds` | 86,400 | [design] |
@@ -34,16 +34,16 @@ Lockgate advances USDG to the platform. The platform pays the investor. The inve
 
 ## Fee identity
 
-Utilization APR is piecewise linear: 0 → 1,200; kink → 1,650; 10,000 → 1,800. Half-up interpolation (`lerpBps`).
+Utilization APR is piecewise linear: 0 → 1,200; kink → 1,200; 10,000 → 1,800 (bands 12/12/18; utilization 9,000 is APR 1,620). Half-up interpolation (`lerpBps`).
 
 ```
 riskApr     = roundHalfUp(riskBps * 600 / 10_000)
 navApr      = 0 if age <= 1 day; else linear to 300 at 7 days
-concApr     = roundHalfUp(min(exposureBps, 2500) * 200 / 2500)
+concApr     = roundHalfUp(min(exposureBps, 10000) * 0 / 10000)
 totalApr    = utilizationApr + riskApr + navApr + concApr
 priced      = secondsToClear * timeScale
 riskFeeBps  = roundHalfUp(totalApr * priced / 31_536_000)
-chargedBps  = clamp(riskFeeBps, minFeeBps, maxFeeBps)
+chargedBps  = max(riskFeeBps, minFeeBps); above maxFeeBps is refused (block `max-fee`)
 fee         = roundHalfUp(navValue * chargedBps / 10_000)
 ```
 
@@ -55,15 +55,15 @@ Time-only 30 days at 1,200 bps is 99 bps: `(1200 * 2,592,000 + 15,768,000) / 31,
 
 ## Worked book
 
-`monthEpoch` in `src/examples.ts`: 10,000 USDG face, cash 50,000, book 100,000, utilization 0, reserve 750 bps and 750 USDG posted, exposure 0, NAV 1 hour old, 8 clean repayments, request at the epoch start. Queue depth `10_000 / 60_000` → 1,666. Concentration `10_000 / 100_000` = 1,000 bps against a 2,500 cap → score 4,000, premium 80 APR bps. NAV score `3600 * 10_000 / 604_800` = 59. Weighted risk `(1666*2500 + 59*1500 + 4000*1000) / 10_000` = 825. Risk premium 50. Total APR 1,330. Fee 109 bps, 109,000,000 base units, floor `risk`, rollovers 0.
+`monthEpoch` in `src/examples.ts`: 10,000 USDG face, cash 50,000, book 100,000, utilization 0, reserve 750 bps and 750 USDG posted, exposure 0, NAV 1 hour old, 8 clean repayments, request at the epoch start. Queue depth `10_000 / 60_000` → 1,666. Concentration `10_000 / 100_000` = 1,000 bps against a 10,000 cap → score 1,000, premium 0 APR bps. NAV score `3600 * 10_000 / 604_800` = 59. Weighted risk `(1666*2500 + 59*1500 + 1000*1000) / 10_000` = 525. Risk premium 32. Total APR 1,232. Fee 101 bps, 101,000,000 base units, floor `risk`, rollovers 0.
 
-Same book at utilization 6,667: utilization APR 1,650, total 1,780, fee 146 bps. At 10,000: utilization APR 1,800, total 1,930, fee 159 bps. Risk stays 825 because utilization is not inside the risk score.
+Same book at utilization 6,667 has utilization APR 1,200 (the kink), so the fee stays 101 bps. At 9,000 utilization APR is 1,620. Risk stays 525 because utilization is not inside the risk score. `src/examples.ts` prints the busy and full fees.
 
 `weeklyClear`: request two days into a 7-day epoch, before the last 48 hours, cash covers the face. Wall wait 5 days (432,000s). Raw fee 18 bps, charged 25 (`min-fee`), fee 25,000,000.
 
 `mapleCovered`: cash 80,000 covers the face. Assumption `maple-under-24h` (86,400s). Queue depth 1,111, risk 687, total APR 1,321, raw fee 4 bps, charged 25.
 
-`demoTenMinutes`: wall wait 600s and `timeScale` 4,320. Priced seconds equal the 30-day epoch, so the fee is 109 bps again. Tenor checks still use the 600 wall seconds.
+`demoTenMinutes`: wall wait 600s and `timeScale` 4,320. Priced seconds equal the 30-day epoch, so the fee is 101 bps again. Tenor checks still use the 600 wall seconds.
 
 Queue depth sets both the rollover count and the risk score. A deep queue lengthens the wait and raises the APR. That double effect is intentional. [design]
 
@@ -142,3 +142,5 @@ A quote may carry a peg snapshot: `priceE8` (1e8 = $1, the unit in `IPegOracle`)
 ## Non-goals
 
 No partner key. No mainnet send. No position transfer, pooled public deposit, or synthetic token. No per-deal technology fee inside this quote. No use of a live TVL figure as a parameter.
+
+- 2026-10-02: engine curve and rounding now equal PricingEngine/PricingMath. Defaults match the constructor (kink APR 1,200, concentration cap 10,000, concentration premium 0), the fee amount rounds up (ceil) in `quoteExit` and `applyMandateFloor`, and a raw fee above `maxFeeBps` is refused (`max-fee`) instead of clamped. The 30-day epoch example is 101 bps (was 109).

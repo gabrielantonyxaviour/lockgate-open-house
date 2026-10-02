@@ -4,7 +4,7 @@
 
 The trust model, the roles, the pause and initialize locks, and the known limits, each tied to a test name, are in `contracts/SECURITY-NOTES.md`. This file is the 2026-10-02 findings log.
 
-Reviewed the stage-1 credit line, reserve, sandbox queues, factory, pricing guardrails, open vault, and exit pool on 2026-10-02. The pass covered access control, reentrancy, rounding, oracle staleness, signature replay, denial of service, griefing, and economic attacks. Five findings were fixed in `contracts/src/core` and `contracts/src/interfaces/ILockgateCreditLine.sol`. Regressions are in `contracts/test/core/Security.t.sol`. The same day, Slither 0.11.6 on the core profile reported 121 results. Two were fixed. The other 116 are false positives or accepted timing checks, grouped below. The queue invariant also checks the open-request list. This is not a pentest and not a legal opinion. `PricingMath` is unchanged: 600 seconds is still 99 bps.
+Reviewed the stage-1 credit line, reserve, sandbox queues, factory, pricing guardrails, open vault, and exit pool on 2026-10-02 (the open vault and exit pool are since removed from the deploy plan: not deployed, superseded). The pass covered access control, reentrancy, rounding, oracle staleness, signature replay, denial of service, griefing, and economic attacks. Five findings were fixed in `contracts/src/core` and `contracts/src/interfaces/ILockgateCreditLine.sol`. Regressions are in `contracts/test/core/Security.t.sol`. The same day, Slither 0.11.6 on the core profile reported 121 results. Two were fixed. The other 116 are false positives or accepted timing checks, grouped below. The queue invariant also checks the open-request list. This is not a pentest and not a legal opinion. `PricingMath` is unchanged: 600 seconds is still 99 bps.
 
 ## Findings
 
@@ -21,7 +21,7 @@ Reviewed the stage-1 credit line, reserve, sandbox queues, factory, pricing guar
 ## Reviewed, no code change
 
 - `withdrawCapital` can take the cash that was not sent to the investor. That cash is not earned fee yet. `free` is `deposited + earnedFees - withdrawn - outstanding`. After a draw, `outstanding` is the principal, so the unsent fee cash is idle capital. Repayment brings the obligation back. A donation does not increase `accountedEquity`. The existing withdraw tests still describe this.
-- `repay` is permissionless and pulls the remainder from the source, which approved the line. It cannot pull more than the open obligation. `processWindow` and the exit pool depend on that. Pausing does not block repay or `markLate`.
+- `repay` is permissionless and pulls the remainder from the source, which approved the line. It cannot pull more than the open obligation. `processWindow` depends on that. Pausing does not block repay or `markLate`.
 - `draw`, `repay`, `markLate`, capital moves, and `postReserve` are `nonReentrant`. State for a draw is stored before the token move. The callback test in `test/invariant/Reenter.t.sol` still expects a second draw during payout to revert. Reserve `post`, `withdraw`, and `slash` are also guarded, so a token callback cannot reenter the reserve while it is inside one of those calls.
 - `markLate` slashes while the advance is still `Active`, so `_applyRecovery` reduces `eligibleOutstanding`. Whatever remains then moves to `lateOutstanding`. A full slash leaves `lateOutstanding` unchanged. A second `markLate` reverts `BadStatus`.
 - `postReserve` is permissionless and credits the named source. That is a donation. The platform admin can withdraw only down to `requiredReserve`. The reserve owner cannot withdraw platform funds. `setCreditLine` is once. `setSlasher` works until `lockSlasherSet`.
@@ -60,11 +60,11 @@ C-6 and C-7 are the code changes. `test_constructorRejectsZeroAddresses` and `te
 
 ## Residual
 
-- `createPlatform` is permissionless and, once the owner has called `setRegistrar(factory)`, registers the caller as issuer with the caller's limit and reserve bps, including 0. That issuer can `setNav` and `exitNow` up to the limit. The line does not compare the reported NAV with cash. Door 2 also registers at reserve bps 0, which is the open-token path. Do not leave capital on a line whose registrar is an open factory unless those issuers are trusted.
+- `createPlatform` and `createDemoFund` are `onlyOwner` (Lockgate), fixing the earlier critical issue where anyone could self-register a platform with a huge limit and 0 reserve, raise NAV, and drain the line. Every limit and reserve bps through the factory is Lockgate-set. The issuer can still `setNav` and `exitNow` up to that limit, and the line does not compare NAV with cash, so the owner's limit and reserve are the bound. Regression `contracts/test/core/FactoryDrain.t.sol`. Door 2 is removed (not deployed, superseded).
 - `graceOf` on an unknown id is 0. A draw made while `grace` is 0 also stores 0. Read `getAdvance` before treating 0 as "slash at `dueAt`".
 - `setSourceTerms` can raise the reserve rate immediately. It cannot lower `reserveFloorBps` while that source still has exposure. The floor follows the live rate again once exposure is 0. `setParams`, `setNav`, and `setGrace` (for a later draw) apply on the next call. None of them waits.
 - Slashers are not locked in the constructor. The owner has to call `lockSlasherSet` after the credit line is named. Until then the owner can add another slasher, and that address receives the slashed tokens.
 - A full open list blocks new redeems until some are cancelled or the window settles them. Filling it costs 128 real requests, not a gas bomb.
 - `push` refuses a recipient whose balance does not rise by the full amount. A contract that forwards the tokens during `transfer` cannot receive a draw, a withdrawal, or a slash.
 - Queue dust that buys zero shares is left queued. Pro-rata rounding can leave cash in the platform. Neither path pays that dust out.
-- The on-chain fee is a ceiling. The engine's fee is half-up. This pass did not retune either one.
+- The on-chain fee is a ceiling. The engine's fee now also rounds up (2026-10-02), and the engine refuses above max. This pass did not retune either one.

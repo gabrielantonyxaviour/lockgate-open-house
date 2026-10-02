@@ -1,5 +1,7 @@
 # Check the harness against the current working tree
 
+> Record note: this record predates the 2026-10-02 fixes. Door 2 is no longer deployed (16 contracts), platform creation is Lockgate-only, and router listing needs Lockgate approval.
+
 Rebuild the dirty tree, deploy it on a private Anvil, and run every harness action. On 2 Oct 2026 that check exited 0 on Forge 1.7.1 and Node v24.14.0. The git tip was `9665484`. The sources under test were the uncommitted working tree. The suite then passed 98 and failed 0 in 55455.614 ms.
 
 Leave port 8545 alone. Leave `harness/deployments` alone. Quote `fee`, `received`, `juniorAfter`, unix timestamps, `capital`, `outstanding`, balances, and `lockgateEth` move with the clock. The figures below are this run. Earlier passes stay in [run-on-anvil.md](run-on-anvil.md), [clean-checkout.md](clean-checkout.md), [g6-g7-g8.md](g6-g7-g8.md), and [sepolia-fork-offline.md](sepolia-fork-offline.md).

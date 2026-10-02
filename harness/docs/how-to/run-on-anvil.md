@@ -1,6 +1,6 @@
 # Run the harness on Anvil
 
-Deploy the Lockgate contracts on a private Anvil, then click through stage 1, door 2, stage 2, and stage 3. You check each command by the JSON fields below.
+Deploy the Lockgate contracts on a private Anvil, then click through stage 1, stage 2, and stage 3. Door 2 is removed: not deployed, superseded. You check each command by the JSON fields below.
 
 Run the commands from `lockgate/repo/harness`. Port 8545 belongs to the shared node. This page uses 8546, 8547, and 8548.
 
@@ -52,7 +52,7 @@ Install Foundry and Node 22 or newer. These commands were run with Foundry 1.7.1
    HARNESS_RPC=http://127.0.0.1:8546 npm run deploy:local
    ```
 
-   Stdout is one JSON object. `mode` is `protocol`, `chainId` is `31337`, and `factory` is `0x5FbDB2315678afecb367f032d93F642f64180aa3`. `contracts` has these 18 names: `Create2Factory`, `CreditFacility`, `CreditLineBook`, `EpochImpl`, `FundFactory`, `LockgateCreditLine`, `LockgateExitPool`, `MockUSDG`, `OpenCreditVault`, `PartnerVaultA`, `PartnerVaultB`, `PartnerVaultImpl`, `PlatformReserve`, `PricingEngine`, `QuarterImpl`, `Router`, `UsdgAdapter`, `WeeklyImpl`.
+   Stdout is one JSON object. `mode` is `protocol`, `chainId` is `31337`, and `factory` is `0x5FbDB2315678afecb367f032d93F642f64180aa3`. `contracts` has 16 names since door 2 was removed (the 2 Oct 2026 pass below listed 18, with `LockgateExitPool` and `OpenCreditVault`): `Create2Factory`, `CreditFacility`, `CreditLineBook`, `EpochImpl`, `FundFactory`, `LockgateCreditLine`, `MockUSDG`, `PartnerVaultA`, `PartnerVaultB`, `PartnerVaultImpl`, `PlatformReserve`, `PricingEngine`, `QuarterImpl`, `Router`, `UsdgAdapter`, `WeeklyImpl`.
 
    The file is `deployments/31337.json`. That directory is gitignored. `npm run cleanup` resets this Anvil with `anvil_reset` and removes only `31337.json`, `31337.demo.json`, `31337.deployment.json`, and an `HARNESS_MANIFEST` file inside this directory. It refuses a public host, port 8545, and a symlink before it dials.
 
@@ -62,7 +62,7 @@ Install Foundry and Node 22 or newer. These commands were run with Foundry 1.7.1
    HARNESS_RPC=http://127.0.0.1:8546 npm run bytecode
    ```
 
-   Stdout on this pass was `{"ok":true,"chainId":31337,"compared":18,"matched":18}`. A mismatch prints `{ "error", "code": "STALE" }` on stderr and exits 1. The message names the contract and does not print bytecode. Immutable spans are ignored. `PartnerVaultA` and `PartnerVaultB` are checked against the proxy.
+   On the 2 Oct 2026 pass stdout was `{"ok":true,"chainId":31337,"compared":18,"matched":18}`. The counts fall with the two door 2 contracts removed. A mismatch prints `{ "error", "code": "STALE" }` on stderr and exits 1. The message names the contract and does not print bytecode. Immutable spans are ignored. `PartnerVaultA` and `PartnerVaultB` are checked against the proxy.
 
 ## Open the console
 
@@ -130,7 +130,7 @@ export HARNESS_RPC=http://127.0.0.1:8546
 
 `stage1.quote` and `stage1.draw` follow the seconds left in the weekly window. Two straight-through runs printed quote `feeBps` `98` and `fee` `9800000`. The 5000-share `received` value was `5066853400` on one run and `5066341700` on the next. Check the ids in the table. The draw's `received` value moves with the clock.
 
-On 2 Oct 2026 the final pass ran these commands on clean Anvils at ports 8546, 8547, and 8548. `npm test` passed 71 tests, failed 0, in 34787.267084 ms. Preflight, `deploy:local`, bytecode (`compared` 18, `matched` 18), and the console page, surface, status, and `read.status` POST passed. After `stage1.registerPlatform` bytecode matched 19 of 19. Result is `pass` when the command exited as this page describes. Every row passed. This run's quote was `feeBps` `98` and `fee` `9800000`. The 100-share `exitNow` `received` value was `101337068`. The 5000-share `received` value was `5066341700`. Initial `lockgateEth` was `9999.958811816434764791`.
+The record below predates the 2026-10-02 fixes: door 2 is no longer deployed (16 contracts), platform creation is Lockgate-only, router listing needs Lockgate approval, and every deploy sets `setCaps(8000, 10000)`. The `door2.cycle` row no longer exists. On 2 Oct 2026 the final pass ran these commands on clean Anvils at ports 8546, 8547, and 8548. `npm test` passed 71 tests, failed 0, in 34787.267084 ms. Preflight, `deploy:local`, bytecode (`compared` 18, `matched` 18), and the console page, surface, status, and `read.status` POST passed. After `stage1.registerPlatform` bytecode matched 19 of 19. Result is `pass` when the command exited as this page describes. Every row passed. This run's quote was `feeBps` `98` and `fee` `9800000`. The 100-share `exitNow` `received` value was `101337068`. The 5000-share `received` value was `5066341700`. Initial `lockgateEth` was `9999.958811816434764791`.
 
 The final `read.status` also printed `capital` `96939.561232`, `outstanding` `3066.3417`, `utilizationBps` `306`, and `earnedFees` `5.902932`. Those four follow the exit fee and can move with the clock.
 
@@ -155,12 +155,11 @@ The final `read.status` also printed `capital` `96939.561232`, `outstanding` `30
 | `npm run cli -- stage1.exitNow --shares 100 --platform WeeklyQueuePlatform` | pass | `requestId` `2`, `advanceId` `1`, `nav` `102340000`, `received` `101337068`. |
 | `npm run cli -- stage1.repay --advanceId 1` | pass | `remaining` `0`. |
 | `npm run cli -- stage1.draw --shares 5000 --platform WeeklyQueuePlatform` | pass | `requestId` `3`, `advanceId` `2`, `nav` `5117000000`. |
-| `npm run cli -- door2.cycle --amountUsdg 1000` | pass | `positionId` `1`, `nav` `1000000000`, `fee` `4900000`, `feeBps` `49`. |
 | `npm run cli -- stage2.setMandate --vault PartnerVaultA --minFeeBps 25` | pass | `vault` `PartnerVaultA` and an `expiry` timestamp. |
 | `npm run cli -- stage2.approvePlatform --vault PartnerVaultA --limitUsdg 20000` | pass | `vault` `PartnerVaultA`, `platform` `WeeklyQueuePlatform`. |
 | `npm run cli -- stage2.deposit --vault PartnerVaultA --amountUsdg 20000` | pass | `amount` `20000000000`. |
 | `npm run cli -- stage2.postReserve --vault PartnerVaultA --amountUsdg 200` | pass | a transaction `hash`. |
-| `npm run cli -- stage2.enlist --vault PartnerVaultA` | pass | `vault` `PartnerVaultA`. |
+| `npm run cli -- stage2.enlist --vault PartnerVaultA` | pass | `vault` `PartnerVaultA`. Lockgate approves the vault on the router, then the partner registers. |
 | `npm run cli -- stage2.setPolicy --policy 0` | pass | `stored` `false`, `strategy` `0`, and the note `PartnerRouter takes the strategy on each quote. It does not store a policy.` |
 | `npm run cli -- stage2.preview --navUsdg 1000 --strategy 0` | pass | one slice, `feeBps` `25`, `fee` `2500000`, `navValue` `1000000000`. |
 | `npm run cli -- stage2.routedAdvance --navUsdg 1000 --strategy 0 --nonce 1` | pass | `vault` `PartnerVaultA`, `advanceId` `1`, `nonce` `1`, `fee` `2500000`, `navValue` `1000000000`, and `exitRef`. |
@@ -178,7 +177,7 @@ The final `read.status` also printed `capital` `96939.561232`, `outstanding` `30
 
 Replace `EXIT_REF` with the `exitRef` printed by `stage2.routedAdvance`.
 
-`stage3.waterfall` accepts `--warpDays`. A non-zero value moves the clock that many days before the repay. This order already moved the clock in `stage1.processWindow` and `door2.cycle`, and the command above omits `--warpDays`.
+`stage3.waterfall` accepts `--warpDays`. A non-zero value moves the clock that many days before the repay. This order already moved the clock in `stage1.processWindow`, and the command above omits `--warpDays`.
 
 ## Check the chain
 
@@ -208,7 +207,7 @@ These fields match the click-through above:
 
 ## Run the resumable demo
 
-Use a second Anvil and a separate manifest. `demo.stage2` does not run door 2. `demo.all` runs stage 1, door 2, stage 2, and stage 3. A second `demo.all` on the same chain prints the same JSON as the first.
+Use a second Anvil and a separate manifest. `demo.all` runs stage 1, stage 2, and stage 3. A second `demo.all` on the same chain prints the same JSON as the first.
 
 1. Start the second node and deploy:
 
@@ -245,7 +244,7 @@ npm run manifest
 
 Stdout is one JSON object. `mode` is `dry-run`, `target` is `sepolia`, `chainId` is `421614`, `asset` is `mock`, and `steps` has 18 entries.
 
-`USE_PAXOS_USDG=1` with the same four addresses prints `asset` `paxos`, still with 18 steps, and still does not dial.
+`USE_PAXOS_USDG=1` with the same four addresses prints `asset` `paxos`, with the same step count, and still does not dial. The step counts on this page were recorded with door 2 and have since changed.
 
 `FACTORY_NONCE=no` with those addresses exits 1. Stderr is:
 

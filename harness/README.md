@@ -1,6 +1,6 @@
 # Harness
 
-You can deploy the Lockgate contracts onto a local Anvil, then drive stage 1, door 2, stage 2, and stage 3 from the CLI or the loopback test console. After the quick start you can run the suite, print every action, and point a command at a manifest you just wrote.
+You can deploy the Lockgate contracts onto a local Anvil, then drive stage 1, stage 2, and stage 3 from the CLI or the loopback test console. After the quick start you can run the suite, print every action, and point a command at a manifest you just wrote.
 
 The stage map, the CREATE2 set, and the signature domain are in [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md). How the suites are run is in [../docs/TESTING.md](../docs/TESTING.md). The review findings are in [../docs/SECURITY-NOTES-harness.md](../docs/SECURITY-NOTES-harness.md). Setup, environment names, and the click-through outputs are in [docs/how-to/run-on-anvil.md](docs/how-to/run-on-anvil.md). The offline reproduction of the Sepolia fork checks is in [docs/how-to/sepolia-fork-offline.md](docs/how-to/sepolia-fork-offline.md). A clean-checkout rehearsal of install, build, deploy, and every action is in [docs/how-to/clean-checkout.md](docs/how-to/clean-checkout.md). A rebuild against the current G6, G7, and G8 sources is in [docs/how-to/g6-g7-g8.md](docs/how-to/g6-g7-g8.md). The final check of this working tree is in [docs/how-to/current-tree.md](docs/how-to/current-tree.md). This page is not the product and not an offer.
 
@@ -52,7 +52,7 @@ HARNESS_RPC=http://127.0.0.1:8546 npm run serve
 
 `serve` binds `127.0.0.1` and defaults to port 18910. Open `http://127.0.0.1:18910/`. The page title is "Lockgate test console". `GET /api/surface` lists the same actions as `help`. `POST /api/act` takes `{ "action", "input" }` where every input value is a string. A number, a boolean, or a body over 8 KiB returns 400 `VALIDATION` and does not call the chain. An unknown action returns 422. A failed command or HTTP call returns `{ "error", "code" }` and does not print a stack or a private key. `npm test` includes `test/hygiene.test.ts` and `test/writes.test.ts`. The first scans command stdout, stderr, and the repo. The second scans the manifest, the demo cursor, the deployment receipt, the checksum seal, the console responses, and the logs of deploy, bytecode, preflight, checksum, and cleanup. A private key or an RPC token fails the suite. The report names the file, the line, and the kind. It does not print the secret. `npm test` also includes `test/inject.test.ts`. An RPC timeout, a reverted call, and a nonce the account has already used each return `{ error, code }` and leave the manifest bytes unchanged.
 
-`npm test` includes `test/smoke.test.ts`. That test deploys to a private Anvil, posts every `stage1.*`, `door2.cycle`, `stage2.*`, and `stage3.*` action to `/api/act`, and reads the final chain. It does not open a browser and it does not leave that Anvil running. Port 8545 is not used.
+`npm test` includes `test/smoke.test.ts`. That test deploys to a private Anvil, posts every `stage1.*`, `stage2.*`, and `stage3.*` action to `/api/act`, and reads the final chain. It does not open a browser and it does not leave that Anvil running. Port 8545 is not used.
 
 On that chain:
 
@@ -63,13 +63,13 @@ HARNESS_RPC=http://127.0.0.1:8546 npm run cli -- demo.stage3
 HARNESS_RPC=http://127.0.0.1:8546 npm run cli -- demo.all
 ```
 
-`npm run demo` is `demo.all`. `demo.stage1`, `demo.stage2`, `demo.stage3`, and `demo.all` are the resumable script. `demo.stage2` does not include door 2. `demo.all` runs stage 1, door 2, stage 2, and stage 3. Run any of them again on the same chain and a finished step returns the saved result without sending a transaction.
+`npm run demo` is `demo.all`. `demo.stage1`, `demo.stage2`, `demo.stage3`, and `demo.all` are the resumable script. `demo.all` runs stage 1, stage 2, and stage 3. Door 2 is removed: not deployed, superseded. Run any of them again on the same chain and a finished step returns the saved result without sending a transaction.
 
 The cursor is `harness/deployments/31337.demo.json`, beside the manifest. Both are gitignored. A step is written only after it succeeds, with the chain id, the factory, and the block hash. A hash that is not on this chain drops that step and every later step. A file that does not parse is ignored, and the script reads the contracts. A live chain does not need the file: a finished stage is recognized from the contracts and is not repeated.
 
 Stopping Anvil during a demo leaves the cursor file in place. The next call exits 1 with `{"error":"RPC is unreachable","code":"RPC"}`. A new Anvil on that port is an empty chain, so the same call exits 1 with `{"error":"Manifest contracts are not on this chain","code":"NOT_DEPLOYED"}` and does not print the saved step. Deploy again, then run the demo. It starts on the new chain. The next call returns that result and does not send a transaction. The check is [docs/how-to/anvil-restart.md](docs/how-to/anvil-restart.md).
 
-`door2.cycle` is not that script. It starts another open-vault sale. The other action ids stay one-shot.
+The other action ids stay one-shot.
 
 ```bash
 npm run cli -- stage1.quote --navUsdg 1000 --platform WeeklyQueuePlatform
@@ -98,7 +98,7 @@ The Sepolia script is a separate path. It does not use this manifest and it does
 
 - The deploy uses the bytecode in `contracts/out`. `harness/fixture/src` is not the protocol. The fixture contracts the harness still deploys are `Create2Factory`, `ERC1967Proxy`, and, only inside the failure test, `PegOracle`.
 - The CREATE2 salt is `lockgate.protocol.<logical>.v1`. The same factory and init code produce the same address on every fresh Anvil. Constructors still run in plan order because later contracts store earlier addresses.
-- A locked platform implementation is constructed with a zero token, so `initialize` on that copy reverts. `FundFactory.createPlatform` clones one of those copies and starts at zero shares. The weekly short-cash demo uses a direct CREATE with unbacked shares, because a clone cannot mint that first balance without taking USDG.
+- A locked platform implementation is constructed with a zero token, so `initialize` on that copy reverts. `FundFactory.createPlatform` (`onlyOwner`, sent from the `lockgate` role with the platform account as issuer) clones one of those copies and starts at zero shares. `stage2.enlist` has Lockgate approve the vault on `PartnerRouter`, then the partner registers. Every deploy calls `setCaps(8000, 10000)` (`LINE_CAPS` in `src/params.ts`). The protocol plan is 16 contracts including `Create2Factory`. The weekly short-cash demo uses a direct CREATE with unbacked shares, because a clone cannot mint that first balance without taking USDG.
 - The facility governor is Anvil account 7. The borrower is account 0. The facility constructor reverts when those two addresses match. Lender approval is sent as the governor. `draw` is sent as the borrower.
 - Stage-1 fees use ceiling division in `feeFromBps`. A partner fee stays on the router slice, which is half-up. The local curve does not clamp at 1500 bps. The chain rejects a quote above that cap.
 - `quoteId` on the signed proposal is the exit ref `relayRepay` reads. The EIP-712 verifying contract is the vault. The vault address is not a field of the struct. Domain name `LockgateAdvance`, version `1`. See [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).
@@ -108,6 +108,8 @@ The Sepolia script is a separate path. It does not use this manifest and it does
 - `npm run deploy:sepolia` returns `SEPOLIA_BLOCKED` until `LOCKGATE_ALLOW_SEPOLIA_DEPLOY=1`. It then requires a node that reports chain 421614 and `DEPLOYER_PRIVATE_KEY` as a 32-byte hex string from the environment. Chain 42161 is `MAINNET_REFUSED` before a transaction. The deployer balance must be at least 0.001 ETH or the script returns `UNFUNDED` before a transaction. Do not point that command at a public RPC with an Anvil key. `npm run preflight:sepolia` uses the same flag and key, and it requires `SEPOLIA_RPC`. It does not fall back to the public Arbitrum Sepolia URL.
 
 `npm run manifest` prints a dry-run deployment manifest for Arbitrum Sepolia. Pass `DEPLOYER_ADDRESS`, `GOVERNOR_ADDRESS`, `PARTNER_A_ADDRESS`, and `PARTNER_B_ADDRESS`. It does not read a private key and it does not dial an RPC. The same deployer, nonce, and owners always produce the same addresses and constructor args. `USE_PAXOS_USDG=1` pins the token to `0xFFC95faa3d63Cde504a05B567C600B78C0b41892` and does not deploy it. `FACTORY_NONCE` defaults to 0. `npm run manifest:local` deploys that plan on loopback chain 31337, on a port other than 8545, and writes `harness/deployments/31337.deployment.json` with a transaction hash and a block number for each contract. `npm run manifest -- broadcast` returns `SEPOLIA_BLOCKED`. The G10 brief does not approve a Sepolia broadcast.
+
+`src/sepolia-seed.ts` is an optional stage-1 seed, off unless `SEED_STAGE1=1`. It uses only approve and pull or transfer from the deployer's balance, so it works on Paxos USDG (`USE_PAXOS_USDG=1`, 6 dp) with no minting. It deposits capital, owner-creates a weekly platform (issuer `PLATFORM_ADDRESS` or the deployer) with Lockgate's limit and reserve bps, posts the reserve, deposits platform cash, and optionally sends investor USDG to `SEED_INVESTOR_ADDRESS`. Defaults are capital 10,000, reserve 375 (750 bps of a 5,000 limit), cash 500, and investor 1,000: 11,875 USDG, or 10,875 with no separate investor. Overrides: `SEED_CAPITAL_USDG`, `SEED_LIMIT_USDG`, `SEED_RESERVE_BPS` (500-1000), `SEED_CASH_USDG`, `SEED_INVESTOR_USDG`, `SEED_INVESTOR_ADDRESS`, `PLATFORM_ADDRESS`. On Paxos it returns `INSUFFICIENT_USDG` before any transaction if the deployer balance is short. Test: `test/sepolia-paxos.test.ts`.
 
 ## Layout
 

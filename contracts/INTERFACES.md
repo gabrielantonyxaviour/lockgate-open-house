@@ -2,7 +2,7 @@
 
 ## SUMMARY
 
-Stage-1 surfaces live in `contracts/src/interfaces`. Decode logs and reverts with the names in the next section. The engine and the harness already match those names. Other sessions request changes in `contracts/INTERFACE-REQUESTS.md`. G6 decides. Door 2 (`OpenCreditVault`, `LockgateExitPool`) is in `src/core`.
+Stage-1 surfaces live in `contracts/src/interfaces`. Decode logs and reverts with the names in the next section. The engine and the harness already match those names. Other sessions request changes in `contracts/INTERFACE-REQUESTS.md`. G6 decides. Door 2 (`OpenCreditVault`, `LockgateExitPool`) is removed from the deploy plan: not deployed, superseded. The sources stay in `src/core` for their unit tests only.
 
 ## Names the engine and the harness match
 
@@ -22,13 +22,13 @@ These are the stage-1 calls the engine and the harness encode. The test checks e
 | `setRegistrar` | `setRegistrar(address,bool)` | Engine `deploy.ts`, harness deploy |
 | `quote` | `quote(address,uint256)` | Both, on the credit line |
 | `feeBps` | `feeBps(uint256,uint256,bool,uint16,uint16)` | Engine Anvil flow, on `PricingEngine` |
-| `createPlatform` | `createPlatform(uint8,string,uint64,uint256,uint256,uint16)` | Both. Arguments are kind, name, interval, share NAV, limit, reserve bps |
+| `createPlatform` | `createPlatform(uint8,string,uint64,uint256,address,uint256,uint16)` | Both. `onlyOwner` (Lockgate). Arguments are kind, name, interval, share NAV, issuer, limit, reserve bps. A zero issuer reverts `ZeroAddress` |
 | `exitNow` | `exitNow(uint256,uint256)` | Both. Shares, then `minUsdgOut` |
 | `processWindow` | `processWindow()` | Both |
-| `sellToLockgate` | `sellToLockgate(uint256,uint256)` | Harness door 2. Shares, then `minUsdgOut` |
-| `settle` | `settle(uint256)` | Harness door 2 |
+| `sellToLockgate` | `sellToLockgate(uint256,uint256)` | Removed with door 2 (not deployed). Shares, then `minUsdgOut` |
+| `settle` | `settle(uint256)` | Removed with door 2 (not deployed) |
 
-`createPlatform` kind `0` reverts `BadKind()`. Kind `1` is weekly, `2` is epoch, `3` is quarterly. Engine kind `4` (`fifo-open`) has no contract. `quoteId` still accepts that `uint8`.
+`createPlatform` and `createDemoFund(string,address)` are `onlyOwner`: a non-owner call reverts `OwnableUnauthorizedAccount`. Only Lockgate can register a platform, so every limit and reserve bps is Lockgate-set. `createPlatform` kind `0` reverts `BadKind()`. Kind `1` is weekly, `2` is epoch, `3` is quarterly. Engine kind `4` (`fifo-open`) has no contract. `quoteId` still accepts that `uint8`.
 
 ### Quote strings and draw errors
 
@@ -130,7 +130,7 @@ Queue platforms inherit `PlatformStore`:
 | `WindowProcessed` | `WindowProcessed(uint256,uint64,bool)` |
 | `AdvanceClosed` | `AdvanceClosed(uint256,uint256)` |
 
-Door 2, reserve, factory, pricing, shares, and the mock token:
+Door 2 (removed, not deployed), reserve, factory, pricing, shares, and the mock token:
 
 | Event | Canonical signature |
 | --- | --- |
@@ -265,7 +265,7 @@ Quote and draw checks, in order: unregistered, paused, zero, gated, window due (
 
 `exitEarly` can also return `"not queued"` and `"reserve"` through the platform quote.
 
-Utilization used for pricing is the pre-draw book: `outstanding * 10000 / (capital + outstanding)`, floored. The hard cap ceils `(outstanding + principal) * 10000 / (capital + outstanding)` on that same denominator, measured before the token move. Outstanding 5000 and capital 5001 is view 4999. A cap of 5000 reverts `UtilizationCap` on the next principal of 1. A cap of 5001 draws it, and the view is 5000. Capital 0 with outstanding 5000 reports 10000, and the quote is `"capital"` because that check comes first. `capital()` is the token balance. Concentration is the source's post-draw share of exposure. `maxConcentrationBps` defaults to 10000 because the first draw is always 100% of the book. A later `setCaps` binds later draws only.
+Utilization used for pricing is the pre-draw book: `outstanding * 10000 / (capital + outstanding)`, floored. The hard cap ceils `(outstanding + principal) * 10000 / (capital + outstanding)` on that same denominator, measured before the token move. Outstanding 5000 and capital 5001 is view 4999. A cap of 5000 reverts `UtilizationCap` on the next principal of 1. A cap of 5001 draws it, and the view is 5000. Capital 0 with outstanding 5000 reports 10000, and the quote is `"capital"` because that check comes first. `capital()` is the token balance. Concentration is the source's post-draw share of exposure. `maxConcentrationBps` defaults to 10000 because the first draw is always 100% of the book. A later `setCaps` binds later draws only. Every deploy (harness `wire`, `sepolia.ts`) calls `setCaps(8000, 10000)`, constants `LINE_CAPS` in `harness/src/params.ts`: utilization 80%, concentration stays 100%. Concentration is one source's share of total exposure, not of capital, so with a single platform drawing any cap below 100% blocks the first draw. The per-source limit and reserve bound one platform instead. Test: `harness/test/caps.test.ts`.
 
 Required reserve is `ceil(exposure * activeReserveBps / 10000)`. `activeReserveBps` is the higher of the live `reserveBpsOf` and `reserveFloorBps`. The floor rises with a higher rate and falls back to the live rate only when that source's exposure hits 0. `setSourceTerms` to 0 does not let the platform withdraw first-loss cash while an advance is open.
 
@@ -283,7 +283,7 @@ Constructor defaults: base 1200, kink 6667, APR at kink 1200, APR at full 1800, 
 
 `validate` requires the model to be available and `model <= proposedBps <= maxFeeBps`. Extra reasons: `"below model"`, `"above max"`.
 
-On-chain token fee is ceil. `feeFromBps(10001, 1) = 2`. The engine token fee is half-up (`engine/src/quote.ts`, `mulDivRoundHalfUp`), which is 1 for that input. The engine also clamps the charged bps (`Math.min(max, Math.max(min, raw))` in that file). On-chain refuses instead. See `INTERFACE-REQUESTS.md`.
+On-chain token fee is ceil. `feeFromBps(10001, 1) = 2`. Since 2026-10-02 the engine token fee also rounds up (`engine/src/quote.ts`), and the engine refuses (block `max-fee`) when the raw fee is above `maxFeeBps` instead of clamping. Its curve defaults equal the constructor defaults above, and `sim/src/pricing.ts` is an exact BigInt port of `PricingMath.quoteCode`. See `INTERFACE-REQUESTS.md`.
 
 `timeScale` and the window length are one choice. Demo funds use a 600-second window with timeScale 4320. A 90-day wait at timeScale 4320 is above the 1500 bps max and is refused. The same wait at timeScale 1 prices at 296 bps on the 1200 base.
 
@@ -313,7 +313,9 @@ Quarterly is the same FIFO, and a closed gate reverts `processWindow` with `Wind
 
 `exitEarly` checks the quote before slippage. No reserve therefore reverts `NotAvailable("reserve")`, not `Slippage`. `minUsdgOut` above the quoted payout reverts `Slippage`.
 
-## Door 2
+## Door 2 (removed: not deployed, superseded)
+
+The contracts below are no longer in the deploy plan. They move investor positions, which contradicts "investor positions never move". They are kept for their unit tests only and carry `@custom:status NOT DEPLOYED, SUPERSEDED`.
 
 `OpenCreditVault` is an 18-decimal ERC-20 (`Open credit token`, `oUSDG`). NAV is 6-decimal USDG per 1e18 shares and starts at `1_000_000`. `deposit` pulls USDG and mints `usdg * 1e18 / nav`. `requestWithdraw` burns the caller's shares, moves `shares * nav / 1e18` from `assets` into `reserved`, and starts a cooldown. It reverts `Insolvent` when that nav exceeds `assets`. The default cooldown is 5 minutes. `setCooldown(0)` reverts `BadParam`. `claim` pays the withdrawal's owner after `readyAt`. Anyone may call it.
 
@@ -345,7 +347,7 @@ AdvanceProposal(address platform,address recipient,uint256 requestId,uint256 nav
 
 Constructor arguments, in order: `owner`, `adapter`, `creditLine`, `reserve`, `weeklyImpl`, `epochImpl`, `quarterImpl`. Deploy `WeeklyCyclePlatform`, `EpochQueuePlatform`, and `QuarterlyWindowPlatform` first, each with a zero-token `PlatformConfig`. That locks the implementation (`initialize` reverts). Each clone starts empty. The factory calls `initialize` before it returns. Direct `new WeeklyCyclePlatform(cfg)` still initializes when `cfg.token` is set. `engine/test/anvil/deploy.ts` deploys the three locked implementations, then passes all seven constructor arguments. G6 did not edit `engine/`.
 
-`createDemoFund` only if the adapter `isMock`. Seeds: NAV `1_023_400`, share value `10_000e6`, cash `2_000e6`, limit `25_000e6`, reserve 750 bps (`1_875e6`), window `demoWindow` (default 600). The factory must be a credit-line registrar and a `MockUSDG` minter. `createPlatform` registers and does not mint shares or post reserve. `createPlatform(None)` reverts `BadKind`.
+`createDemoFund(name, issuer)` is `onlyOwner` and works only if the adapter `isMock`. Seeds: NAV `1_023_400`, share value `10_000e6`, cash `2_000e6`, limit `25_000e6`, reserve 750 bps (`1_875e6`), window `demoWindow` (default 600). The factory must be a credit-line registrar and a `MockUSDG` minter. `createPlatform` registers and does not mint shares or post reserve. The owner passes the limit and reserve bps. `createPlatform(None)` reverts `BadKind`.
 
 ## Deploy order for G10
 
@@ -353,8 +355,8 @@ Constructor arguments, in order: `owner`, `adapter`, `creditLine`, `reserve`, `w
 2. `PricingEngine`, `PlatformReserve`, `LockgateCreditLine`.
 3. `reserve.setCreditLine(line)`, `reserve.setSlasher(line, true)`.
 4. Three locked implementations (zero-token config), then `FundFactory` with those addresses. `line.setRegistrar(factory, true)`. `mock.setMinter(factory, true)` on the mock path.
-5. Owner `depositCapital`. `createDemoFund` on the mock path.
-6. Door 2, mock path: `OpenCreditVault(owner, token, true)`, `mock.setMinter(vault, true)`, `LockgateExitPool(owner, vault, line)`, `registerSource(pool, limit, 0)`. Real USDG uses `mintYield = false` and skips `setMinter`.
+5. Owner `depositCapital`, then `setCaps(8000, 10000)`. `createDemoFund` on the mock path.
+6. Door 2 is removed from the plan.
 7. `reserve.lockSlasherSet()` when the slasher set should freeze.
 
 G10 owns the deploy scripts. This tree does not deploy.

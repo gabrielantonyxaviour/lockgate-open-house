@@ -24,6 +24,8 @@ The repo has no git remote. HEAD is `9665484`. The run used the working tree. Co
 | e2e | anvil | pass | 250s | ok |
 | e2e | compare | pass | 64s | 1 tests, 0 failed |
 
+LossSymmetry re-run (2026-10-02): the recorded counterexample now passes and is pinned as `test_recordedCounterexampleHolds` in `contracts/test/facility/LossSymmetry.t.sol`. All facility fuzz suites pass at `--fuzz-runs 5000`. The earlier failure coincided with the test file being edited mid-run. The record below is as found.
+
 The forge failure is `test/facility/LossSymmetry.t.sol:LossSymmetryTest` `testFuzz_unpaidDrawBecomesDeficitAndRepayRestoresSeniorFirst`. The log line is `[FAIL: assertion failed: 32728340926 != 32729340929]`. It stopped at run 6. Counterexample args `[3, 79228162514264337593543950332, 486443499876322530418866, 59944674909726747, 2588]`. Fuzz seed `0xac60779458821b7d1e165eb2402b4ca8a239716756372c66132d9ab0b23af13e`. The suite rollup was 89 suites, 369 passed, 1 failed, 0 skipped, 370 total. The engine skip is `test/anvil/g10-deploy.test.ts`. `test_tinyRepaysDoNotBlockAnotherLender` passed on this compile.
 
 ```
@@ -63,6 +65,8 @@ npm run flaky
 
 # P0 — one quoteId, two vaults
 
+FIXED 2026-10-02. `PartnerRouter` is now `Ownable2Step` (owner Lockgate). `register(vault)` needs the vault's own `owner()` and Lockgate's `approveVault`, else `NotApproved`, so an unvetted grief contract cannot list itself, record the `quoteId` first, and soak up `relayRepay(exitRef, 0)`. Records stay per (exitRef, vault, advanceId) once and `relayRepay` pays the vault that recorded it. Strict one record per exitRef was not adopted, because pro-rata splits record one exitRef from several vaults. Regression: `contracts/test/partner/RouterGrief.t.sol`. The text below is the original repro.
+
 ```mermaid
 sequenceDiagram
   participant Grief
@@ -101,6 +105,8 @@ FOUNDRY_TEST=test/invariant forge test --match-contract Adversarial --offline
 Do not start that while another forge is writing `contracts/out`.
 
 # P1 — three fee clocks
+
+FIXED 2026-10-02. The on-chain `PricingEngine`/`PricingMath` quote is the source of truth. Engine `DEFAULT_PARAMS` now equal the `PricingEngine` constructor (kink APR 1200, concentration cap 10000, concentration premium 0). The engine fee rounds up and the engine refuses (block `max-fee`) above `maxFeeBps` instead of clamping. `sim/src/pricing.ts` is an exact BigInt port of `PricingMath.quoteCode`, and sim `riskBps` is a 0..10000 platform risk score. The compare feeds all three legs the same NAV age and risk score. Live compare on own Anvil: sim, engine, chain 100 bps, fee 100000000 each. Full utilization 149/149/149. Rounding nav 1000001 at 100 bps is 10001 everywhere. 0 divergences, 0 breaks. The tables below are the original measurements.
 
 `DIVERGENCE.md` on disk is the third flaky compare: chain 31337, block 1529, `now` 1790902519. The verify compare was block 1304, `now` 1790900969. 4 divergences. 0 integration breaks. The fee rows match. The vault stored the signed engine fee 101000000 and principal 9899000000. Idle went 80000000000, then 70101000000, then 80101000000. Lockgate's balance stayed 0. The chain was not reset and was not warped.
 
@@ -175,7 +181,7 @@ Row: "stage-3 interest is a daily floor, and a year of floors is short of the on
 | legal | The excluded-moneylender line and the MAS custody line are legal sentences. | `sim/COVERAGE.md` Open | No test asserts them. |
 | mock-book | `SepoliaFacility` draws and repays through `MockBook`. Supply is unchanged. Senior deposit 100e6, draw and repay 40e6. | `contracts/test/fork/SepoliaFacility.t.sol`, `sim/COVERAGE.md` | `cd lockgate/repo/contracts && FOUNDRY_TEST=test/fork forge test --match-contract SepoliaFacility --offline`. The fork directory's last isolated run, recorded in `sim/README.md`, passed 9 and failed 0. The fork reads the public Arbitrum Sepolia RPC and does not broadcast. Do not overlap another forge. |
 | conservation | `FlowConservation` passed 1, failed 0: 32 runs, depth 20, 640 calls, 0 reverts. Facility APR is 0. The handler does not warp. | `sim/COVERAGE.md` Conservation | `cd lockgate/repo/contracts && FOUNDRY_TEST=test/invariant forge test --match-contract FlowConservation --offline` |
-| door-2 | Shared-Anvil e2e leaves Door 2 out because settle needs a time jump. | `e2e/README.md` | The verify `npm run e2e` printed ok in 256s. Do not warp the shared Anvil. Time jumps in this tree are the `FacilityTime` command. |
+| door-2 | Removed: door 2 is not deployed and superseded. The row stays as history. | `e2e/README.md` | The verify `npm run e2e` printed ok in 256s. Do not warp the shared Anvil. Time jumps in this tree are the `FacilityTime` command. |
 | mtime-cache | `solidityTreeMtime` is cached for the process. A source edited after the first deploy in that process is not rebuilt. | `docs/SECURITY-NOTES-testing.md` Residual | `cd lockgate/repo/e2e && npm test`. "freshness follows a nested source, not only the contract file" stamps one directory once. |
 | revert-text | A `BaseError` whose message contains "reverted" counts as a revert. | Same residual. `e2e/test/security.test.ts` | Same e2e `npm test`. "a transport error is not counted as a revert" expects `BaseError("execution reverted")` to count. |
 | utilization | Simulator utilization is cash advanced over cash advanced plus idle. Caps use owed nav. A line at the owed cap can print utilization 5000 while that platform's exposure is 10000. | `docs/SECURITY-NOTES-testing.md` Residual. `sim/test/utilization.test.ts` | `cd lockgate/repo/sim && npm test` |
@@ -189,7 +195,7 @@ This pass did not edit those notes. The verify forge row is 369 passed, 1 failed
 | What remains | Source | Command already named there |
 |---|---|---|
 | `withdrawCapital` can take idle cash while the fee is still unearned. `test_ownerWithdrawsIdleWhileTheFeeIsUnrealized`: fee 990000, `earnedFees` 0, outstanding 99010000, until repay. | `docs/SECURITY-NOTES-contracts.md` Reviewed | `cd lockgate/repo/contracts && FOUNDRY_TEST=test/core forge test --match-test test_ownerWithdrawsIdleWhileTheFeeIsUnrealized --offline` |
-| After `setRegistrar(factory)`, `createPlatform` registers the caller, including reserve bps 0. The line does not compare reported NAV with cash. | Same file, Residual | The residual paragraph. This pass did not re-run a dedicated match. |
+| `createPlatform` is now `onlyOwner` (Lockgate), so limit and reserve bps are Lockgate-set (`contracts/test/core/FactoryDrain.t.sol`). The issuer can still set NAV on its own platform, bounded by that limit and reserve. The line does not compare reported NAV with cash. | Same file, Residual | The residual paragraph. This pass did not re-run a dedicated match. |
 | The address stored as `autoModule` may call `execute` with an empty partner signature. Bounds live inside `AutoApproveModule`. | `docs/SECURITY-NOTES-partner.md` Residual | The residual paragraph. |
 | `quote` skips a vault that needs more than 2500000 gas inside `maxNav`. The partner can still fund it directly. | Same residual | The residual paragraph. |
 | `submitProposal` stores the digest before `preview`. A rejected nonce stays occupied until the owner cancels. | Partner Reviewed, and `docs/SECURITY-NOTES-engine.md` Residual | The residual paragraphs. |

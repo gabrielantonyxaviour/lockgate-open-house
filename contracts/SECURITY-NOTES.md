@@ -16,7 +16,7 @@ A draw sends `navValue - fee` to the payee. The source owes `navValue`. `outstan
 
 You trust the credit-line owner with capital, caps, grace, registrars, and pause. `renounceOwnership` on the line reverts `RenounceDisabled`, so repaid USDG still has an owner who can call `withdrawCapital`. Granting and then revoking a registrar and a slasher, clearing the reserve admin, and renouncing the reserve owner leave a 100e6 advance repayable by a stranger. The line owner then withdraws 500,000e6 plus the 990,000 fee, and the source withdraws its 20e6 reserve. `test_grantRevokeAndRenounceLeaveRepayAndCashReachable` A stranger who calls `registerSource` reverts `NotRegistrar`, and a stranger who calls `setSourceTerms` reverts `OwnableUnauthorizedAccount`. The owner can call both on an open source, and the source list stays one entry. `test_accessAndReregister` The owner's second `registerSource` on a source that is still registered emits `SourceUpdated` and does not emit `SourceRegistered` again. `test_ownerUpdateDoesNotEmitASecondRegistration` The owner's second `registerSource` is what changes the stored reserve rate: the test sets it to 500 bps. `test_registrarCannotRewriteAnOpenSource` After the owner deregisters a source, the factory registrar cannot register it again. `test_registrarCannotRestoreADeregisteredSource`
 
-You trust the factory once the owner has enabled it as a registrar. A non-owner `createPlatform` then stores the limit that caller passed (5,000e6 in the test) and leaves the fund's token balance and reserve balance at 0. `test_createPlatformDoesNotSeedCash`
+You trust the factory once the owner has enabled it as a registrar. `createPlatform` and `createDemoFund` are `onlyOwner`, so a non-owner call reverts `OwnableUnauthorizedAccount` and every limit and reserve bps comes from Lockgate. The owner-passed limit is stored and the call leaves the fund's token balance and reserve balance at 0. `test_createPlatformDoesNotSeedCash`
 
 You trust a registered source's reported face. The line does not read the source's token balance. A stub draws 100e6, the investor receives 99,010,000, the source's exposure becomes 100e6, and `earnedFees` stays 0 until repayment. `test_drawPaysNetAndOwesFace`
 
@@ -59,7 +59,7 @@ A short token delivery cannot fund the reserve or leave the line. Reserve `post`
 | Reserve owner | Cannot withdraw a platform balance (`NotAdmin`). Cannot name a slasher of the zero address. A stranger cannot name an admin (`NotPlatform`) or a slasher | `test_postWithdrawFloorAndSlashTarget` `test_onlyPlatformNamesAdmin` |
 | Reserve owner | `setCreditLine` a second time reverts `AlreadySet`. After `lockSlasherSet`, `setSlasher` and a second `lockSlasherSet` revert `SlashersLocked` | `test_lockSlashersAndCreditLineOnce` `test_strangerCannotCallOwnerControls` |
 | Platform | Names its reserve admin. That admin withdraws. The reserve owner does not | `test_postWithdrawFloorAndSlashTarget` |
-| Issuer | `createPlatform` and `createDemoFund` attribute the fund to `msg.sender` | `test_createPlatformDoesNotSeedCash` `test_demoSeedAndExitClearsOnTheWindow` |
+| Issuer | `createPlatform` and `createDemoFund` attribute the fund to the issuer argument the owner passes (zero reverts `ZeroAddress`). The issuer can set NAV on its own platform, bounded by Lockgate's limit and reserve | `test_createPlatformDoesNotSeedCash` `test_demoSeedAndExitClearsOnTheWindow` |
 | Issuer | Sets the gate and the nav. `QueueKind.None` reverts `BadKind` | `test_gateBlocksRedeemNotDepositAndNavDoesNotRewriteTheQueue` `test_shareNeedsAllowlistAndFactoryRejectsBadConfig` |
 | Factory owner | `setDemoWindow(0)` reverts `BadParam`. A factory whose adapter is not a mock reverts `DemoRequiresMock` on `createDemoFund` | `test_shareNeedsAllowlistAndFactoryRejectsBadConfig` `test_realAdapterCannotMintTheDemo` |
 | Pricing owner | `setParams` is owner-only, and the guards above reject a broken curve | `test_setParamsGuards` |
@@ -100,7 +100,7 @@ The exit pool's gate blocks a new sale and does not settle an existing one by it
 | Limit | What stays true | Test |
 | --- | --- | --- |
 | Reported face | The line pays from its own capital against the source's reported nav. It does not match that figure to cash in the source | `test_drawPaysNetAndOwesFace` |
-| Open factory | A non-owner `createPlatform` stores the limit that caller passed and posts no cash and no reserve. A platform created with reserve bps 0 still accepts deposits and queues up to `MAX_OPEN` | `test_createPlatformDoesNotSeedCash` `test_openQueueCapsAndDropsSettledHistory` |
+| Factory registration | `createPlatform` is `onlyOwner`. An attacker self-registering with a huge limit and 0 reserve (the old critical drain) reverts `OwnableUnauthorizedAccount`. Owner-set limit and reserve bound a marked-up NAV. It posts no cash and no reserve. A platform created with reserve bps 0 still accepts deposits and queues up to `MAX_OPEN` | `test_createPlatformDoesNotSeedCash` `test_openQueueCapsAndDropsSettledHistory` `test/core/FactoryDrain.t.sol` |
 | Reserve floor | Lowering the live rate while exposure is open leaves `reserveFloorBps` in place. A 100e6 draw at 750 bps still requires 7,500,000. Withdrawal of that balance reverts `ShortReserve`. Repayment to zero exposure drops the floor to the new live rate | `test_openExposureKeepsTheReserveFloor` `test_loweredRateKeepsTheOpenFloor` |
 | Grace | `setGrace` does not change `graceOf` on an advance already drawn. A later draw stores the new grace. Grace 0 can be marked late at `dueAt` | `test_graceIsFixedAtDraw` `test_zeroUtilizationBlocksAndGraceZeroIsDue` |
 | Params | The owner can change `minFeeBps` and `timeScale` and the next draw sees the new values. An open advance keeps its stored fee. In the reserve test, `minFeeBps` is 0 and `timeScale` is 1, a 1-unit draw is short reserve until 1 unit is posted, and `requiredReserve` is then 1 | `test_paramChangeLeavesTheOpenAdvance` `test_requiredReserveRoundsUpFromOneUnit` |
@@ -115,8 +115,8 @@ The exit pool's gate blocks a new sale and does not settle an existing one by it
 | Advanced exits | `cancel` on an advanced request reverts `BadStatus`. The shares stay escrowed until the window repays the line | `test_exitNowRepaysOnTheWindowAndQueuedNavStaysLocked` |
 | Epoch dust | Pro-rata that buys nothing leaves the requests queued and rolls the cycle. Cash can sit below `queuedValue`. Preview is payable 0 and shortfall 4 | `test_epochDustRollsAndQuarterlyUngatePays` |
 | Epoch floor | Two claims of 3 against cash 5 each receive 2. Preview is payable 4 and shortfall 2. Cash left is 1, both stay queued at nav 1, and the next epoch pays 0 | `test_epochProRataLeavesOneUnitAndBothStayQueued` |
-| Door 2 reserve | The exit pool is registered at 0 bps. A 100e6 sale requires 0 reserve, charges 490,000 (49 bps over the 5-minute cooldown), and `settle` before `readyAt` reverts `NotReady` | `test_sellThenSettleRepaysTheFace` |
-| Door 2 after late | `markLate` on the pool's advance, then `settle`, clears `lateOutstanding` and leaves the advance `Late` | `test_gateSlippageAndLateSettle` |
+| Door 2 reserve (removed: not deployed) | The exit pool is registered at 0 bps. A 100e6 sale requires 0 reserve, charges 490,000 (49 bps over the 5-minute cooldown), and `settle` before `readyAt` reverts `NotReady` | `test_sellThenSettleRepaysTheFace` |
+| Door 2 after late (removed: not deployed) | `markLate` on the pool's advance, then `settle`, clears `lateOutstanding` and leaves the advance `Late` | `test_gateSlippageAndLateSettle` |
 | Mock yield | With minting on, one year accrues 9% (100e6 becomes 109e6). With minting off, a year of `accrue` leaves assets and the token balance unchanged | `test_oneYearOfMockYieldIsNinePercent` `test_accessZeroAndRealTokenDoesNotMintYield` |
 | Fee rounding | `feeFromBps(1, 1)` is 1. `feeFromBps(10_001, 750)` is 751. Ceil is half-up, or one unit above it when the remainder is below half. `halfUp(type(uint256).max, 2, 4)` is `2^255`. A zero denominator reverts. `feeFromBps(type(uint256).max, 10001)` reverts because the fee does not fit | `test_oneUnitRoundsUp` `testFuzz_ceilIsHalfUpOrOneMore` `test_zeroDustMaxUintAndRoundingDirection` `test_halfUpRevertsOnZeroDenominator` `test_feeFromBpsRevertsWhenCeilDoesNotFit` |
 | Demo approve | `createDemoFund` uses `forceApprove`. A token whose `approve` returns false for the reserve reverts `SafeERC20FailedOperation` and leaves `allFunds` and `sources` empty | `test_demoFundRejectsAFalseApprove` |
@@ -215,7 +215,7 @@ Each row is one attacker, the asset they can reach, the call they use, what the 
 
 | Attacker | Asset | Entry point | Mitigation | Test |
 | --- | --- | --- | --- | --- |
-| Anyone the owner has enabled as a registrar | A new fund's cash and reserve | `createPlatform` | The call stores the limit that caller passed and posts no cash and no reserve | `test_createPlatformDoesNotSeedCash` |
+| Anyone but the owner | Line capital through a self-registered platform | `createPlatform`, `createDemoFund` | `onlyOwner`: reverts `OwnableUnauthorizedAccount`. The owner's call stores the owner-set limit and reserve bps and posts no cash and no reserve | `test_createPlatformDoesNotSeedCash` |
 | Deployer | Wiring of the adapter, line, reserve, and implementations | Constructor | A zero adapter, credit line, reserve, weekly implementation, epoch implementation, or quarterly implementation reverts `ZeroAddress` | `test_constructorRejectsZeroAddresses` `test_freshCloneRejectsAZeroField` |
 | Caller on a live adapter, or a token whose `approve` returns false | Demo mint and a half-registered fund | `createDemoFund` | A non-mock adapter reverts `DemoRequiresMock`. A false `approve` reverts `SafeERC20FailedOperation` and leaves `allFunds` and `sources` empty | `test_realAdapterCannotMintTheDemo` `test_demoFundRejectsAFalseApprove` |
 | Caller passing `QueueKind.None`, or the owner passing a zero demo window | A fund deployment | `createPlatform`, `setDemoWindow` | `QueueKind.None` reverts `BadKind`. `setDemoWindow(0)` reverts `BadParam` | `test_shareNeedsAllowlistAndFactoryRejectsBadConfig` |
@@ -256,7 +256,7 @@ Library. Reserve `post`, capital moves, vault deposits, and pushes are the calle
 | Stranger | Uncapped supply | `mint` | The call reverts `NotMinter` until the owner calls `setMinter`. `mint` to the zero address reverts `ZeroAddress` | `test_mintAuth` |
 | Anyone | Per-call faucet | `faucet` | A call above 10,000e6 reverts `FaucetCap`. A second call at the cap succeeds. This token is a test double | `test_metadataAndFaucetCap` |
 
-### OpenCreditVault
+### OpenCreditVault (removed: not deployed, superseded; unit tests only)
 
 | Attacker | Asset | Entry point | Mitigation | Test |
 | --- | --- | --- | --- | --- |
@@ -264,7 +264,7 @@ Library. Reserve `post`, capital moves, vault deposits, and pushes are the calle
 | Stranger, or the owner setting a zero cooldown | Withdrawal timing | `setCooldown`, `claim` | A stranger's `setCooldown` reverts `OwnableUnauthorizedAccount`. `setCooldown(0)` reverts `BadParam`. `claim` before `readyAt` reverts `NotReady`. An unknown id reverts `UnknownWithdrawal`. A second claim reverts `AlreadyClaimed` | `test_accessZeroAndRealTokenDoesNotMintYield` `test_vaultClaimWaitsAndFullRedeemFits` |
 | Vault deployed with `mintYield` false | Underlying balance | `accrue` | A year of `accrue` leaves assets, nav, and the token balance unchanged. With minting on, one year takes 100e6 to 109e6 | `test_accessZeroAndRealTokenDoesNotMintYield` `test_oneYearOfMockYieldIsNinePercent` |
 
-### LockgateExitPool
+### LockgateExitPool (removed: not deployed, superseded; unit tests only)
 
 | Attacker | Asset | Entry point | Mitigation | Test |
 | --- | --- | --- | --- | --- |

@@ -234,3 +234,7 @@ This pass adds no event. The engine does not decode logs.
 Getters reviewed and left as contract state, off these interfaces: `registered(address)`, `token()`, `pricing()`, `reserveVault()`, `maxUtilizationBps`, `maxConcentrationBps`, `deposited`, `withdrawn`, `registrars`, `openCount`, `firstOpen`, `nextOpen`, `MAX_OPEN`, `isSlasher`, `tokenBalance`, `IOpenCreditVault.getWithdrawal`, `withdrawals(uint256)`. `kind()` stays on `IQueueAdapter`.
 
 Core profile after `CallerViews.t.sol`: 30 suites, 152 passed, 0 failed, 0 skipped, in 500.42ms (2.65s CPU). Solc 0.8.28 compiled 102 files in 69.89s. The three core invariants each stayed at 64 runs, depth 40, 2560 calls, 0 reverts. The invariant directory was not re-run. Sizes were not remeasured.
+
+## 2026-10-02 · factory is owner-only, door 2 removed
+
+`createPlatform` is now `createPlatform(uint8,string,uint64,uint256,address,uint256,uint16)` (kind, name, interval, share NAV, issuer, limit, reserve bps) and is `onlyOwner`. So is `createDemoFund(name, issuer)`. A zero issuer reverts `ZeroAddress`. The harness sends both from the `lockgate` role. This supersedes the "G10 · factory and door 2" lines about a platform account sending `createPlatform`. Door 2 (`OpenCreditVault`, `LockgateExitPool`) is no longer in the deploy plan or the demo: not deployed, superseded. `PartnerRouter` is `Ownable2Step`; `register(vault)` also needs the owner's `approveVault(vault, true)`.
