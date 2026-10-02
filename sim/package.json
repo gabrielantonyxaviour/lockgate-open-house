@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "tsx --test test/*.test.ts",
+    "regressions": "tsx src/run-regressions.ts",
     "sim": "tsx src/run-sim.ts"
   },
   "dependencies": {

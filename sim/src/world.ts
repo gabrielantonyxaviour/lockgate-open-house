@@ -54,6 +54,8 @@ export type World = {
   investorPaid: number;
   rejected: Record<string, number>;
   lockgateSwept: number;
+  /** Set when a gated early exit is refused. Absent until the first one. */
+  gatedHits?: Record<string, number>;
 };
 
 export const DAY = 86_400;

@@ -10,8 +10,10 @@ test("a short path keeps the identity, repay-first, fee bounds and loss order", 
     const run = runOnce(stage, scenario, 20261001, false);
     assert.equal(run.breaches, 0);
     assert.equal(run.lockgateSwept, 0);
-    assert.ok(run.advanced > 0, stage);
-    assert.ok(run.feeYieldBps === null || run.feeYieldBps >= 0);
+    assert.equal(run.advanced, 595);
+    const yieldBps = Number((BigInt(run.realizedFees) * 10_000n * 365n) / BigInt(run.avgEquity) / BigInt(run.horizonDays));
+    assert.equal(run.feeYieldBps, yieldBps);
+    assert.equal(run.feeYieldBps, { stage1: 1727, stage2: 3192, stage3: 25548 }[stage]);
   }
 });
 
@@ -21,6 +23,9 @@ test("default losses exceed baseline, and a bank-run uses more of the book", () 
   const stressed = runOnce("stage1", shock!, 20261001, false);
   const rush = runOnce("stage1", run!, 20261001, false);
   assert.ok(stressed.reserveAbsorbed + stressed.creditLossEquity > calm.reserveAbsorbed + calm.creditLossEquity);
-  assert.ok(rush.peakUtilBps >= calm.peakUtilBps);
-  assert.ok(rush.requested > calm.requested);
+  assert.equal(calm.reserveAbsorbed + calm.creditLossEquity, 0);
+  assert.equal(calm.peakUtilBps, 4076);
+  assert.equal(rush.peakUtilBps, 8553);
+  assert.equal(calm.requested, 1738);
+  assert.equal(rush.requested, 5056);
 });

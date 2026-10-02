@@ -98,6 +98,8 @@ export function fundExit(world: World, platform: Platform, nav: number, day: num
   }
   if (gated) {
     reject(world, "gated");
+    const hits = (world.gatedHits ??= {});
+    hits[platform.id] = (hits[platform.id] ?? 0) + 1;
     return;
   }
   if (platform.navAgeDays * DAY > MAX_NAV_AGE_SECONDS) {

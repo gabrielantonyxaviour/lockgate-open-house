@@ -15,7 +15,7 @@ import {
   withdrawable,
 } from "../src/books.js";
 import { fail } from "../src/errors.js";
-import { mandateReject, type Mandate } from "../src/mandate.js";
+import { mandateAssets, mandateReject, type Mandate } from "../src/mandate.js";
 import { MAX_FEE_BPS, MAX_NAV_AGE_SECONDS, MIN_FEE_BPS } from "../src/params.js";
 import { feeFromBps, quoteFee, type QuoteInput } from "../src/pricing.js";
 
@@ -80,8 +80,9 @@ test("canDraw names dust, limit, reserve and capital", () => {
   const reserved = emptyLine();
   depositEquity(reserved, 20_000);
   postReserve(reserved, "p", 1);
+  assert.equal(reserveNeed(10_000, 1), 1);
   assert.equal(reserveNeed(10_001, 1), 2);
-  assert.equal(Math.floor((10_001 * 1) / 10_000), 1);
+  assert.deepEqual(canDraw(reserved, "p", 10_000, 10_000, 1, 100_000), { ok: true });
   assert.deepEqual(canDraw(reserved, "p", 10_001, 10_001, 1, 100_000), { ok: false, reason: "reserve-short" });
 });
 
@@ -97,16 +98,28 @@ test("concentration cap is the floored token amount", () => {
     expiryDay: 10,
     paused: false,
   };
-  const why = mandateReject(line, mandate, {
-    platform: "p",
-    day: 1,
-    feeBps: 100,
-    tenorSeconds: 600,
-    principal: 900,
-    owed: 1_001,
-  });
-  assert.equal(why, "mandate-concentration");
-  assert.equal(Math.floor((10_001 * 1_000) / 10_000), 1_000);
+  const input = { platform: "p", day: 1, feeBps: 100, tenorSeconds: 600, principal: 900 };
+  assert.equal(mandateReject(line, mandate, { ...input, owed: 1_000 }), null);
+  assert.equal(mandateReject(line, mandate, { ...input, owed: 1_001 }), "mandate-concentration");
+});
+
+test("reserve cash is outside the concentration base", () => {
+  const line = emptyLine();
+  depositEquity(line, 9_000);
+  postReserve(line, "p", 1_000);
+  const mandate: Mandate = {
+    platforms: new Set(["p"]),
+    limit: 100_000,
+    minFeeBps: 25,
+    maxTenorSeconds: 86_400,
+    concentrationBps: 1_000,
+    expiryDay: 10,
+    paused: false,
+  };
+  const input = { platform: "p", day: 1, feeBps: 100, tenorSeconds: 600, principal: 800 };
+  assert.equal(mandateAssets(line), 9_000);
+  assert.equal(mandateReject(line, mandate, { ...input, owed: 900 }), null);
+  assert.equal(mandateReject(line, mandate, { ...input, owed: 901 }), "mandate-concentration");
 });
 
 test("draws and repayments that break the book throw a coded error", () => {

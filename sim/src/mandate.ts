@@ -1,9 +1,11 @@
-import { MAX_FEE_BPS } from "./params.js";
 import type { Line } from "./books.js";
+import { fail } from "./errors.js";
+import { MAX_FEE_BPS } from "./params.js";
+import type { Stage } from "./schema.js";
 
 export type Mandate = {
   platforms: ReadonlySet<string>;
-  /** Principal cap for one platform, micro-USDG. */
+  /** Owed-nav cap for one platform, micro-USDG. */
   limit: number;
   minFeeBps: number;
   maxTenorSeconds: number;
@@ -23,6 +25,11 @@ export type MandateInput = {
   owed: number;
 };
 
+/** Idle cash plus outstanding principal. Posted reserve is not part of this base. */
+export function mandateAssets(line: Line): number {
+  return line.balance - line.reserve + line.principal;
+}
+
 export function mandateReject(line: Line, mandate: Mandate, input: MandateInput): string | null {
   if (mandate.paused) return "mandate-paused";
   if (input.day > mandate.expiryDay) return "mandate-expired";
@@ -31,7 +38,7 @@ export function mandateReject(line: Line, mandate: Mandate, input: MandateInput)
   if (input.tenorSeconds > mandate.maxTenorSeconds) return "mandate-tenor";
   const nextExposure = (line.exposure[input.platform] ?? 0) + input.owed;
   if (input.owed > mandate.limit || nextExposure > mandate.limit) return "mandate-limit";
-  const assets = line.balance + line.principal;
+  const assets = mandateAssets(line);
   if (assets <= 0) return "mandate-empty";
   const cap = Math.floor((assets * mandate.concentrationBps) / 10_000);
   if (input.owed > cap || nextExposure > cap) return "mandate-concentration";
@@ -54,6 +61,58 @@ export function pickBestFee(offers: readonly VaultOffer[]): VaultOffer | null {
     }
   }
   return best;
+}
+
+export type LimitPeaks = {
+  platform: Record<string, number>;
+  mandate: Record<string, number>;
+  concentrationGap: Record<string, number>;
+};
+
+export function emptyPeaks(): LimitPeaks {
+  return { platform: {}, mandate: {}, concentrationGap: {} };
+}
+
+/**
+ * Booked owed nav stays inside the platform cap and, on stage 2, the vault mandate cap.
+ * Concentration is checked again here only to record a gap after assets shrink.
+ * A gap is not a new draw.
+ */
+export function scanLimits(
+  stage: Stage,
+  lines: readonly Line[],
+  vaults: readonly { id: string; mandate: Mandate; line: Line }[],
+  platforms: readonly { id: string; limit: number }[],
+  peaks: LimitPeaks,
+): void {
+  const totals: Record<string, number> = {};
+  for (const line of lines) {
+    for (const [id, owed] of Object.entries(line.exposure)) {
+      if (owed < 0) fail(`negative exposure on ${id}`, "mandate-limit");
+      totals[id] = (totals[id] ?? 0) + owed;
+    }
+  }
+  for (const platform of platforms) {
+    const owed = totals[platform.id] ?? 0;
+    if (owed > platform.limit) fail(`${platform.id} owed ${owed} over platform limit ${platform.limit}`, "over-limit");
+    if (owed > (peaks.platform[platform.id] ?? 0)) peaks.platform[platform.id] = owed;
+  }
+  if (stage !== "stage2") return;
+  for (const vault of vaults) {
+    for (const [id, owed] of Object.entries(vault.line.exposure)) {
+      if (owed > vault.mandate.limit) {
+        fail(`${vault.id} owed ${owed} to ${id} over mandate limit ${vault.mandate.limit}`, "mandate-limit");
+      }
+      const key = `${vault.id}:${id}`;
+      if (owed > (peaks.mandate[key] ?? 0)) peaks.mandate[key] = owed;
+      const assets = mandateAssets(vault.line);
+      const cap = assets <= 0 ? 0 : Math.floor((assets * vault.mandate.concentrationBps) / 10_000);
+      if (owed > cap) {
+        const gap = owed - cap;
+        if (gap > (peaks.concentrationGap[key] ?? 0)) peaks.concentrationGap[key] = gap;
+      }
+    }
+  }
 }
 
 export function pickRoundRobin(offers: readonly VaultOffer[], cursor: number): { offer: VaultOffer; cursor: number } | null {

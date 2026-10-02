@@ -3,9 +3,11 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { fail } from "./errors.js";
+import { renderAdversarial } from "./actors.js";
+import { renderHorizon, runHorizon } from "./horizon.js";
 import { renderReport } from "./report.js";
 import { runRequestSchema, stageSchema, type Stage } from "./schema.js";
-import { scenarioSet } from "./scenarios.js";
+import { REFERENCE_SEEDS, scenarioSet } from "./scenarios.js";
 import { runOnce, type RunResult } from "./simulate.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -13,7 +15,7 @@ const root = resolve(here, "..");
 
 const request = runRequestSchema.parse({
   horizonDays: 360,
-  seeds: [20261001, 20261002, 20261003, 20261004, 20261005, 20261006, 20261007, 20261008, 20261009, 20261010],
+  seeds: [...REFERENCE_SEEDS],
 });
 const stages = ["stage1", "stage2", "stage3"].map((stage) => stageSchema.parse(stage));
 const illustrated = request.seeds[0]!;
@@ -38,9 +40,13 @@ mkdirSync(resolve(root, "charts"), { recursive: true });
 const summary = resolve(root, "out", "summary.json");
 writeFileSync(summary, JSON.stringify(payload));
 writeFileSync(resolve(root, "RESULTS.md"), renderReport(runs, illustrated));
+writeFileSync(resolve(root, "ADVERSARIAL.md"), renderAdversarial());
+const horizonRuns = runHorizon();
+writeFileSync(resolve(root, "HORIZON.md"), renderHorizon(horizonRuns));
+writeFileSync(resolve(root, "out", "horizon.json"), JSON.stringify({ horizonDays: horizonRuns[0]?.horizonDays ?? 0, runs: horizonRuns }));
 
 const chart = spawnSync("python3", [resolve(root, "chart.py"), summary, resolve(root, "charts")], { encoding: "utf8" });
 if (chart.status !== 0) {
   fail(chart.stderr || "chart render failed", "chart");
 }
-process.stdout.write(`sim wrote ${runs.length} paths to RESULTS.md\n`);
+process.stdout.write(`sim wrote ${runs.length} paths to RESULTS.md and ${horizonRuns.length} paths to HORIZON.md\n`);

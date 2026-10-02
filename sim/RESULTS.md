@@ -23,7 +23,7 @@ Advances funded:
 | | baseline | gating | default | depeg | bank-run |
 |---|---:|---:|---:|---:|---:|
 | stage1 | 3,503 | 3,397 | 2,953 | 3,496 | 3,916 |
-| stage2 | 3,490 | 3,389 | 2,944 | 3,490 | 3,879 |
+| stage2 | 3,490 | 3,389 | 2,945 | 3,490 | 3,880 |
 | stage3 | 3,503 | 3,397 | 2,924 | 3,496 | 2,508 |
 
 Peak utilization:
@@ -31,7 +31,7 @@ Peak utilization:
 | | baseline | gating | default | depeg | bank-run |
 |---|---:|---:|---:|---:|---:|
 | stage1 | 48.97% | 46.74% | 50.19% | 48.77% | 88.78% |
-| stage2 | 64.19% | 60.28% | 66.21% | 64.39% | 97.16% |
+| stage2 | 64.19% | 60.28% | 66.22% | 64.38% | 97.19% |
 | stage3 | 85.61% | 80.05% | 83.48% | 85.61% | 99.99% |
 
 Annualized exit-fee yield on average equity value. Stage 2 is the partners' yield. Lockgate's stage-2 income is the flat invoice, not this column:
@@ -39,7 +39,7 @@ Annualized exit-fee yield on average equity value. Stage 2 is the partners' yiel
 | | baseline | gating | default | depeg | bank-run |
 |---|---:|---:|---:|---:|---:|
 | stage1 | 21.64% | 19.24% | 19.45% | 21.61% | 25.25% |
-| stage2 | 32.15% | 29.97% | 29.84% | 32.25% | 36.75% |
+| stage2 | 32.13% | 29.97% | 29.85% | 32.22% | 36.75% |
 | stage3 | 125.81% | 125.63% | 116.99% | 125.71% | 95.97% |
 
 Credit loss (reserve absorbed + junior + equity credit loss + senior), median:
@@ -47,7 +47,7 @@ Credit loss (reserve absorbed + junior + equity credit loss + senior), median:
 | | baseline | gating | default | depeg | bank-run |
 |---|---:|---:|---:|---:|---:|
 | stage1 | $0.00 | $0.00 | $198,974.55 | $48,940.15 | $374,441.02 |
-| stage2 | $0.00 | $0.00 | $198,462.29 | $0.00 | $202,396.05 |
+| stage2 | $0.00 | $0.00 | $198,462.29 | $0.00 | $207,314.62 |
 | stage3 | $0.00 | $0.00 | $195,182.46 | $48,273.02 | $390,307.69 |
 
 Stage 3 also pays facility interest out of equity. Median interest and median senior loss:
@@ -71,7 +71,7 @@ Stage 3 also pays facility interest out of equity. Median interest and median se
 | stage1 | bank-run | 3791 | 85.53% | 23.96% | $67,500.00 | $0.00 | $263,080.48 | $0.00 | $0.00 |
 | stage2 | baseline | 3488 | 65.17% | 32.59% | $0.00 | $0.00 | $0.00 | $0.00 | $72,000.00 |
 | stage2 | gating | 3371 | 66.21% | 30.30% | $0.00 | $0.00 | $0.00 | $0.00 | $72,000.00 |
-| stage2 | default | 2946 | 65.84% | 29.79% | $10,895.67 | $0.00 | $156,152.06 | $0.00 | $72,000.00 |
+| stage2 | default | 2947 | 65.84% | 29.83% | $10,895.67 | $0.00 | $156,152.06 | $0.00 | $72,000.00 |
 | stage2 | depeg | 3489 | 66.05% | 32.67% | $0.00 | $0.00 | $0.00 | $0.00 | $72,000.00 |
 | stage2 | bank-run | 3763 | 95.94% | 35.32% | $50,814.27 | $0.00 | $154,943.29 | $0.00 | $72,000.00 |
 | stage3 | baseline | 3500 | 91.02% | 126.64% | $0.00 | $0.00 | $0.00 | $0.00 | $0.00 |

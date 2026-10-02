@@ -1,9 +1,12 @@
 import { assertLine, equityValue, type Line } from "./books.js";
 import { fail } from "./errors.js";
-import { fundExit } from "./fund.js";
+import { fundExit, reject } from "./fund.js";
+import { oracleBlock } from "./oracle.js";
+import { emptyPeaks, scanLimits, type LimitPeaks } from "./mandate.js";
 import { MAX_FEE_BPS, MIN_FEE_BPS, TECH_FEE_USDG_PER_VAULT_PER_30D, u } from "./params.js";
 import { makeRng, normal, poisson, type Rng } from "./rng.js";
 import type { Scenario, Stage } from "./schema.js";
+import { EPOCH_GATE_END, EPOCH_GATE_START, QUARTERLY_GATE_DAYS, mixedKindGated } from "./scenarios.js";
 import { enforceLates, processWindow } from "./window.js";
 import { accrueAndPay, buildWorld, pullFacility, type Platform, type World } from "./world.js";
 
@@ -20,6 +23,7 @@ export type RunResult = {
   realizedFees: number;
   techFee: number;
   reserveAbsorbed: number;
+  reserveLeft: number;
   juniorLoss: number;
   seniorLoss: number;
   creditLossEquity: number;
@@ -32,6 +36,14 @@ export type RunResult = {
   breaches: number;
   lockgateSwept: number;
   path: PathPoint[];
+  /** Gated refusals by platform id. Empty when nothing was gated. */
+  gatedHits: Record<string, number>;
+  /** Days in the named gate window when every listed platform took a new gated refusal. */
+  sameDayGateDays: number;
+  /** Those days, in order. Empty when the count is 0. */
+  sameDayGateOn: number[];
+  /** Peak booked owed nav. The day loop throws if a cap is crossed. */
+  exposurePeaks: LimitPeaks;
 };
 
 const EARLY = 0.7;
@@ -47,10 +59,25 @@ function sampleNav(rng: Rng): number {
   return Math.min(40_000, Math.max(800, Math.round(whole))) * 1_000_000;
 }
 
-function isGated(platform: Platform, day: number, scenario: Scenario): boolean {
-  if (scenario.gateMode === "scheduled") {
-    if (platform.kind === "quarterly" && day <= 90) return true;
-    if (platform.kind === "epoch" && day >= 40 && day <= 70) return true;
+export function isGated(
+  platform: Pick<Platform, "kind" | "gateInRun"> & { id?: string },
+  day: number,
+  scenario: Scenario,
+): boolean {
+  if (
+    platform.id &&
+    scenario.gateIds.includes(platform.id) &&
+    scenario.gateStart > 0 &&
+    day >= scenario.gateStart &&
+    day <= scenario.gateEnd
+  ) {
+    return true;
+  }
+  if (scenario.name === "mixed") {
+    if (mixedKindGated(platform.kind, day)) return true;
+  } else if (scenario.gateMode === "scheduled") {
+    if (platform.kind === "quarterly" && day <= QUARTERLY_GATE_DAYS) return true;
+    if (platform.kind === "epoch" && day >= EPOCH_GATE_START && day <= EPOCH_GATE_END) return true;
   }
   if (scenario.bankRunGates && platform.gateInRun && day >= scenario.runStart && day <= scenario.runEnd) {
     return true;
@@ -109,19 +136,26 @@ export function runOnce(stage: Stage, scenario: Scenario, seed: number, keepPath
   const early = makeRng(seed ^ 0xea21);
   const cash = makeRng(seed ^ 0xca54);
   const path: PathPoint[] = [];
+  const exposurePeaks = emptyPeaks();
   let utilSum = 0;
   let equitySum = 0;
   let peak = 0;
+  const sameDayGateOn: number[] = [];
   for (let day = 1; day <= scenario.horizonDays; day += 1) {
     const line = world.lines[0];
+    const oracle = oracleBlock(scenario, day);
     if (world.facility && line) {
       accrueAndPay(line, world.facility);
-      pullFacility(line, world.facility);
+      if (!oracle) pullFacility(line, world.facility);
     }
     if (stage === "stage2" && day % 30 === 0) {
       world.techFee += world.vaults.length * u(TECH_FEE_USDG_PER_VAULT_PER_30D);
     }
     const rush = scenario.runMultiplier > 1 && day >= scenario.runStart && day <= scenario.runEnd;
+    const gateList = scenario.gateIds;
+    const inGateWindow =
+      gateList.length > 0 && scenario.gateStart > 0 && day >= scenario.gateStart && day <= scenario.gateEnd;
+    const hitsBefore = inGateWindow ? { ...(world.gatedHits ?? {}) } : null;
     for (const platform of world.platforms) {
       platform.navAgeDays += 1;
       const gated = isGated(platform, day, scenario);
@@ -130,12 +164,24 @@ export function runOnce(stage: Stage, scenario: Scenario, seed: number, keepPath
       const n = poisson(arrival, lambda(platform.kind) * (rush ? scenario.runMultiplier : 1));
       for (let i = 0; i < n; i += 1) {
         const nav = sampleNav(size);
-        if (early.bool(EARLY)) fundExit(world, platform, nav, day, platform.nextWindow, gated);
-        else queueWait(world, platform, nav);
+        if (early.bool(EARLY)) {
+          if (oracle) {
+            world.requested += 1;
+            reject(world, oracle);
+          } else {
+            fundExit(world, platform, nav, day, platform.nextWindow, gated);
+          }
+        } else {
+          queueWait(world, platform, nav);
+        }
       }
+    }
+    if (hitsBefore && gateList.every((id) => (world.gatedHits?.[id] ?? 0) > (hitsBefore[id] ?? 0))) {
+      sameDayGateOn.push(day);
     }
     enforceLates(world, day, scenario);
     assertBook(world);
+    scanLimits(stage, world.lines, world.vaults, world.platforms, exposurePeaks);
     const util = bookUtil(world.lines);
     utilSum += util;
     peak = Math.max(peak, util);
@@ -157,6 +203,7 @@ export function runOnce(stage: Stage, scenario: Scenario, seed: number, keepPath
     realizedFees: sumFees(world.lines),
     techFee: world.techFee,
     reserveAbsorbed: world.lines.reduce((n, book) => n + book.reserveAbsorbed, 0),
+    reserveLeft: world.lines.reduce((n, book) => n + book.reserve, 0),
     juniorLoss: world.facility?.juniorLoss ?? 0,
     seniorLoss: world.facility?.seniorLoss ?? 0,
     creditLossEquity: world.lines.reduce((n, book) => n + book.creditLossEquity, 0),
@@ -169,6 +216,10 @@ export function runOnce(stage: Stage, scenario: Scenario, seed: number, keepPath
     breaches: world.breaches,
     lockgateSwept: world.lockgateSwept,
     path,
+    gatedHits: world.gatedHits ?? {},
+    sameDayGateDays: sameDayGateOn.length,
+    sameDayGateOn,
+    exposurePeaks,
   };
 }
 

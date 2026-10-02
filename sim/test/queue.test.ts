@@ -76,7 +76,8 @@ test("an unbooked advance does not pay investors or spend cash", () => {
   assert.equal(platform.cash, 1_000);
   assert.equal(world.investorPaid, 0);
   assert.equal(world.breaches, 0);
-  assert.equal(repayFirstBroken(true, 50), true);
+  assert.equal(repayFirstBroken(platform.reqs[0]!.open, world.investorPaid), false);
+  assert.equal(repayFirstBroken(platform.reqs[0]!.open, 50), true);
   assert.equal(repayFirstBroken(false, 50), false);
 });
 
@@ -87,6 +88,11 @@ test("router modes pick the cheapest, the next cursor, or the larger idle vault"
     { index: 2, feeBps: 40, principal: 1, idle: 50 },
   ];
   assert.equal(pickBestFee(offers)?.index, 2);
+  assert.equal(pickRoundRobin(offers, 0)?.offer.index, 0);
   assert.equal(pickRoundRobin(offers, 1)?.offer.index, 1);
-  assert.equal(pickProRata(offers, 16)?.index, 2);
+  assert.equal(pickRoundRobin(offers, 3)?.offer.index, 0);
+  assert.equal(pickProRata(offers, 0)?.index, 0);
+  assert.equal(pickProRata(offers, 10)?.index, 1);
+  assert.equal(pickProRata(offers, 15)?.index, 2);
+  assert.equal(pickProRata([], 0), null);
 });

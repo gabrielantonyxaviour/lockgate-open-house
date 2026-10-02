@@ -62,7 +62,8 @@ test("junior absorbs before equity and equity before senior", () => {
   assert.equal(line.seniorDebt, 150_000);
   assert.equal(line.juniorDebt, 0);
   assert.equal(residual(line), 0);
-  assert.ok(equityValue(line) >= 0);
+  assert.equal(equityValue(line), 0);
+  assert.equal(line.balance, line.seniorDebt);
 });
 
 test("interest already paid does not shield senior", () => {
