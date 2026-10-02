@@ -25,13 +25,18 @@ test("a gated quote is unavailable and the engine will not sign it", async () =>
   const quote = quoteSchema.parse(await run(["quote", "--file", write("gated", { gated: true })]));
   assert.equal(quote.available, false);
   assert.equal(quote.feeBps, 0);
-  assert.ok(quote.blocks.some((block) => block.code === "gated"));
+  assert.deepEqual(quote.blocks.map((block) => block.code), ["gated"]);
+  assert.equal(quote.blocks[0]?.reason, "platform withdrawals are gated");
+  const open = quoteSchema.parse(await run(["quote", "--file", write("open", { gated: false })]));
+  assert.equal(open.available, true);
+  assert.equal(open.feeBps, 101);
+  assert.deepEqual(open.blocks, []);
   const signed = proposalSchema.parse(
     await run(["propose", "--file", write("gated-propose", { gated: true }, true), "--sign-env", "LOCKGATE_PROPOSER_KEY"]),
   );
   assert.equal(signed.submittable, false);
   assert.equal(signed.signature, null);
-  assert.ok(signed.blocks.some((block) => block.code === "gated"));
+  assertProposalRefusal(signed.blocks);
 });
 
 test("a stale nav is refused and a future nav is a param error", async () => {
@@ -39,12 +44,16 @@ test("a stale nav is refused and a future nav is a param error", async () => {
     await run(["quote", "--file", write("stale", { navUpdatedAt: now - 8 * 86_400 })]),
   );
   assert.equal(stale.available, false);
-  assert.ok(stale.blocks.some((block) => block.code === "stale-nav"));
+  assert.equal(stale.feeBps, 0);
+  assert.deepEqual(stale.blocks.map((block) => block.code), ["stale-nav"]);
+  const fresh = quoteSchema.parse(await run(["quote", "--file", write("fresh", { navUpdatedAt: now - 3_600 })]));
+  assert.equal(fresh.available, true);
+  assert.equal(fresh.feeBps, 101);
 
   await assert.rejects(run(["quote", "--file", write("future", { navUpdatedAt: now + 60 })]), (err: unknown) => {
     assert.ok(err instanceof EngineError);
     assert.equal(err.toJSON().code, "param");
-    assert.equal(typeof err.toJSON().error, "string");
+    assert.equal(err.toJSON().error, "NAV timestamp is in the future");
     return true;
   });
 });
@@ -53,8 +62,17 @@ test("an unsigned refusal still parses and is not submittable", async () => {
   const proposal = proposalSchema.parse(await run(["propose", "--file", write("unsigned", { gated: true }, true)]));
   assert.equal(proposal.submittable, false);
   assert.equal(proposal.signature, null);
-  assert.ok(proposal.blocks.some((block) => block.code === "gated"));
+  assertProposalRefusal(proposal.blocks);
 });
+
+function assertProposalRefusal(blocks: { code: string; reason: string }[]): void {
+  const codes = blocks.map((block) => block.code);
+  assert.equal(codes.includes("gated"), true);
+  assert.equal(codes.includes("vault-snapshot"), true);
+  assert.equal(codes.every((code) => code === "gated" || code === "clock" || code === "vault-snapshot"), true);
+  assert.equal(blocks.find((block) => block.code === "gated")?.reason, "platform withdrawals are gated");
+  assert.equal(blocks.find((block) => block.code === "vault-snapshot")?.reason, "idle cash and vault assets are required before signing");
+}
 
 function write(name: string, patch: { gated?: boolean; navUpdatedAt?: number }, propose = false): string {
   const input = {

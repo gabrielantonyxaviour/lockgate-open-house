@@ -39,6 +39,10 @@ const quoteSchema = z.object({
   blocks: z.array(z.object({ code: z.string(), reason: z.string() })).default([]),
 });
 
+export function stageQuoteBody(now: number, nav: bigint) {
+  return body(now, nav, "northwind-invoice");
+}
+
 function body(now: number, nav: bigint, platformId: string) {
   return {
     input: {
@@ -70,7 +74,7 @@ function body(now: number, nav: bigint, platformId: string) {
 }
 
 export async function engineQuote(now: number, nav: bigint): Promise<z.infer<typeof quoteSchema>> {
-  const file = writeBody("quote.json", body(now, nav, "northwind-invoice"));
+  const file = writeBody("quote.json", stageQuoteBody(now, nav));
   return quoteSchema.parse(await run(["quote", "--file", file]));
 }
 
@@ -102,7 +106,7 @@ export async function enginePropose(args: {
 }): Promise<EngineProposal> {
   const payout = args.mandate.payoutTo.toLowerCase() === ZERO ? undefined : args.mandate.payoutTo;
   const request = {
-    ...body(args.now, args.nav, "northwind-invoice"),
+    ...stageQuoteBody(args.now, args.nav),
     mandate: {
       vault: args.vault,
       partner: args.mandate.partner,

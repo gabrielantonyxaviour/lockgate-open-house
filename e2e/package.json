@@ -4,7 +4,10 @@
   "type": "module",
   "scripts": {
     "e2e": "tsx src/run.ts",
-    "test": "tsx --test test/*.test.ts"
+    "compare": "tsx --test compare/live.test.ts",
+    "test": "tsx --test test/*.test.ts",
+    "verify": "bash verify.sh",
+    "flaky": "bash flaky.sh"
   },
   "dependencies": {
     "viem": "^2.37.6",
