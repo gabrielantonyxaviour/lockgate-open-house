@@ -1,8 +1,9 @@
 import { encodeFunctionData, getAddress, type Address, type Hex } from "viem";
 import { z } from "zod";
 import { assertTransactableChain } from "../chains.js";
+import { blockSendDuringDryRun } from "../dryrun.js";
 import { parseOrThrow, zAddress, zAmount } from "../domain.js";
-import { EngineError } from "../errors.js";
+import { EngineError, rethrowPublic } from "../errors.js";
 
 export const sweepInputSchema = z.object({
   chainId: z.number().int().positive(),
@@ -58,8 +59,18 @@ export type SweepAction = {
   reason: string;
 };
 
+function sweepDeadline(now: number, dueAt: number, graceSeconds: number): number {
+  if (!Number.isSafeInteger(now) || !Number.isSafeInteger(dueAt) || !Number.isSafeInteger(graceSeconds)) {
+    throw new EngineError("param", "sweep clock does not fit a safe integer");
+  }
+  const deadline = dueAt + graceSeconds;
+  if (!Number.isSafeInteger(deadline)) throw new EngineError("param", "sweep grace does not fit a safe integer");
+  return deadline;
+}
+
 export function classifyAdvance(advance: AdvanceView, now: number, graceSeconds: number): SweepAction {
   const base = { advanceId: advance.id, vault: advance.vault, vaultKind: advance.vaultKind };
+  const deadline = sweepDeadline(now, advance.dueAt, graceSeconds);
   if (advance.status !== "active") {
     return { ...base, kind: "skip", sendable: false, calldata: null, reason: `status ${advance.status}` };
   }
@@ -69,7 +80,7 @@ export function classifyAdvance(advance: AdvanceView, now: number, graceSeconds:
   const repayData = encodeFunctionData({ abi: creditLineAbi, functionName: "repay", args: [advance.id] });
   const lateData = encodeFunctionData({ abi: creditLineAbi, functionName: "markLate", args: [advance.id] });
   const partner = advance.vaultKind === "partner";
-  if (now >= advance.dueAt + graceSeconds) {
+  if (now >= deadline) {
     return {
       ...base,
       kind: "mark-late",
@@ -113,6 +124,7 @@ export async function broadcastOwnBook(
   creditLine: Address,
   sender: (tx: { to: Address; data: Hex }) => Promise<Hex>,
 ): Promise<Hex[]> {
+  blockSendDuringDryRun("repay or markLate");
   assertTransactableChain(chainId);
   const line = getAddress(creditLine);
   const sendable = actions.filter((action) => action.sendable);
@@ -135,7 +147,11 @@ export async function broadcastOwnBook(
       if (!data || action.calldata?.toLowerCase() !== data.toLowerCase()) {
         throw new EngineError("param", "sweep calldata is not repay or markLate for this advance");
       }
-      hashes.push(await sender({ to: line, data }));
+      try {
+        hashes.push(await sender({ to: line, data }));
+      } catch (err) {
+        rethrowPublic(err);
+      }
     }
     return hashes;
   } finally {

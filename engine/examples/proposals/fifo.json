@@ -1,0 +1,74 @@
+{
+  "input": {
+    "platformId": "maple-syrup-usdc",
+    "kind": "fifo-open",
+    "now": 1700000000,
+    "navValue": "10000000000",
+    "queuedAhead": "0",
+    "cashAvailable": "80000000000",
+    "cashPerEpoch": "50000000000",
+    "cashKnown": true,
+    "gated": false,
+    "navUpdatedAt": 1699996400,
+    "reserveBalance": "750000000",
+    "reserveBps": 750,
+    "exposure": "0",
+    "limit": "25000000000",
+    "bookAssets": "100000000000",
+    "utilizationBps": 0,
+    "repayment": {
+      "samples": 8,
+      "onTime": 8,
+      "late": 0,
+      "slashed": 0,
+      "gateEvents": 0,
+      "windowsObserved": 8
+    },
+    "requestId": "11",
+    "requestedAt": 1700000000
+  },
+  "params": {
+    "baseAprBps": 1200,
+    "kinkUtilBps": 6667,
+    "aprAtKinkBps": 1650,
+    "aprAtFullBps": 1800,
+    "minFeeBps": 25,
+    "maxFeeBps": 1500,
+    "timeScale": 1,
+    "maxRiskPremiumAprBps": 600,
+    "navWarnSeconds": 86400,
+    "maxNavAgeSeconds": 604800,
+    "navAgeMaxPremiumAprBps": 300,
+    "concentrationCapBps": 2500,
+    "concentrationMaxPremiumAprBps": 200,
+    "maxTenorSeconds": 31622400,
+    "proposalTtlSeconds": 600,
+    "graceSeconds": 86400,
+    "minSamples": 3,
+    "unknownHistoryBps": 5000,
+    "unknownGateBps": 2000,
+    "unknownLiquidityQueueBps": 8000
+  },
+  "platform": "0x00000000000000000000000000000000000000b5",
+  "recipient": "0x00000000000000000000000000000000000000b5",
+  "chainId": 421614,
+  "nonce": "6",
+  "mandate": {
+    "vault": "0x00000000000000000000000000000000000000c5",
+    "partner": "0x00000000000000000000000000000000000000d5",
+    "signer": "0x00000000000000000000000000000000000000d5",
+    "approvedPlatforms": [
+      "0x00000000000000000000000000000000000000b5"
+    ],
+    "platformLimits": {
+      "0x00000000000000000000000000000000000000b5": "100000000000"
+    },
+    "minFeeBps": 25,
+    "maxTenorSeconds": 3456000,
+    "concentrationCapBps": 2500,
+    "expiresAt": 1700086400,
+    "payoutTo": "0x00000000000000000000000000000000000000b5",
+    "idle": "80000000000",
+    "totalAssets": "100000000000"
+  }
+}

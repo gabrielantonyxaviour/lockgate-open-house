@@ -1,0 +1,8 @@
+{
+  "category": "quarterly-gated-repurchase",
+  "platform": "acred",
+  "offerBps": 500,
+  "capBps": 500,
+  "epochStart": 1790812800,
+  "deadline": 1793318400
+}

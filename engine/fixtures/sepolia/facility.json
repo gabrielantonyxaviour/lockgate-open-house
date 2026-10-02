@@ -1,0 +1,18 @@
+{
+  "now": 1700000000,
+  "cash": "900000",
+  "drawn": "100000",
+  "seniorPrincipal": "500000",
+  "juniorPrincipal": "500000",
+  "seniorAprBps": 800,
+  "juniorAprBps": 1200,
+  "advanceRateBps": 8000,
+  "maxLateBps": 2000,
+  "minJuniorBps": 2000,
+  "lastAccrual": 1700000000,
+  "recovery": false,
+  "eligibleOutstanding": "1000000",
+  "lateOutstanding": "0",
+  "bookReadable": true,
+  "payout": "700000"
+}

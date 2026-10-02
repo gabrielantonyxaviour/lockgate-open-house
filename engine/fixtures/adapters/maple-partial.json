@@ -1,0 +1,39 @@
+{
+  "platform": "maple-ethereum-syrup-usdc",
+  "now": 1700000000,
+  "calls": [
+    {
+      "address": "0x1bc47a0Dd0FdaB96E9eF982fdf1F34DC6207cfE3",
+      "functionName": "queue",
+      "result": ["10", "11"]
+    },
+    {
+      "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "functionName": "decimals",
+      "result": "6"
+    },
+    {
+      "address": "0x1bc47a0Dd0FdaB96E9eF982fdf1F34DC6207cfE3",
+      "functionName": "requests",
+      "args": ["10"],
+      "result": ["0x1111111111111111111111111111111111111111", "1000000"]
+    },
+    {
+      "address": "0x1bc47a0Dd0FdaB96E9eF982fdf1F34DC6207cfE3",
+      "functionName": "requests",
+      "args": ["11"],
+      "result": ["0x2222222222222222222222222222222222222222", "2000000"]
+    },
+    {
+      "address": "0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b",
+      "functionName": "convertToExitAssets",
+      "args": ["3000000"],
+      "result": "3000000"
+    },
+    {
+      "address": "0x80ac24aA929eaF5013f6436cdA2a7ba190f5Cc0b",
+      "functionName": "totalAssets",
+      "error": "missing assets"
+    }
+  ]
+}

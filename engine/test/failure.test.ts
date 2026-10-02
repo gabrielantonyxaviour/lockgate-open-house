@@ -70,13 +70,14 @@ describe("failure paths", () => {
       fc.bigInt({ min: 0n, max: 10n ** 12n }),
       fc.bigInt({ min: 1n, max: 10n ** 12n }),
       (amount, numerator, denominator) => {
-        const floor = (amount * numerator) / denominator;
+        const product = amount * numerator;
+        const floor = product / denominator;
+        const remainder = product % denominator;
         const half = mulDivRoundHalfUp(amount, numerator, denominator);
         const ceil = mulDivCeil(amount, numerator, denominator);
-        expect(half === floor || half === floor + 1n).toBe(true);
-        expect(ceil === floor || ceil === floor + 1n).toBe(true);
-        expect(ceil).toBeGreaterThanOrEqual(half > ceil ? half : ceil);
-        expect(ceil).toBeGreaterThanOrEqual(floor);
+        expect(half).toBe(remainder * 2n >= denominator ? floor + 1n : floor);
+        expect(ceil).toBe(remainder === 0n ? floor : floor + 1n);
+        expect(half).toBeLessThanOrEqual(ceil);
       },
     ), { numRuns: 100 });
   });

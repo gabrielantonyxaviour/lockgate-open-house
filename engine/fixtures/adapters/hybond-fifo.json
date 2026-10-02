@@ -1,0 +1,7 @@
+{
+  "category": "capped-fifo",
+  "platform": "openeden-hybond",
+  "capBps": 1000,
+  "settlement": "T+4",
+  "queueAmount": null
+}

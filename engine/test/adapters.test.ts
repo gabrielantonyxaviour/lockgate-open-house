@@ -72,18 +72,19 @@ describe("live adapters", () => {
         priority: 1,
         requestedFrom: 0,
       }),
+      asset: () => getAddress("0x00000000000000000000000000000000000000d1"),
+      decimals: () => 6,
       convertToAssets: () => 2_000_000n,
     }), {
       systemVariables: DEPLOYMENTS.kasuBase.systemVariables,
       pendingPool: getAddress("0x00000000000000000000000000000000000000ab"),
-      assetDecimals: 6,
     });
     expect(seen.epochSeconds).toBe(604_800);
     expect(seen.clearingSeconds).toBe(172_800);
     expect(seen.queuedShares).toBe(2_000_000n);
     expect(seen.queuedValue).toBe(2_000_000n);
     expect(seen.truncated).toBe(false);
-    expect(erc4626Abi[0]?.name).toBe("convertToAssets");
+    expect(erc4626Abi.map((item) => item.name)).toEqual(["asset", "convertToAssets"]);
   });
 
   it("does not invent Maple cash, and marks a long queue truncated", async () => {
@@ -105,7 +106,7 @@ describe("live adapters", () => {
     }), { ...DEPLOYMENTS.mapleSepoliaSyrupUsdc, maxScan: 2 });
     expect(wide.truncated).toBe(true);
     expect(wide.queuedValue).toBeNull();
-    expect(maplePoolAbi.length).toBeGreaterThan(0);
+    expect(maplePoolAbi.map((item) => item.name)).toEqual(["convertToExitAssets", "totalAssets"]);
   });
 
   it("converts an sUSDai queue into 6-decimal cash and a future window", async () => {
@@ -121,7 +122,11 @@ describe("live adapters", () => {
     expect(seen.cashAvailable).toBe(1_000_000n);
     expect(seen.nextWindowAt).toBe(now + 86_400);
     expect(seen.timestampWasPast).toBe(false);
-    expect(erc20Abi[0]?.name).toBe("decimals");
-    expect(kasuPendingAbi.length).toBeGreaterThan(0);
+    expect(erc20Abi.map((item) => item.name)).toEqual(["decimals"]);
+    expect(kasuPendingAbi.map((item) => item.name)).toEqual([
+      "totalSupply",
+      "tokenByIndex",
+      "trancheWithdrawalNftDetails",
+    ]);
   });
 });

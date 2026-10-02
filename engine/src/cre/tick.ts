@@ -1,29 +1,15 @@
-import { z } from "zod";
+import { applyKasuRead, applyMapleRead, applyUsdaiRead } from "../adapters/apply.js";
+import type { KasuRead } from "../adapters/kasu/read.js";
+import type { MapleRead } from "../adapters/maple/read.js";
+import type { UsdaiRead } from "../adapters/usdai/read.js";
 import { assertTransactableChain } from "../chains.js";
-import { mandateSchema, paramsSchema, parseOrThrow, quoteInputSchema, zAddress, zAmount } from "../domain.js";
+import type { QuoteInput } from "../domain.js";
+import { asApiError, type ApiError } from "../errors.js";
 import { quoteExit } from "../quote.js";
 import { alertsForQuote, type Alert } from "../alert/evaluate.js";
 import { buildProposal, type BuiltProposal } from "../proposal/build.js";
 import { routeVaults, type RoutePolicy, type VaultCandidate } from "../proposal/router.js";
-
-export const creConfigSchema = z.object({
-  chainId: z.number().int().positive(),
-  now: z.number().int().nonnegative(),
-  params: paramsSchema,
-  policy: z.enum(["lowest-fee", "most-capacity", "round-robin"]).default("lowest-fee"),
-  roundRobin: z.number().int().nonnegative().default(0),
-  vaults: z.array(z.object({
-    mandate: mandateSchema,
-    idle: zAmount,
-    cursor: z.number().int().nonnegative(),
-  })).min(1).max(32),
-  requests: z.array(z.object({
-    input: quoteInputSchema,
-    platform: zAddress,
-    recipient: zAddress,
-    nonce: zAmount,
-  })).min(1).max(32),
-});
+import { parseConfig } from "../schema/config.js";
 
 export type CreTick = {
   proposals: BuiltProposal[];
@@ -36,7 +22,7 @@ export type CreTick = {
  * submitProposal calldata. It does not broadcast. See engine/cre/CRE.md.
  */
 export function runCreTick(raw: unknown): CreTick {
-  const config = parseOrThrow(creConfigSchema, raw, "param");
+  const config = parseConfig(raw);
   assertTransactableChain(config.chainId);
   const proposals: BuiltProposal[] = [];
   const alerts: Alert[] = [];
@@ -47,7 +33,7 @@ export function runCreTick(raw: unknown): CreTick {
     cursor: vault.cursor,
   }));
   config.requests.forEach((request, index) => {
-    const input = { ...request.input, now: config.now };
+    const input = applyRead({ ...request.input, now: config.now }, request);
     const preview = quoteExit(input, config.params);
     alerts.push(...alertsForQuote(input, preview, config.params));
     if (!preview.available) {
@@ -95,4 +81,23 @@ export function runCreTick(raw: unknown): CreTick {
     proposals.push(proposal);
   });
   return { proposals, alerts, skipped };
+}
+
+function applyRead(
+  input: QuoteInput,
+  request: { kasu?: KasuRead; maple?: MapleRead; usdai?: UsdaiRead },
+): QuoteInput {
+  if (request.kasu) return applyKasuRead(input, request.kasu);
+  if (request.maple) return applyMapleRead(input, request.maple);
+  if (request.usdai) return applyUsdaiRead(input, request.usdai);
+  return input;
+}
+
+/** CRE entry. A bad config or a forbidden chain is `{ error, code }`, never a throw or a stack. */
+export function creEntry(raw: unknown): CreTick | ApiError {
+  try {
+    return runCreTick(raw);
+  } catch (err) {
+    return asApiError(err);
+  }
 }

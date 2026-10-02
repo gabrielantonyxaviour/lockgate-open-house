@@ -60,6 +60,7 @@ describe("facility invariants", () => {
   });
 
   it("does not move principal when interest accrues, and caps the draw", () => {
+    let openDraws = 0;
     fc.assert(fc.property(
       fc.integer({ min: 0, max: 90 }),
       money,
@@ -89,15 +90,18 @@ describe("facility invariants", () => {
           lateOutstanding: 0n,
           bookReadable: true,
         });
-        expect(view.availableDraw).toBeLessThanOrEqual(drawable(view.books));
         if (!view.breached) {
           const base = view.borrowingBase;
           const room = drawn >= base ? 0n : base - drawn;
-          expect(view.availableDraw).toBeLessThanOrEqual(room);
+          const liquid = drawable(view.books);
+          const expected = room < liquid ? room : liquid;
+          expect(view.availableDraw).toBe(expected);
+          if (expected > 0n) openDraws += 1;
         } else {
           expect(view.availableDraw).toBe(0n);
         }
       },
     ), { numRuns: 60 });
+    expect(openDraws).toBeGreaterThan(0);
   });
 });

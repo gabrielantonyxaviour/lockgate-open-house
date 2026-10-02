@@ -1,3 +1,5 @@
+import { guardRpc } from "../../errors.js";
+import { withPolicy } from "../policy.js";
 import { toUsdg6 } from "../../money.js";
 import type { Address } from "../../domain.js";
 import { asAddress, asBigint, named, scanBound, type ContractReader } from "../reader.js";
@@ -21,19 +23,27 @@ export type MapleRead = {
  * delegate's choice, not a view the engine can treat as committed.
  * https://docs.maple.finance/technical-resources/withdrawal-managers/withdrawal-manager-queue
  */
-export async function readMaple(
+export function readMaple(
   reader: ContractReader,
   cfg: { pool: Address; withdrawalManager: Address; asset: Address; maxScan?: number },
 ): Promise<MapleRead> {
+  return guardRpc(() => readMapleUnsafe(reader, cfg));
+}
+
+async function readMapleUnsafe(
+  reader: ContractReader,
+  cfg: { pool: Address; withdrawalManager: Address; asset: Address; maxScan?: number },
+): Promise<MapleRead> {
+  const paced = withPolicy(reader);
   const maxScan = scanBound(cfg.maxScan);
-  const head = await reader.readContract({
+  const head = await paced.readContract({
     address: cfg.withdrawalManager,
     abi: mapleQueueAbi,
     functionName: "queue",
   });
   const nextRequestId = asBigint(named(head, "nextRequestId", 0), "next");
   const lastRequestId = asBigint(named(head, "lastRequestId", 1), "last");
-  const decimals = Number(asBigint(await reader.readContract({
+  const decimals = Number(asBigint(await paced.readContract({
     address: cfg.asset,
     abi: erc20Abi,
     functionName: "decimals",
@@ -47,7 +57,7 @@ export async function readMaple(
   let queuedShares = 0n;
   if (!empty && !truncated) {
     for (let id = nextRequestId; id <= lastRequestId; id++) {
-      const row = await reader.readContract({
+      const row = await paced.readContract({
         address: cfg.withdrawalManager,
         abi: mapleQueueAbi,
         functionName: "requests",
@@ -58,10 +68,10 @@ export async function readMaple(
     }
   }
   if (truncated) notes.push("scan-truncated");
-  const queuedValue = truncated ? null : await exitAssets(reader, cfg.pool, queuedShares, decimals);
+  const queuedValue = truncated ? null : await exitAssets(paced, cfg.pool, queuedShares, decimals);
   let totalAssets: bigint | null = null;
   try {
-    const raw = asBigint(await reader.readContract({
+    const raw = asBigint(await paced.readContract({
       address: cfg.pool,
       abi: maplePoolAbi,
       functionName: "totalAssets",

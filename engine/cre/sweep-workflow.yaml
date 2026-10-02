@@ -1,0 +1,18 @@
+# Local stand-in. Not registered with Chainlink CRE and not a WASM workflow.
+# Shape follows https://docs.chain.link/cre/reference/project-configuration-ts
+# The handler is runCreSweep (src/cre/sweep.ts). Simulation records the report
+# and leaves onReport uncalled. https://docs.chain.link/cre/guides/workflow/using-evm-client/onchain-write/overview-ts
+# Cron this stands in for: "0 */10 * * * *" (every 10 minutes, 6-field).
+# https://docs.chain.link/cre/guides/workflow/using-triggers/cron-trigger-ts
+local-simulation:
+  user-workflow:
+    workflow-name: "lockgate-sweep-local"
+  workflow-artifacts:
+    workflow-path: "../src/cre/sweep.ts"
+    config-path: "./sweep-config.json"
+    secrets-path: ""
+  engine:
+    handler: "runCreSweep"
+    broadcast: false
+    chain-id: 31337
+    schedule: "0 */10 * * * *"

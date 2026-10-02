@@ -1,0 +1,31 @@
+{
+  "platform": "usdai-arbitrum",
+  "now": 1700000000,
+  "calls": [
+    {
+      "address": "0x0B2b2B2076d95dda7817e785989fE353fe955ef9",
+      "functionName": "redemptionQueueInfo",
+      "result": ["1", "2", "3", "2000000000000000000", "1000000000000000000"]
+    },
+    {
+      "address": "0x0B2b2B2076d95dda7817e785989fE353fe955ef9",
+      "functionName": "redemptionSharePrice",
+      "result": "1000000000000000000"
+    },
+    {
+      "address": "0x0B2b2B2076d95dda7817e785989fE353fe955ef9",
+      "functionName": "nav",
+      "result": "5000000000000000000"
+    },
+    {
+      "address": "0x0B2b2B2076d95dda7817e785989fE353fe955ef9",
+      "functionName": "redemptionTimestamp",
+      "result": "1692224000"
+    },
+    {
+      "address": "0x0A1a1A107E45b7Ced86833863f482BC5f4ed82EF",
+      "functionName": "decimals",
+      "result": "18"
+    }
+  ]
+}

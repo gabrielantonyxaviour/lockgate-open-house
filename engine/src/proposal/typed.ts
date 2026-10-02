@@ -5,7 +5,12 @@ import {
   type Address,
   type Hex,
 } from "viem";
-import { kindCode, type QueueKind } from "../domain.js";
+import { z } from "zod";
+import { kindCode, zAddress, zAmount, type QueueKind } from "../domain.js";
+
+const UINT64 = (1n << 64n) - 1n;
+
+const zUint64 = zAmount.refine((value) => value <= UINT64, "fits in uint64");
 
 export const ADVANCE_DOMAIN_NAME = "LockgateAdvance";
 export const ADVANCE_DOMAIN_VERSION = "1";
@@ -39,6 +44,25 @@ export type AdvanceMessage = {
   nonce: bigint;
   quoteId: Hex;
 };
+
+/** The EIP-712 message. `feeBps` is a uint16, the timestamps are uint64, and payout funds nav minus fee. */
+export const advanceMessageSchema = z.object({
+  platform: zAddress,
+  recipient: zAddress,
+  requestId: zAmount,
+  navValue: zAmount,
+  fee: zAmount,
+  payout: zAmount,
+  feeBps: z.number().int().min(0).max(65_535),
+  dueAt: zUint64,
+  expiresAt: zUint64,
+  nonce: zAmount,
+  quoteId: z.string().regex(/^0x[0-9a-fA-F]{64}$/),
+}).superRefine((row, ctx) => {
+  if (row.fee + row.payout !== row.navValue) {
+    ctx.addIssue({ code: "custom", message: "payout plus fee must equal nav" });
+  }
+});
 
 export function domainFor(chainId: number, vault: Address) {
   return {

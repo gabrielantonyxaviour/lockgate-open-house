@@ -1,0 +1,7 @@
+{
+  "category": "lock-then-cooldown",
+  "platform": "jane-susd3",
+  "lockLabel": "1-month",
+  "cooldownSeconds": null,
+  "windowSeconds": null
+}

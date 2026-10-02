@@ -19,9 +19,16 @@ describe("cli", () => {
     const dir = mkdtempSync(join(tmpdir(), "lockgate-"));
     const file = join(dir, "quote.json");
     writeFileSync(file, encodeJson(example));
-    const quote = await run(["quote", "--file", file]) as { available: boolean; feeBps: number };
+    const quote = await run(["quote", "--file", file]) as {
+      available: boolean;
+      feeBps: number;
+      fee: bigint;
+      payout: bigint;
+    };
     expect(quote.available).toBe(true);
-    expect(quote.feeBps).toBeGreaterThan(0);
+    expect(quote.feeBps).toBe(109);
+    expect(quote.fee).toBe(109_000_000n);
+    expect(quote.payout).toBe(9_891_000_000n);
     const report = await run(["backtest", "--scenario", "gated-refuse"]) as { refused: number };
     expect(report.refused).toBe(1);
   });

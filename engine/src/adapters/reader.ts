@@ -26,23 +26,23 @@ export function named(value: unknown, key: string, index: number): unknown {
   if (value && typeof value === "object" && key in value) {
     return (value as Record<string, unknown>)[key];
   }
-  throw new Error(`missing ${key}`);
+  throw new EngineError("param", `missing ${key}`);
 }
 
 export function asBigint(value: unknown, label: string): bigint {
   if (typeof value === "bigint") {
-    if (value < 0n) throw new Error(`${label} is negative`);
+    if (value < 0n) throw new EngineError("param", `${label} is negative`);
     return value;
   }
   if (typeof value === "number") {
-    if (!Number.isSafeInteger(value) || value < 0) throw new Error(`${label} is not a safe integer`);
+    if (!Number.isSafeInteger(value) || value < 0) throw new EngineError("param", `${label} is not a safe integer`);
     return BigInt(value);
   }
   if (typeof value === "string" && /^[0-9]+$/.test(value)) return BigInt(value);
-  throw new Error(`${label} is not an integer`);
+  throw new EngineError("param", `${label} is not an integer`);
 }
 
 export function asAddress(value: unknown, label: string): Address {
   if (typeof value === "string" && /^0x[a-fA-F0-9]{40}$/.test(value)) return value as Address;
-  throw new Error(`${label} is not an address`);
+  throw new EngineError("param", `${label} is not an address`);
 }

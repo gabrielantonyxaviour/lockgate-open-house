@@ -19,8 +19,8 @@ describe("pricing", () => {
     expect(utilizationAprBps(0, DEFAULT_PARAMS)).toBe(1200);
     expect(utilizationAprBps(6667, DEFAULT_PARAMS)).toBe(1650);
     expect(utilizationAprBps(10_000, DEFAULT_PARAMS)).toBe(1800);
-    expect(utilizationAprBps(3000, DEFAULT_PARAMS)).toBeGreaterThan(1200);
-    expect(utilizationAprBps(9000, DEFAULT_PARAMS)).toBeGreaterThan(1650);
+    expect(utilizationAprBps(3000, DEFAULT_PARAMS)).toBe(1402);
+    expect(utilizationAprBps(9000, DEFAULT_PARAMS)).toBe(1755);
   });
 
   it("prices a 30-day epoch from the APR the quote itself reports", () => {

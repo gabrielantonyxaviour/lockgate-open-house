@@ -1,0 +1,7 @@
+{
+  "category": "two-cycle-vault",
+  "platform": "fasanara",
+  "cycleDays": 7,
+  "bufferHours": 24,
+  "earlyExit": false
+}

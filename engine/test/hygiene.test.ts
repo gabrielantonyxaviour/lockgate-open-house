@@ -11,7 +11,7 @@ function files(dir: string): string[] {
 }
 
 describe("hygiene", () => {
-  it("keeps TypeScript files under 300 lines and out of console.log", () => {
+  it("keeps TypeScript files under 300 lines and out of console calls", () => {
     const paths = [...files("src"), ...files("test")];
     expect(paths.length).toBeGreaterThan(10);
     for (const path of paths) {
@@ -19,8 +19,7 @@ describe("hygiene", () => {
       const lines = text.split("\n").length;
       expect(lines, path).toBeLessThanOrEqual(300);
       if (path.startsWith("src/")) {
-        const call = ["console", "log"].join(".");
-        expect(text.includes(`${call}(`), path).toBe(false);
+        expect(text.includes("console."), path).toBe(false);
       }
     }
   });

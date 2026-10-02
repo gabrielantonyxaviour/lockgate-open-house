@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getAddress, type Hex } from "viem";
 import { EngineError } from "../src/errors.js";
+import { buildSweepReport } from "../src/sweep/report.js";
 import { broadcastOwnBook, planSweep, type AdvanceView } from "../src/sweep/sweep.js";
 import { alertsForSweep } from "../src/alert/evaluate.js";
 
@@ -43,7 +44,8 @@ describe("sweeper", () => {
     ]);
     expect(actions[1]?.sendable).toBe(true);
     expect(actions[5]?.sendable).toBe(false);
-    expect(actions[2]?.calldata?.startsWith("0x")).toBe(true);
+    expect(actions[1]?.calldata?.startsWith("0x371fd8e6")).toBe(true);
+    expect(actions[2]?.calldata?.startsWith("0x184f24db")).toBe(true);
   });
 
   it("refuses mainnet and never asks a sender to touch partner funds", async () => {
@@ -64,5 +66,24 @@ describe("sweeper", () => {
     const forced = { ...partner[0]!, sendable: true };
     await expect(broadcastOwnBook([forced], 31337, vault, async () => "0x11")).rejects.toBeInstanceOf(EngineError);
     expect(alertsForSweep("northwind", partner).some((alert) => alert.code === "partner-repay")).toBe(true);
+  });
+
+  it("puts late, short-cash, and partner repay alerts on the report", () => {
+    const raw = {
+      chainId: 31337,
+      now,
+      graceSeconds: grace,
+      advances: [
+        advance({ id: 2n, dueAt: now - 1_000 }),
+        advance({ id: 3n, dueAt: now - grace - 5 }),
+        advance({ id: 4n, dueAt: now - 1_000, cash: 10n }),
+        advance({ id: 6n, vaultKind: "partner", dueAt: now - 1_000 }),
+      ],
+    };
+    const report = buildSweepReport(raw, planSweep(raw));
+    expect(report.alerts.map((alert) => alert.code)).toEqual(["late", "cash-short", "partner-repay"]);
+    expect(report.alerts.map((alert) => alert.severity)).toEqual(["critical", "warn", "info"]);
+    expect(report.alerts.every((alert) => alert.platformId === platform)).toBe(true);
+    expect(report.alerts.some((alert) => alert.code === "repay")).toBe(false);
   });
 });

@@ -1,0 +1,302 @@
+{
+  "chainId": 31337,
+  "platform": "0x00000000000000000000000000000000000000b1",
+  "recipient": "0x00000000000000000000000000000000000000b2",
+  "mandate": {
+    "vault": "0x00000000000000000000000000000000000000c1",
+    "partner": "0x00000000000000000000000000000000000000d1",
+    "signer": "0x00000000000000000000000000000000000000d1",
+    "approvedPlatforms": [
+      "0x00000000000000000000000000000000000000b1"
+    ],
+    "platformLimits": {
+      "0x00000000000000000000000000000000000000b1": "100000000000"
+    },
+    "minFeeBps": 10,
+    "maxTenorSeconds": 8000000,
+    "concentrationCapBps": 5000,
+    "expiresAt": 1710000000,
+    "payoutTo": "0x00000000000000000000000000000000000000b2",
+    "idle": "50000000000",
+    "totalAssets": "100000000000"
+  },
+  "ticks": [
+    {
+      "outcome": "repay",
+      "nonce": "11",
+      "input": {
+        "platformId": "northwind-invoice",
+        "kind": "quarterly-gated",
+        "now": 1700000000,
+        "navValue": "10000000000",
+        "queuedAhead": "0",
+        "cashAvailable": "50000000000",
+        "cashPerEpoch": "50000000000",
+        "cashKnown": true,
+        "gated": false,
+        "navUpdatedAt": 1699996400,
+        "reserveBalance": "750000000",
+        "reserveBps": 750,
+        "exposure": "0",
+        "limit": "25000000000",
+        "bookAssets": "100000000000",
+        "utilizationBps": 0,
+        "repayment": {
+          "samples": 8,
+          "onTime": 8,
+          "late": 0,
+          "slashed": 0,
+          "gateEvents": 0,
+          "windowsObserved": 8
+        },
+        "requestId": "11",
+        "epochStart": 1700000000,
+        "windowSeconds": 7776000,
+        "requestedAt": 1700000000
+      }
+    },
+    {
+      "outcome": "repay",
+      "nonce": "12",
+      "input": {
+        "platformId": "northwind-invoice",
+        "kind": "epoch",
+        "now": 1700086400,
+        "navValue": "10000000000",
+        "queuedAhead": "0",
+        "cashAvailable": "50000000000",
+        "cashPerEpoch": "50000000000",
+        "cashKnown": true,
+        "gated": false,
+        "navUpdatedAt": 1700082800,
+        "reserveBalance": "750000000",
+        "reserveBps": 750,
+        "exposure": "0",
+        "limit": "25000000000",
+        "bookAssets": "100000000000",
+        "utilizationBps": 0,
+        "repayment": {
+          "samples": 8,
+          "onTime": 8,
+          "late": 0,
+          "slashed": 0,
+          "gateEvents": 0,
+          "windowsObserved": 8
+        },
+        "requestId": "12",
+        "epochStart": 1700086400,
+        "requestedAt": 1700086400,
+        "epochSeconds": 2592000,
+        "cutoffSeconds": 86400
+      }
+    },
+    {
+      "outcome": "slash",
+      "nonce": "13",
+      "input": {
+        "platformId": "northwind-invoice",
+        "kind": "epoch",
+        "now": 1702678400,
+        "navValue": "10000000000",
+        "queuedAhead": "0",
+        "cashAvailable": "50000000000",
+        "cashPerEpoch": "50000000000",
+        "cashKnown": true,
+        "gated": false,
+        "navUpdatedAt": 1702674800,
+        "reserveBalance": "750000000",
+        "reserveBps": 750,
+        "exposure": "0",
+        "limit": "25000000000",
+        "bookAssets": "100000000000",
+        "utilizationBps": 0,
+        "repayment": {
+          "samples": 8,
+          "onTime": 8,
+          "late": 0,
+          "slashed": 0,
+          "gateEvents": 0,
+          "windowsObserved": 8
+        },
+        "requestId": "13",
+        "epochStart": 1702678400,
+        "requestedAt": 1702678400,
+        "epochSeconds": 2592000,
+        "cutoffSeconds": 86400
+      }
+    },
+    {
+      "outcome": "repay",
+      "nonce": "14",
+      "input": {
+        "platformId": "northwind-invoice",
+        "kind": "epoch",
+        "now": 1705270400,
+        "navValue": "10000000000",
+        "queuedAhead": "0",
+        "cashAvailable": "50000000000",
+        "cashPerEpoch": "50000000000",
+        "cashKnown": true,
+        "gated": false,
+        "navUpdatedAt": 1705266800,
+        "reserveBalance": "750000000",
+        "reserveBps": 750,
+        "exposure": "0",
+        "limit": "25000000000",
+        "bookAssets": "100000000000",
+        "utilizationBps": 0,
+        "repayment": {
+          "samples": 8,
+          "onTime": 8,
+          "late": 0,
+          "slashed": 0,
+          "gateEvents": 0,
+          "windowsObserved": 8
+        },
+        "requestId": "14",
+        "epochStart": 1705270400,
+        "requestedAt": 1705270400,
+        "epochSeconds": 2592000,
+        "cutoffSeconds": 86400
+      }
+    },
+    {
+      "outcome": "repay",
+      "nonce": "15",
+      "input": {
+        "platformId": "northwind-invoice",
+        "kind": "epoch",
+        "now": 1707862400,
+        "navValue": "10000000000",
+        "queuedAhead": "0",
+        "cashAvailable": "50000000000",
+        "cashPerEpoch": "50000000000",
+        "cashKnown": true,
+        "gated": false,
+        "navUpdatedAt": 1707858800,
+        "reserveBalance": "750000000",
+        "reserveBps": 750,
+        "exposure": "0",
+        "limit": "25000000000",
+        "bookAssets": "100000000000",
+        "utilizationBps": 6667,
+        "repayment": {
+          "samples": 8,
+          "onTime": 8,
+          "late": 0,
+          "slashed": 0,
+          "gateEvents": 0,
+          "windowsObserved": 8
+        },
+        "requestId": "15",
+        "epochStart": 1707862400,
+        "requestedAt": 1707862400,
+        "epochSeconds": 2592000,
+        "cutoffSeconds": 86400
+      }
+    },
+    {
+      "outcome": "repay",
+      "nonce": "16",
+      "input": {
+        "platformId": "northwind-invoice",
+        "kind": "weekly-cycle",
+        "now": 1708467200,
+        "navValue": "10000000000",
+        "queuedAhead": "0",
+        "cashAvailable": "50000000000",
+        "cashPerEpoch": "50000000000",
+        "cashKnown": true,
+        "gated": false,
+        "navUpdatedAt": 1708463600,
+        "reserveBalance": "750000000",
+        "reserveBps": 750,
+        "exposure": "0",
+        "limit": "25000000000",
+        "bookAssets": "100000000000",
+        "utilizationBps": 0,
+        "repayment": {
+          "samples": 8,
+          "onTime": 8,
+          "late": 0,
+          "slashed": 0,
+          "gateEvents": 0,
+          "windowsObserved": 8
+        },
+        "requestId": "16",
+        "epochStart": 1708294400,
+        "epochSeconds": 604800,
+        "clearingSeconds": 172800,
+        "requestedAt": 1708467200
+      }
+    },
+    {
+      "outcome": "repay",
+      "nonce": "17",
+      "input": {
+        "platformId": "northwind-invoice",
+        "kind": "fifo-open",
+        "now": 1708553600,
+        "navValue": "10000000000",
+        "queuedAhead": "0",
+        "cashAvailable": "50000000000",
+        "cashPerEpoch": "50000000000",
+        "cashKnown": true,
+        "gated": false,
+        "navUpdatedAt": 1708550000,
+        "reserveBalance": "750000000",
+        "reserveBps": 750,
+        "exposure": "0",
+        "limit": "25000000000",
+        "bookAssets": "100000000000",
+        "utilizationBps": 0,
+        "repayment": {
+          "samples": 8,
+          "onTime": 8,
+          "late": 0,
+          "slashed": 0,
+          "gateEvents": 0,
+          "windowsObserved": 8
+        },
+        "requestId": "17",
+        "coveredWaitSeconds": 86400,
+        "requestedAt": 1708553600
+      }
+    },
+    {
+      "outcome": "repay",
+      "nonce": "18",
+      "input": {
+        "platformId": "harbor-epoch-credit",
+        "kind": "epoch",
+        "now": 1708640000,
+        "navValue": "10000000000",
+        "queuedAhead": "0",
+        "cashAvailable": "50000000000",
+        "cashPerEpoch": "50000000000",
+        "cashKnown": true,
+        "gated": false,
+        "navUpdatedAt": 1708636400,
+        "reserveBalance": "750000000",
+        "reserveBps": 750,
+        "exposure": "0",
+        "limit": "25000000000",
+        "bookAssets": "100000000000",
+        "utilizationBps": 0,
+        "repayment": {
+          "samples": 8,
+          "onTime": 8,
+          "late": 0,
+          "slashed": 0,
+          "gateEvents": 0,
+          "windowsObserved": 8
+        },
+        "requestId": "18",
+        "epochStart": 1708640000,
+        "requestedAt": 1708640000,
+        "epochSeconds": 2592000,
+        "cutoffSeconds": 86400
+      }
+    }
+  ]
+}

@@ -53,7 +53,7 @@ describe("proposals", () => {
     });
     expect(built.submittable).toBe(true);
     expect(built.message.payout + built.message.fee).toBe(built.message.navValue);
-    expect(built.calldata.startsWith("0x")).toBe(true);
+    expect(built.calldata.startsWith("0xe7c1fee8")).toBe(true);
     const signature = await signBuiltProposal(built, ANVIL);
     const recovered = await recoverTypedDataAddress({
       domain: built.domain,

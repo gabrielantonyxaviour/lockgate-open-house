@@ -1,4 +1,4 @@
-import { encodeFunctionData, getAddress, hashTypedData, isAddress, type Hex } from "viem";
+import { getAddress, isAddress, type Hex } from "viem";
 import { assertTransactableChain } from "../chains.js";
 import { EngineError } from "../errors.js";
 import {
@@ -11,15 +11,15 @@ import {
 } from "../domain.js";
 import { applyMandateFloor, quoteExit, type Quote } from "../quote.js";
 import { mandateBlocks } from "./mandate.js";
-import { buildPartnerFiling, submitProposalAbi, type PartnerFiling } from "./partner.js";
-import { advanceTypes, domainFor, makeQuoteId, type AdvanceMessage } from "./typed.js";
+import { buildPartnerFiling, type PartnerFiling } from "./partner.js";
+import { makeQuoteId, type AdvanceMessage } from "./typed.js";
 
 export type BuiltProposal = {
   quote: Quote;
   input: QuoteInput;
   mandate: Mandate;
   message: AdvanceMessage;
-  domain: ReturnType<typeof domainFor>;
+  domain: PartnerFiling["domain"];
   digest: Hex;
   calldata: Hex;
   partner: PartnerFiling;
@@ -35,6 +35,8 @@ export function buildProposal(args: {
   recipient: string;
   chainId: number;
   nonce: bigint;
+  /** Fixes the clock check. Omit it to use this machine's clock. */
+  wall?: number;
 }): BuiltProposal {
   if (!isAddress(args.platform) || !isAddress(args.recipient)) {
     throw new EngineError("param", "platform and recipient must be addresses");
@@ -50,7 +52,7 @@ export function buildProposal(args: {
   const mandate = parseOrThrow(mandateSchema, args.mandate);
   const priced = quoteExit(input, params);
   const quote = priced.available ? applyMandateFloor(priced, mandate.minFeeBps, params.maxFeeBps) : priced;
-  const blocks = [...quote.blocks, ...mandateBlocks(quote, input, mandate, platform, recipient)];
+  const blocks = [...quote.blocks, ...mandateBlocks(quote, input, mandate, platform, recipient, args.wall)];
   const requestId = input.requestId ?? 0n;
   if (quote.available && blocks.length === quote.blocks.length && requestId === 0n) {
     blocks.push({ code: "request", reason: "a proposal must name a non-zero queue request" });
@@ -81,22 +83,15 @@ export function buildProposal(args: {
       kind: input.kind,
     }),
   };
-  const domain = domainFor(args.chainId, mandate.vault);
-  const digest = hashTypedData({ domain, types: advanceTypes, primaryType: "AdvanceProposal", message });
-  const calldata = encodeFunctionData({
-    abi: submitProposalAbi,
-    functionName: "submitProposal",
-    args: [message, "0x"],
-  });
   const partner = buildPartnerFiling({ vault: mandate.vault, chainId: args.chainId, message });
   return {
     quote,
     input,
     mandate,
     message,
-    domain,
-    digest,
-    calldata,
+    domain: partner.domain,
+    digest: partner.digest,
+    calldata: partner.submitCalldata,
     partner,
     blocks,
     submittable: blocks.length === 0,

@@ -1,5 +1,6 @@
 import type { Address } from "viem";
 import type { Mandate, QuoteInput } from "../domain.js";
+import { EngineError } from "../errors.js";
 import type { Block, Quote } from "../quote.js";
 
 function limitFor(mandate: Mandate, platform: Address): bigint | undefined {
@@ -19,9 +20,12 @@ export function mandateBlocks(
   mandate: Mandate,
   platform: Address,
   recipient: Address,
+  wall = Math.floor(Date.now() / 1000),
 ): Block[] {
   const blocks: Block[] = [];
-  const wall = Math.floor(Date.now() / 1000);
+  if (!Number.isInteger(wall) || wall < 0) {
+    throw new EngineError("param", "wall clock must be a non-negative integer");
+  }
   if (input.now > wall + CLOCK_AHEAD_SECONDS) {
     blocks.push({ code: "clock", reason: "quote clock is more than a day ahead of this machine" });
   }

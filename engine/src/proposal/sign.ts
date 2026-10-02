@@ -1,8 +1,8 @@
-import { hashTypedData, type Hex } from "viem";
+import type { Hex } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { EngineError } from "../errors.js";
 import type { PartnerFiling } from "./partner.js";
-import { advanceTypes, type AdvanceMessage } from "./typed.js";
+import { advanceTypes } from "./typed.js";
 import type { BuiltProposal } from "./build.js";
 
 export async function signBuiltProposal(built: BuiltProposal, privateKey: Hex): Promise<Hex> {
@@ -24,14 +24,5 @@ export async function signPartnerFiling(filing: PartnerFiling, submittable: bool
     types: advanceTypes,
     primaryType: "AdvanceProposal",
     message: filing.message,
-  });
-}
-
-export function digestOf(built: BuiltProposal): Hex {
-  return hashTypedData({
-    domain: built.domain,
-    types: advanceTypes,
-    primaryType: "AdvanceProposal",
-    message: built.message satisfies AdvanceMessage,
   });
 }

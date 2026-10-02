@@ -83,11 +83,12 @@ function repay(): SweepAction {
 
 describe("security regressions", () => {
   it("signs only the three allowlisted chains", () => {
-    expect(ALLOWED_CHAIN_IDS.has(31337)).toBe(true);
-    expect(() => assertTransactableChain(421614)).not.toThrow();
-    expect(() => assertTransactableChain(11155111)).not.toThrow();
+    expect([...ALLOWED_CHAIN_IDS].sort((left, right) => left - right)).toEqual([31337, 421614, 11155111]);
+    for (const chainId of [31337, 421614, 11155111]) {
+      assertTransactableChain(chainId);
+      expect(propose({ chainId }).submittable).toBe(true);
+    }
     expect(() => assertTransactableChain(42170)).toThrow(EngineError);
-    expect(propose({ chainId: 11155111 }).submittable).toBe(true);
     expect(() => propose({ chainId: 42170 })).toThrow(EngineError);
   });
 

@@ -1,7 +1,8 @@
-import { EngineError } from "../../errors.js";
+import { EngineError, guardRpc } from "../../errors.js";
 import { mulDivCeil, toUsdg6 } from "../../money.js";
 import { QUEUE } from "../../pricing/defaults.js";
 import type { Address } from "../../domain.js";
+import { withPolicy } from "../policy.js";
 import { asBigint, named, type ContractReader } from "../reader.js";
 import { erc20Abi } from "../maple/abi.js";
 import { stakedUsdaiAbi } from "./abi.js";
@@ -28,19 +29,28 @@ export type UsdaiRead = {
  * https://docs.usd.ai/depositor/susdai
  * https://github.com/usdai-foundation/usdai-contracts/blob/main/src/interfaces/IStakedUSDai.sol
  */
-export async function readUsdai(
+export function readUsdai(
   reader: ContractReader,
   cfg: { staked: Address; asset: Address; epochSeconds?: number },
   now: number,
 ): Promise<UsdaiRead> {
+  return guardRpc(() => readUsdaiUnsafe(reader, cfg, now));
+}
+
+async function readUsdaiUnsafe(
+  reader: ContractReader,
+  cfg: { staked: Address; asset: Address; epochSeconds?: number },
+  now: number,
+): Promise<UsdaiRead> {
+  const paced = withPolicy(reader);
   const epochSeconds = cfg.epochSeconds ?? QUEUE.epochSeconds;
-  const info = await call(reader, cfg.staked, "redemptionQueueInfo");
+  const info = await call(paced, cfg.staked, "redemptionQueueInfo");
   const pendingShares = asBigint(named(info, "pending", 3), "pending");
   const balance = asBigint(named(info, "balance", 4), "balance");
-  const sharePrice = asBigint(await call(reader, cfg.staked, "redemptionSharePrice"), "price");
-  const rawNav = asBigint(await call(reader, cfg.staked, "nav"), "nav");
-  const stamp = Number(asBigint(await call(reader, cfg.staked, "redemptionTimestamp"), "timestamp"));
-  const decimals = Number(asBigint(await reader.readContract({
+  const sharePrice = asBigint(await call(paced, cfg.staked, "redemptionSharePrice"), "price");
+  const rawNav = asBigint(await call(paced, cfg.staked, "nav"), "nav");
+  const stamp = Number(asBigint(await call(paced, cfg.staked, "redemptionTimestamp"), "timestamp"));
+  const decimals = Number(asBigint(await paced.readContract({
     address: cfg.asset,
     abi: erc20Abi,
     functionName: "decimals",

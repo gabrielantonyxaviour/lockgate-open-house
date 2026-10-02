@@ -1,6 +1,7 @@
 import { encodeFunctionData, getAddress, hashTypedData, recoverTypedDataAddress, type Address, type Hex } from "viem";
 import { assertTransactableChain } from "../chains.js";
-import { EngineError } from "../errors.js";
+import { blockSendDuringDryRun } from "../dryrun.js";
+import { EngineError, rethrowPublic } from "../errors.js";
 import { advanceTypes, domainFor, type AdvanceMessage } from "./typed.js";
 
 /** Same selector and struct as `IPartnerVault.submitProposal`. There is no execute entry. */
@@ -40,6 +41,13 @@ export type PartnerFiling = {
   submitCalldata: Hex;
 };
 
+/** Digests whose send returned. A thrown send is removed so a dropped transaction can be retried. */
+const submitted = new Set<string>();
+
+function submissionKey(chainId: number, filing: PartnerFiling): string {
+  return `${chainId}:${getAddress(filing.domain.verifyingContract)}:${filing.message.nonce}:${filing.digest}`;
+}
+
 /**
  * Filing for the live vault. `AdvanceHash` delegates to `AdvanceProposalLib`, so this digest
  * is the G6 `LockgateAdvance` digest. The unsigned calldata is `submitProposal`.
@@ -76,6 +84,7 @@ export async function filePartnerProposal(
   proposer: Address,
   sender: (tx: { to: Address; data: Hex }) => Promise<Hex>,
 ): Promise<Hex> {
+  blockSendDuringDryRun("submitProposal");
   assertTransactableChain(chainId);
   if (filing.domain.chainId !== chainId) throw new EngineError("param", "chain id does not match the filing");
   if (!submittable) throw new EngineError("refused", "refusing to file a proposal that fails its checks");
@@ -95,10 +104,18 @@ export async function filePartnerProposal(
   if (getAddress(recovered) !== getAddress(proposer)) {
     throw new EngineError("param", "signature is not from the proposer");
   }
+  const key = submissionKey(chainId, filing);
+  if (submitted.has(key)) throw new EngineError("replay", "refusing to file a signature that was already submitted");
   const data = encodeFunctionData({
     abi: submitProposalAbi,
     functionName: "submitProposal",
     args: [filing.message, signature],
   });
-  return sender({ to: filing.domain.verifyingContract, data });
+  submitted.add(key);
+  try {
+    return await sender({ to: filing.domain.verifyingContract, data });
+  } catch (err) {
+    submitted.delete(key);
+    rethrowPublic(err);
+  }
 }

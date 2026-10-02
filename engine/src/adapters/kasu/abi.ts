@@ -75,9 +75,27 @@ export const kasuPendingAbi = [
 export const erc4626Abi = [
   {
     type: "function",
+    name: "asset",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "assetToken", type: "address" }],
+  },
+  {
+    type: "function",
     name: "convertToAssets",
     stateMutability: "view",
     inputs: [{ name: "shares", type: "uint256" }],
     outputs: [{ name: "assets", type: "uint256" }],
+  },
+] as const;
+
+/** Lending-pool token. Kasu hardcodes this token at 6 decimals. */
+export const poolTokenAbi = [
+  {
+    type: "function",
+    name: "decimals",
+    stateMutability: "view",
+    inputs: [],
+    outputs: [{ name: "decimals", type: "uint8" }],
   },
 ] as const;

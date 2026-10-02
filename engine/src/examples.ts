@@ -1,5 +1,6 @@
-import { DEFAULT_PARAMS } from "./pricing/defaults.js";
 import type { PricingParams, QuoteInput, RepaymentHistory } from "./domain.js";
+import { EngineError } from "./errors.js";
+import { DEFAULT_PARAMS, DEMO_TIME_SCALE } from "./pricing/defaults.js";
 
 const U = 1_000_000n;
 export const DAY = 86_400;
@@ -83,7 +84,7 @@ export function demoTenMinutes(now = 1_700_000_000): { input: QuoteInput; params
       clearingSeconds: 60,
       requestedAt: now,
     },
-    params: { ...DEFAULT_PARAMS, timeScale: 4320 },
+    params: { ...DEFAULT_PARAMS, timeScale: DEMO_TIME_SCALE },
   };
 }
 
@@ -101,6 +102,6 @@ export function exampleBundle(name: string): { input: QuoteInput; params: Pricin
     case "demo":
       return demoTenMinutes();
     default:
-      throw new Error(`unknown example ${name}`);
+      throw new EngineError("usage", `unknown example ${name}`);
   }
 }

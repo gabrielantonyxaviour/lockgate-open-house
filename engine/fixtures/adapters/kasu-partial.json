@@ -1,0 +1,99 @@
+{
+  "platform": "kasu-base",
+  "now": 1700000000,
+  "calls": [
+    {
+      "address": "0x193Bb02A24F5562b58fEB86550e6f09Bb6c41f69",
+      "functionName": "currentEpochNumber",
+      "result": "121"
+    },
+    {
+      "address": "0x193Bb02A24F5562b58fEB86550e6f09Bb6c41f69",
+      "functionName": "epochDuration",
+      "result": "604800"
+    },
+    {
+      "address": "0x193Bb02A24F5562b58fEB86550e6f09Bb6c41f69",
+      "functionName": "clearingPeriodLength",
+      "result": "172800"
+    },
+    {
+      "address": "0x193Bb02A24F5562b58fEB86550e6f09Bb6c41f69",
+      "functionName": "epochStartTimestamp",
+      "args": ["121"],
+      "result": "1600000000"
+    },
+    {
+      "address": "0x193Bb02A24F5562b58fEB86550e6f09Bb6c41f69",
+      "functionName": "isClearingTime",
+      "result": false
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000ab",
+      "functionName": "totalSupply",
+      "result": "3"
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000ab",
+      "functionName": "tokenByIndex",
+      "args": ["0"],
+      "result": "1461501637330902918203684832716283019655932543146"
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000ab",
+      "functionName": "tokenByIndex",
+      "args": ["1"],
+      "result": "57896044618658097711785492505805455563965895251023966852445075023612497363114"
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000ab",
+      "functionName": "trancheWithdrawalNftDetails",
+      "args": ["57896044618658097711785492505805455563965895251023966852445075023612497363114"],
+      "result": ["2000000", "0x00000000000000000000000000000000000000aa", "121", "1", "0"]
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000ab",
+      "functionName": "tokenByIndex",
+      "args": ["2"],
+      "result": "57896044618658097711785492507266957201296798169227651685161358043268429906107"
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000ab",
+      "functionName": "trancheWithdrawalNftDetails",
+      "args": ["57896044618658097711785492507266957201296798169227651685161358043268429906107"],
+      "result": ["1500000", "0x00000000000000000000000000000000000000bb", "121", "1", "0"]
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000aa",
+      "functionName": "asset",
+      "result": "0x00000000000000000000000000000000000000d1"
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000d1",
+      "functionName": "decimals",
+      "result": "6"
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000aa",
+      "functionName": "convertToAssets",
+      "args": ["2000000"],
+      "result": "2000000"
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000bb",
+      "functionName": "asset",
+      "result": "0x00000000000000000000000000000000000000d2"
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000d2",
+      "functionName": "decimals",
+      "result": "6"
+    },
+    {
+      "address": "0x00000000000000000000000000000000000000bb",
+      "functionName": "convertToAssets",
+      "args": ["1500000"],
+      "error": "missing convert"
+    }
+  ]
+}
