@@ -24,7 +24,7 @@ const DEPOSIT = usd(80_000n);
 export async function runStage2(now: number) {
   process.env.LOCKGATE_PROPOSER_KEY = proposerKey;
   const token = await deploy("MockUSDG", [deployer.address]);
-  const router = await deploy("PartnerRouter", []);
+  const router = await deploy("PartnerRouter", [deployer.address]);
   const harbourVault = await vaultFor(token, harbour.address);
   const keppelVault = await vaultFor(token, keppel.address);
 
@@ -110,6 +110,7 @@ async function fund(token: Address, vault: Address, partner: typeof harbour, rou
   await send("PartnerVault", vault, "setRouter", [router], partner);
   await send("MockUSDG", token, "approve", [vault, DEPOSIT], partner);
   await send("PartnerVault", vault, "deposit", [DEPOSIT], partner);
+  await send("PartnerRouter", router, "approveVault", [vault, true], deployer);
   await send("PartnerRouter", router, "register", [vault], partner);
 }
 

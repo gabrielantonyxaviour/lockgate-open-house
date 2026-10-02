@@ -10,7 +10,7 @@ import { startServer } from "../src/server.js";
 import { parseUsdg } from "../src/units.js";
 import { withAnvil } from "./anvil.js";
 
-const STAGE = ACTIONS.map((action) => action.id).filter((id) => /^(stage[123]|door2)\./.test(id));
+const STAGE = ACTIONS.map((action) => action.id).filter((id) => /^stage[123]\./.test(id));
 
 type Step = { action: string; input?: Record<string, string>; save?: Record<string, string> };
 
@@ -32,7 +32,6 @@ const STEPS: Step[] = [
   { action: "stage1.exitNow", input: { shares: "100" }, save: { smallAdvance: "advanceId" } },
   { action: "stage1.repay", input: { advanceId: "{smallAdvance}" } },
   { action: "stage1.draw", input: { shares: "5000" }, save: { largeAdvance: "advanceId" } },
-  { action: "door2.cycle", input: { amountUsdg: "1000" } },
   { action: "stage2.setMandate", input: { vault: "PartnerVaultA", minFeeBps: "25" } },
   { action: "stage2.approvePlatform", input: { vault: "PartnerVaultA" } },
   { action: "stage2.deposit", input: { vault: "PartnerVaultA", amountUsdg: "20000" } },
@@ -164,9 +163,7 @@ async function assertChain(ctx: Ctx): Promise<void> {
   assert.ok(await read<bigint>(ctx, "PartnerVaultA", "scheduledEta") > now);
   assert.equal(await read<bigint>(ctx, "Router", "vaultCount"), 1n);
 
-  const positions = await read<bigint>(ctx, "LockgateExitPool", "positionCount");
-  assert.equal(positions, 1n);
-  assert.equal(positionSettled(await read(ctx, "LockgateExitPool", "getPosition", [positions])), true);
+  assert.equal(ctx.manifest.contracts.LockgateExitPool, undefined);
 
   const state = await books(ctx);
   assert.equal(state.recovery, true);
@@ -180,9 +177,4 @@ async function advanceStatus(ctx: Ctx, id: bigint): Promise<number> {
   const value = await read<unknown>(ctx, "LockgateCreditLine", "getAdvance", [id]);
   if (value && typeof value === "object" && "status" in value) return Number((value as { status: number }).status);
   return Number((value as unknown[])[6]);
-}
-
-function positionSettled(value: unknown): boolean {
-  if (value && typeof value === "object" && "settled" in value) return Boolean((value as { settled: boolean }).settled);
-  return Boolean((value as unknown[])[7]);
 }

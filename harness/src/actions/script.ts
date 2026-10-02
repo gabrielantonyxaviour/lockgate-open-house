@@ -4,7 +4,6 @@ import { HarnessError } from "../errors.js";
 import { ROLES } from "../roles.js";
 import { formatUsdg, parseUsdg } from "../units.js";
 import { SHARE, balanceOf, expect, expectRevert, same, shareBalance } from "./common.js";
-import { continueDoor2, door2Cycle } from "./door2.js";
 import {
   approvePlatform, approveProposal, assertLockgateHasNoControl, depositVault, enlist, payInvestor,
   postVaultReserve, preview, proposeUpgrade, repayRoute, routedAdvance, setMandate, setPaused,
@@ -17,12 +16,6 @@ import { buyShares, exitNow, markLate, postReserve, registerPlatform } from "./s
 const EPOCH = "EpochQueuePlatform";
 const FIVE = 5000n * SHARE;
 const VAULTS = ["PartnerVaultA", "PartnerVaultB"] as const;
-
-export async function resumeDoor2(ctx: Ctx): Promise<unknown> {
-  const existing = await continueDoor2(ctx);
-  if (existing !== undefined) return existing;
-  return door2Cycle(ctx);
-}
 
 export async function resumeStage2(ctx: Ctx): Promise<unknown> {
   const done = await finishedStage2(ctx);

@@ -89,7 +89,7 @@ export const deploymentManifestSchema = z.object({
   if (!token) fail("token");
   if (doc.asset === "paxos" && (token?.kind !== "external" || token.address.toLowerCase() !== PAXOS_USDG_SEPOLIA.toLowerCase())) fail("paxos");
   if (doc.asset === "mock" && token?.kind !== "create2") fail("mock");
-  for (const name of ["LockgateCreditLine", "PartnerVaultA", "FundFactory", "LockgateExitPool"]) {
+  for (const name of ["LockgateCreditLine", "PartnerVaultA", "FundFactory"]) {
     if (!names.has(name)) fail(name);
   }
 });

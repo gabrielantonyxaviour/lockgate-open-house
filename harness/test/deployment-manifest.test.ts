@@ -54,7 +54,7 @@ test("sepolia plan is deterministic and does not dial", () => {
     assert.equal(JSON.stringify(first), JSON.stringify(second));
     assert.equal(first.mode, "dry-run");
     assert.equal(first.chainId, 421614);
-    assert.equal(first.steps.length, 18);
+    assert.equal(first.steps.length, 16);
     assert.deepEqual(first.steps.map((step) => step.address), local.steps.map((step) => step.address));
     assert.ok(first.steps.every((step) => step.txHash === null && step.blockNumber === null));
     const line = first.steps.find((step) => step.logical === "LockgateCreditLine");

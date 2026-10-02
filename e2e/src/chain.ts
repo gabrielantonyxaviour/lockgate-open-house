@@ -16,7 +16,7 @@ import {
 } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 
-export const RPC = "http://127.0.0.1:8545";
+export const RPC = process.env.E2E_RPC ?? "http://127.0.0.1:8545";
 const U = 1_000_000n;
 export const usd = (whole: bigint) => whole * U;
 
@@ -34,7 +34,7 @@ const KEYS = [
   "0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
   "0x7c852118294e51e653712a81e05800f419141751be58f605c371e15141b007a6",
   "0x47e179ec197488593b187f80a00eb0da91f1b9d0b13f8733639f19c30a34926a",
-  "0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e87292fc0d0e8",
+  "0x8b3a350cf5c34c9194ca85829a2df0ec3153be0318b5e2d3348e872092edffba",
 ] as const;
 
 export const accounts = KEYS.map((key) => privateKeyToAccount(key));

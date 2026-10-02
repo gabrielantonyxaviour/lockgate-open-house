@@ -41,7 +41,7 @@ test("sepolia script deploys the protocol on local chain 421614", { timeout: 120
     assert.equal(manifest.mode, "protocol");
     assert.equal(manifest.factory.toLowerCase(), "0x5fbdb2315678afecb367f032d93f642f64180aa3");
     const client = createPublicClient({ chain: foundry, transport: http(rpc) });
-    const names = ["MockUSDG", "LockgateCreditLine", "FundFactory", "LockgateExitPool", "PartnerVaultA"] as const;
+    const names = ["MockUSDG", "LockgateCreditLine", "FundFactory", "PartnerVaultA"] as const;
     for (const name of names) assert.match(manifest.contracts[name] ?? "", /^0x[0-9a-fA-F]{40}$/);
     assert.equal(new Set(names.map((name) => manifest.contracts[name]?.toLowerCase())).size, names.length);
     const vault = manifest.contracts.PartnerVaultA ?? "";

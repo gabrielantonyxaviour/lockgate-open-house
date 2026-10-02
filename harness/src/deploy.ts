@@ -14,7 +14,7 @@ import { loadCtx, send } from "./chain.js";
 import { HarnessError } from "./errors.js";
 import { ANVIL_CHAIN_ID, assertHarnessWrite, assertLocalRpc } from "./guards.js";
 import { manifestPath, writeManifest, type Manifest } from "./manifest.js";
-import { DEMO } from "./params.js";
+import { DEMO, LINE_CAPS } from "./params.js";
 import { fetchProbe, preflight } from "./preflight.js";
 import { ROLES, type RoleName } from "./roles.js";
 import { usdg } from "./units.js";
@@ -108,12 +108,11 @@ export async function deployProtocol(rpc: string, manifestFile?: string): Promis
 async function wire(ctx: Awaited<ReturnType<typeof loadCtx>>): Promise<void> {
   const line = ctx.binding("LockgateCreditLine").address;
   const factory = ctx.binding("FundFactory").address;
-  const vault = ctx.binding("OpenCreditVault").address;
   await send(ctx, "lockgate", "PlatformReserve", "setCreditLine", [line]);
   await send(ctx, "lockgate", "PlatformReserve", "setSlasher", [line, true]);
   await send(ctx, "lockgate", "LockgateCreditLine", "setRegistrar", [factory, true]);
   await send(ctx, "lockgate", "MockUSDG", "setMinter", [factory, true]);
-  await send(ctx, "lockgate", "MockUSDG", "setMinter", [vault, true]);
+  await send(ctx, "lockgate", "LockgateCreditLine", "setCaps", [LINE_CAPS.utilizationBps, LINE_CAPS.concentrationBps]);
 }
 
 export function protocolPlan(factory: Address, owners: ProtocolOwners = anvilOwners(), externalAsset?: Address): Planned[] {
@@ -124,7 +123,7 @@ export function protocolPlan(factory: Address, owners: ProtocolOwners = anvilOwn
   const pricing = predict(factory, "PricingEngine", [owners.owner]);
   const reserve = predict(factory, "PlatformReserve", [owners.owner, adapter.address]);
   const line = predict(factory, "LockgateCreditLine", [owners.owner, adapter.address, pricing.address, reserve.address]);
-  const router = predict(factory, "Router", []);
+  const router = predict(factory, "Router", [owners.owner]);
   const impl = predict(factory, "PartnerVaultImpl", []);
   const creditBook = predict(factory, "CreditLineBook", [line.address]);
   const facility = predict(factory, "CreditFacility", [facilityInit(owners.governor, owners.owner, usdg.address, creditBook.address)]);
@@ -137,11 +136,9 @@ export function protocolPlan(factory: Address, owners: ProtocolOwners = anvilOwn
   const fundFactory = predict(factory, "FundFactory", [
     owners.owner, adapter.address, line.address, reserve.address, weekly.address, epoch.address, quarter.address,
   ]);
-  const openVault = predict(factory, "OpenCreditVault", [owners.owner, usdg.address, !externalAsset]);
-  const exitPool = predict(factory, "LockgateExitPool", [owners.owner, openVault.address, line.address]);
   const planned = [
     usdg, adapter, pricing, reserve, line, router, impl, creditBook, facility, vaultA, vaultB,
-    weekly, epoch, quarter, fundFactory, openVault, exitPool,
+    weekly, epoch, quarter, fundFactory,
   ];
   return externalAsset ? planned.filter((item) => item.logical !== "MockUSDG") : planned;
 }

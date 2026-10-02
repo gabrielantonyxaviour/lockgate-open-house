@@ -78,8 +78,8 @@ describe.sequential("anvil stages 1-3", () => {
   it("draws and repays a stage-1 exit on the credit line", async () => {
     const issuer = node.account(1).address;
     const exit = 10_000n * U;
-    await send(node, 1, world.factory, world.factoryAbi, "createPlatform", [
-      1, "Northwind weekly", 600n, 1_000_000n, 100_000n * U, 750,
+    await send(node, 0, world.factory, world.factoryAbi, "createPlatform", [
+      1, "Northwind weekly", 600n, 1_000_000n, issuer, 100_000n * U, 750,
     ]);
     const funds = await read<Address[]>(node, world.factory, world.factoryAbi, "fundsOf", [issuer]);
     fund = getAddress(funds[funds.length - 1]!);

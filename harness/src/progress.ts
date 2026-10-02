@@ -4,7 +4,7 @@ import { z } from "zod";
 import { explain, type Ctx } from "./chain.js";
 import { HarnessError } from "./errors.js";
 
-const ORDER = ["stage1", "door2", "stage2", "stage3"] as const;
+const ORDER = ["stage1", "stage2", "stage3"] as const;
 export type StepId = (typeof ORDER)[number];
 
 const stepSchema = z.object({

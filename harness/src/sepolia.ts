@@ -7,6 +7,8 @@ import { ARBITRUM_ONE, ARBITRUM_SEPOLIA, PAXOS_USDG_SEPOLIA, assertSepoliaBroadc
 import { parseSepoliaEnv, type SepoliaEnv } from "./input.js";
 import { preflight } from "./preflight.js";
 import { writeManifest, type Manifest } from "./manifest.js";
+import { LINE_CAPS } from "./params.js";
+import { assertSeedBalance, parseSeedEnv, seedStage1 } from "./sepolia-seed.js";
 import { usdg } from "./units.js";
 
 const DEFAULT_RPC = "https://sepolia-rollup.arbitrum.io/rpc";
@@ -18,6 +20,7 @@ const DEFAULT_RPC = "https://sepolia-rollup.arbitrum.io/rpc";
  */
 export async function broadcastSepolia(env: NodeJS.ProcessEnv, manifestFile: string): Promise<Manifest> {
   const parsed = parseSepoliaEnv(env);
+  const seed = parseSeedEnv(env);
   const rpc = parsed.rpc ?? DEFAULT_RPC;
   const chainId = await readChainId(rpc);
   if (chainId === ARBITRUM_ONE) throw new HarnessError("Arbitrum One is refused", "MAINNET_REFUSED");
@@ -36,6 +39,8 @@ export async function broadcastSepolia(env: NodeJS.ProcessEnv, manifestFile: str
     },
     skipMockUsdg: parsed.paxos,
   });
+  // Paxos USDG cannot be minted: refuse before any transaction when the deployer cannot fund the seed.
+  if (seed && parsed.paxos) await assertSeedBalance(publicClient, PAXOS_USDG_SEPOLIA as Address, account.address, seed);
   const nonce = await publicClient.getTransactionCount({ address: account.address });
   const factory = getContractAddress({ from: account.address, nonce: BigInt(nonce) });
   const owners = ownersFrom(parsed, account.address);
@@ -60,34 +65,26 @@ export async function broadcastSepolia(env: NodeJS.ProcessEnv, manifestFile: str
   const line = contracts.LockgateCreditLine;
   const reserve = contracts.PlatformReserve;
   if (!line || !reserve) throw new HarnessError("Credit line or reserve missing from the plan", "DEPLOY_FAILED");
-  const reserveAbi = loadArtifact("PlatformReserve").abi;
-  const wire = async (functionName: string, args: readonly unknown[]) => {
-    const hash = await wallet.writeContract({ address: reserve, abi: reserveAbi, functionName, args, account, chain });
-    await publicClient.waitForTransactionReceipt({ hash });
+  const send = async (address: Address, name: string, functionName: string, args: readonly unknown[]) => {
+    const hash = await wallet.writeContract({ address, abi: loadArtifact(name).abi, functionName, args, account, chain });
+    const receipt = await publicClient.waitForTransactionReceipt({ hash });
+    if (receipt.status !== "success") throw new HarnessError(`${name}.${functionName} reverted`, "DEPLOY_FAILED");
+    return hash;
   };
-  await wire("setCreditLine", [line]);
-  await wire("setSlasher", [line, true]);
+  await send(reserve, "PlatformReserve", "setCreditLine", [line]);
+  await send(reserve, "PlatformReserve", "setSlasher", [line, true]);
   const fundFactory = contracts.FundFactory;
-  const openVault = contracts.OpenCreditVault;
-  if (!fundFactory || !openVault) throw new HarnessError("Factory or open vault missing from the plan", "DEPLOY_FAILED");
-  const lineAbi = loadArtifact("LockgateCreditLine").abi;
-  const registrar = await wallet.writeContract({
-    address: line, abi: lineAbi, functionName: "setRegistrar", args: [fundFactory, true], account, chain,
-  });
-  await publicClient.waitForTransactionReceipt({ hash: registrar });
+  if (!fundFactory) throw new HarnessError("Factory missing from the plan", "DEPLOY_FAILED");
+  await send(line, "LockgateCreditLine", "setRegistrar", [fundFactory, true]);
+  await send(line, "LockgateCreditLine", "setCaps", [LINE_CAPS.utilizationBps, LINE_CAPS.concentrationBps]);
   if (!external) {
-    const token = loadArtifact("MockUSDG");
     const tokenAddress = contracts.MockUSDG as Address;
-    for (const who of [fundFactory, openVault]) {
-      const allow = await wallet.writeContract({
-        address: tokenAddress, abi: token.abi, functionName: "setMinter", args: [who, true], account, chain,
-      });
-      await publicClient.waitForTransactionReceipt({ hash: allow });
-    }
-    const hash = await wallet.writeContract({
-      address: tokenAddress, abi: token.abi, functionName: "mint", args: [account.address, usdg(1_000_000n)], account, chain,
-    });
-    await publicClient.waitForTransactionReceipt({ hash });
+    await send(tokenAddress, "MockUSDG", "setMinter", [fundFactory, true]);
+    await send(tokenAddress, "MockUSDG", "mint", [account.address, usdg(1_000_000n)]);
+  }
+  if (seed) {
+    await assertSeedBalance(publicClient, contracts.MockUSDG as Address, account.address, seed);
+    contracts.WeeklyQueuePlatform = await seedStage1(publicClient, send, contracts, account.address, seed);
   }
 
   const manifest: Manifest = {

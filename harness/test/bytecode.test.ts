@@ -249,9 +249,9 @@ test("a fresh Anvil deploy matches the current artifacts", { timeout: 120_000 },
     assert.deepEqual(Object.keys(report).sort(), ["chainId", "compared", "matched", "ok"]);
     assert.equal(report.ok, true);
     assert.equal(report.chainId, 31337);
-    assert.equal(report.compared, 18);
-    assert.equal(report.matched, 18);
-    assert.equal(Object.keys(manifest.contracts).length, 18);
+    assert.equal(report.compared, 16);
+    assert.equal(report.matched, 16);
+    assert.equal(Object.keys(manifest.contracts).length, 16);
     const factory = manifest.contracts.Create2Factory ?? "";
     assert.match(factory, /^0x[0-9a-fA-F]{40}$/);
     const client = createPublicClient({ chain: foundry, transport: http(rpc) });

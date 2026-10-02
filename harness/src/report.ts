@@ -166,7 +166,7 @@ function decodeOne(contract: string, log: { blockNumber: bigint | null; data: He
       data: log.data,
       topics: log.topics as [Hex, ...Hex[]],
     });
-    return { block, contract, name: decoded.eventName, args: formatEventArgs(decoded.args) };
+    return { block, contract, name: decoded.eventName ?? "undecoded", args: formatEventArgs(decoded.args) };
   } catch {
     return { block, contract, name: "undecoded", args: "" };
   }

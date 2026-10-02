@@ -1,7 +1,6 @@
 import { send, type Ctx } from "../chain.js";
 import { isRole, type RoleName } from "../roles.js";
 import { parseUsdg } from "../units.js";
-import { door2Cycle } from "./door2.js";
 import { demoAll, demoStage1, demoStage2, demoStage3 } from "./demo.js";
 import { status } from "./read.js";
 import {
@@ -46,7 +45,6 @@ export const ACTIONS: Action[] = [
   { id: "stage1.exitNow", summary: "Same draw path as stage1.draw", fields: [{ name: "shares", label: "whole shares", default: "100" }], run: exitNow },
   { id: "stage1.setGated", summary: "Gate or ungate the platform", fields: [{ name: "gated", label: "true or false", default: "true" }], run: setGated },
   { id: "stage1.pause", summary: "Pause or unpause the credit line", fields: [{ name: "paused", label: "true or false", default: "true" }], run: pauseLine },
-  { id: "door2.cycle", summary: "Lockgate buys open-token shares, pays nav minus fee, and settle returns the withdrawal to the stage-1 line. Reserve bps is 0. Lockgate holds no partner key.", fields: [{ name: "amountUsdg", label: "USDG", default: "1000" }], run: (ctx, input) => door2Cycle(ctx, input) },
   { id: "stage2.setMandate", summary: "Partner sets min fee, tenor, concentration and expiry", fields: [{ name: "vault", label: "vault", default: "PartnerVaultA" }, { name: "minFeeBps", label: "min fee bps", default: "25" }], run: setMandate },
   { id: "stage2.approvePlatform", summary: "Partner approves a platform, payout, proposer and router", fields: [{ name: "vault", label: "vault", default: "PartnerVaultA" }, { name: "limitUsdg", label: "limit", default: "20000" }], run: approvePlatform },
   { id: "stage2.postReserve", summary: "Partner posts a vault reserve for the platform", fields: [{ name: "vault", label: "vault", default: "PartnerVaultA" }, { name: "amountUsdg", label: "USDG", default: "200" }], run: postVaultReserve },

@@ -60,7 +60,12 @@ export async function postVaultReserve(ctx: Ctx, input: Record<string, string>):
 
 export async function enlist(ctx: Ctx, input: Record<string, string>): Promise<unknown> {
   const vault = input.vault ?? "PartnerVaultA";
-  const hash = await send(ctx, vaultRole(vault), "Router", "register", [ctx.binding(vault).address]);
+  const address = ctx.binding(vault).address;
+  // Lockgate vets the vault for the directory; the partner then lists it. Neither step touches vault funds.
+  if (!(await read<boolean>(ctx, "Router", "approvedVault", [address]))) {
+    await send(ctx, "lockgate", "Router", "approveVault", [address, true]);
+  }
+  const hash = await send(ctx, vaultRole(vault), "Router", "register", [address]);
   return { hash, vault };
 }
 

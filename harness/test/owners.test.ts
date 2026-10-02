@@ -39,7 +39,7 @@ test("an omitted partner A is the deployer", { timeout: 120_000 }, async () => {
     assert.notEqual(manifest.contracts.MockUSDG.toLowerCase(), PAXOS_USDG_SEPOLIA.toLowerCase());
     const client = createPublicClient({ transport: http(rpc) });
     const balance = await client.readContract({
-      address: manifest.contracts.MockUSDG,
+      address: manifest.contracts.MockUSDG as `0x${string}`,
       abi: loadArtifact("MockUSDG").abi,
       functionName: "balanceOf",
       args: [manifest.roles.deployer],

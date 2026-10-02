@@ -25,8 +25,8 @@ test("two fresh Anvil chains deploy the same protocol addresses", { timeout: 180
   assert.equal(first.contracts.PartnerVaultB, second.contracts.PartnerVaultB);
   assert.equal(first.contracts.CreditFacility, second.contracts.CreditFacility);
   assert.equal(first.contracts.FundFactory, second.contracts.FundFactory);
-  assert.equal(first.contracts.OpenCreditVault, second.contracts.OpenCreditVault);
-  assert.equal(first.contracts.LockgateExitPool, second.contracts.LockgateExitPool);
+  assert.equal(first.contracts.OpenCreditVault, undefined, "door 2 is not deployed");
+  assert.equal(first.contracts.LockgateExitPool, undefined, "door 2 is not deployed");
   assert.notEqual(first.contracts.PartnerVaultA.toLowerCase(), first.roles.lockgate.toLowerCase());
   assert.notEqual(first.contracts.FundFactory.toLowerCase(), first.contracts.WeeklyImpl.toLowerCase());
 });
@@ -63,7 +63,7 @@ test("demo flows and the test console run on local Anvil", { timeout: 300_000 },
       assert.equal(surface.mode, "protocol");
       assert.ok(surface.actions.some((action) => action.id === "stage2.routedAdvance"));
       assert.ok(surface.actions.some((action) => action.id === "stage2.approve"));
-      assert.ok(surface.actions.some((action) => action.id === "door2.cycle"));
+      assert.ok(!surface.actions.some((action) => action.id.startsWith("door2.")));
       const faucet = await fetch(`${server.url}/api/act`, {
         method: "POST",
         headers: { "content-type": "application/json" },

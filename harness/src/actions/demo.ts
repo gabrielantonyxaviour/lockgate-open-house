@@ -2,7 +2,7 @@ import { type Ctx } from "../chain.js";
 import { runStep } from "../progress.js";
 import { ROLES } from "../roles.js";
 import { expect, same } from "./common.js";
-import { resumeDoor2, resumeStage2, resumeStage3 } from "./script.js";
+import { resumeStage2, resumeStage3 } from "./script.js";
 import { resumeStage1 } from "./weekly.js";
 
 export async function demoStage1(ctx: Ctx): Promise<unknown> {
@@ -19,9 +19,8 @@ export async function demoStage3(ctx: Ctx): Promise<unknown> {
 
 export async function demoAll(ctx: Ctx): Promise<unknown> {
   const stage1 = await demoStage1(ctx);
-  const door2 = await runStep(ctx, "door2", () => resumeDoor2(ctx));
   const stage2 = await demoStage2(ctx);
   const stage3 = await demoStage3(ctx);
   expect(!same(ROLES.lockgate.address, ROLES.partnerA.address), "roles collided");
-  return { stage1, door2, stage2, stage3 };
+  return { stage1, stage2, stage3 };
 }

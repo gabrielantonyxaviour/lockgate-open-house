@@ -207,11 +207,13 @@ async function registerClone(
   interval: number,
   input: Record<string, string>,
 ): Promise<unknown> {
-  await send(ctx, "platform", "FundFactory", "createPlatform", [
+  // Lockgate (factory owner) creates the platform and sets its limit and reserve; the platform account runs it.
+  await send(ctx, "lockgate", "FundFactory", "createPlatform", [
     kind,
     LABELS[kind],
     BigInt(interval),
     DEMO.nav,
+    ROLES.platform.address,
     parseUsdg(input.limitUsdg ?? "25000"),
     parseBps(input.reserveBps ?? "750"),
   ]);

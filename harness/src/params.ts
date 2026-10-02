@@ -23,3 +23,11 @@ export const SEPOLIA_CLOCK = {
   maxNavAge: 36 * 60 * 60,
   grace: 2 * 24 * 60 * 60,
 } as const;
+
+/**
+ * Line caps every deploy sets with `setCaps`. Utilization is 80%: outstanding plus the new principal may use at most
+ * 80% of capital plus outstanding, so 20% of the line always stays liquid. Concentration stays at 100% because the
+ * line measures it as one source's share of total exposure, not of capital: with a single platform drawing, any cap
+ * below 100% blocks the first draw. The per-source limit and reserve, both Lockgate-set, bound one platform instead.
+ */
+export const LINE_CAPS = { utilizationBps: 8000, concentrationBps: 10_000 } as const;
