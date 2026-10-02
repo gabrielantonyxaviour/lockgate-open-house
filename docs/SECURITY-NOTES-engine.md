@@ -33,9 +33,9 @@ Reviewed the off-chain engine on 2026-10-02 against access control, reentrancy, 
 
 ## Residual
 
-- Utilization, cash, NAV, and the vault snapshot are operator inputs. A lied snapshot can still be signed. The vault re-checks at `approve` and `execute`.
+- Queue utilization, cash, and platform NAV stay operator inputs. `propose --rpc` reads the vault and will not sign when vault-owned fields disagree, the nonce is taken, or `preview` is not `None`. Without `--rpc`, a lied snapshot can still be signed. The vault re-checks at `approve` and `execute`.
 - `quoteId` does not include nonce, recipient, or vault. Repayment routing must use the full advance, not `quoteId` alone.
-- The engine does not store nonces. A filed proposal that later fails `preview` still occupies that nonce until the vault owner cancels it.
+- A successful `filePartnerProposal` is remembered in this process. Filing that digest again throws `replay` and does not call the sender. A send that throws is forgotten, so a dropped transaction can be retried. The vault still stores the digest before preview, and that nonce stays occupied until the owner cancels it. A new process does not see the in-memory set.
 - The one-day clock bound can hide one day of NAV or oracle age.
 - A scan longer than 256 entries is refused rather than fully priced.
 - `broadcastOwnBook` can still send `repay` and `markLate` on the named credit line. It cannot send any other selector.

@@ -2,6 +2,8 @@
 
 ## SUMMARY
 
+The trust model, the roles, the pause and initialize locks, and the known limits, each tied to a test name, are in `contracts/SECURITY-NOTES.md`. This file is the 2026-10-02 findings log.
+
 Reviewed the stage-1 credit line, reserve, sandbox queues, factory, pricing guardrails, open vault, and exit pool on 2026-10-02. The pass covered access control, reentrancy, rounding, oracle staleness, signature replay, denial of service, griefing, and economic attacks. Five findings were fixed in `contracts/src/core` and `contracts/src/interfaces/ILockgateCreditLine.sol`. Regressions are in `contracts/test/core/Security.t.sol`. The same day, Slither 0.11.6 on the core profile reported 121 results. Two were fixed. The other 116 are false positives or accepted timing checks, grouped below. The queue invariant also checks the open-request list. This is not a pentest and not a legal opinion. `PricingMath` is unchanged: 600 seconds is still 99 bps.
 
 ## Findings
