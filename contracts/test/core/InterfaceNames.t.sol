@@ -41,7 +41,7 @@ contract InterfaceNamesTest is CoreFixture {
         assertEq(IPricingEngine.feeBps.selector, bytes4(keccak256("feeBps(uint256,uint256,bool,uint16,uint16)")));
         assertEq(
             IFundFactory.createPlatform.selector,
-            bytes4(keccak256("createPlatform(uint8,string,uint64,uint256,uint256,uint16)"))
+            bytes4(keccak256("createPlatform(uint8,string,uint64,uint256,address,uint256,uint16)"))
         );
         assertEq(IIssuerFund.exitNow.selector, bytes4(keccak256("exitNow(uint256,uint256)")));
         assertEq(IIssuerFund.processWindow.selector, bytes4(keccak256("processWindow()")));

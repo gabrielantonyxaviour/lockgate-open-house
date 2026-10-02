@@ -25,7 +25,7 @@ contract PartnerGasTest is VaultFixture {
         assertLe(vaultRuntime, DEPLOYED_MAX);
         assertLe(vaultInit, INIT_MAX);
 
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
         uint256 routerRuntime = address(router).code.length;
         uint256 routerInit = type(PartnerRouter).creationCode.length;
         assertLe(routerRuntime, DEPLOYED_MAX);
@@ -177,7 +177,8 @@ contract PartnerGasTest is VaultFixture {
 
     function _listed() internal returns (PartnerRouter router) {
         _arm();
-        router = new PartnerRouter();
+        router = new PartnerRouter(address(this));
+        router.approveVault(address(vault), true);
         vm.startPrank(partner);
         vault.setRouter(address(router));
         router.register(address(vault));

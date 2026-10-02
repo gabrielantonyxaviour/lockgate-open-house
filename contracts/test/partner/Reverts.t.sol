@@ -156,12 +156,13 @@ contract PartnerRevertsTest is VaultFixture {
         vm.stopPrank();
         assertEq(vault.mandate().minFeeBps, 100);
 
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
         vm.expectRevert(PartnerRouter.UnknownRecord.selector);
         router.relayRepay(bytes32("none"), 0);
         vm.prank(partner);
         vm.expectRevert(PartnerRouter.UnknownVault.selector);
         router.remove(address(vault));
+        router.approveVault(address(vault), true);
         vm.startPrank(partner);
         router.register(address(vault));
         vm.expectRevert(PartnerRouter.Registered.selector);
@@ -249,7 +250,8 @@ contract PartnerRevertsTest is VaultFixture {
     function test_routerProbeRevertsTheNamedError() public {
         bytes32 exitRef = keccak256("probe");
         RouterProbe probe = new RouterProbe(address(this), platform, exitRef);
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
+        router.approveVault(address(probe), true);
         router.register(address(probe));
         vm.prank(address(probe));
         router.notifyFunded(exitRef, 1, platform, 10, 1);

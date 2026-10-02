@@ -16,7 +16,8 @@ import {PlatformConfig} from "./PlatformConfig.sol";
 import {PlatformBase} from "./PlatformBase.sol";
 
 /// @title FundFactory
-/// @notice Sandbox platforms. `createDemoFund` seeds the MVP numbers and only works when the token is MockUSDG.
+/// @notice Sandbox platforms. Only the owner (Lockgate) creates them, so only Lockgate sets each limit and reserve
+///         rate the factory registers on the line. `createDemoFund` seeds the MVP numbers and only works on MockUSDG.
 contract FundFactory is Ownable, IFundFactory {
     using SafeERC20 for IERC20;
 
@@ -92,7 +93,8 @@ contract FundFactory is Ownable, IFundFactory {
     }
 
     /// @inheritdoc IFundFactory
-    function createDemoFund(string calldata fundName) external returns (address fund) {
+    function createDemoFund(string calldata fundName, address issuer) external onlyOwner returns (address fund) {
+        if (issuer == address(0)) revert ZeroAddress();
         if (!mockToken) revert DemoRequiresMock();
         uint256 shares = DEMO_SHARE_VALUE * 1e18 / DEMO_NAV;
         fund = _deploy(
@@ -100,11 +102,11 @@ contract FundFactory is Ownable, IFundFactory {
                 token: token,
                 creditLine: creditLine,
                 reserve: reserve,
-                issuer: msg.sender,
+                issuer: issuer,
                 name: fundName,
                 nav: DEMO_NAV,
                 interval: demoWindow,
-                initialHolder: msg.sender,
+                initialHolder: issuer,
                 initialShares: shares
             }),
             QueueKind.QuarterlyGated
@@ -123,19 +125,21 @@ contract FundFactory is Ownable, IFundFactory {
         string calldata fundName,
         uint64 interval,
         uint256 shareNav,
+        address issuer,
         uint256 limit,
         uint16 reserveBps
-    ) external returns (address fund) {
+    ) external onlyOwner returns (address fund) {
+        if (issuer == address(0)) revert ZeroAddress();
         fund = _deploy(
             PlatformConfig({
                 token: token,
                 creditLine: creditLine,
                 reserve: reserve,
-                issuer: msg.sender,
+                issuer: issuer,
                 name: fundName,
                 nav: shareNav,
                 interval: interval,
-                initialHolder: msg.sender,
+                initialHolder: issuer,
                 initialShares: 0
             }),
             kind

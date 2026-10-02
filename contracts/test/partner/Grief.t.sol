@@ -84,7 +84,8 @@ contract PartnerGriefTest is VaultFixture {
     function _relay(uint256 tinyCount) internal returns (uint256 otherGas, uint256 tailGas) {
         PartnerVault v = _proxy(partner);
         _arm(v);
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
+        router.approveVault(address(v), true);
         vm.startPrank(partner);
         v.setRouter(address(router));
         router.register(address(v));

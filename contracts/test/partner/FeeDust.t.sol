@@ -123,7 +123,7 @@ contract PartnerFeeDustTest is VaultFixture {
     }
 
     function test_oneUnitQuotesFundAndRepayWithoutDust() public {
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
         PartnerVault[6] memory tiny;
         for (uint256 i; i < tiny.length; ++i) {
             tiny[i] = _tiny(router);
@@ -214,6 +214,7 @@ contract PartnerFeeDustTest is VaultFixture {
                 )
             )
         );
+        router.approveVault(address(v), true);
         vm.startPrank(partner);
         v.setProposer(engine);
         v.setMandate(100, 30 days, 10_000, uint64(block.timestamp + 365 days));

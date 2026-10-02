@@ -15,9 +15,9 @@ contract OpenHolesTest is CoreFixture {
     }
 
     function test_strangerZeroReserveDrawPaysFromTheLine() public {
-        vm.prank(stranger);
+        vm.prank(owner);
         WeeklyCyclePlatform fund = WeeklyCyclePlatform(
-            factory.createPlatform(QueueKind.WeeklyCycle, "Zero reserve", 600, 1e6, 5_000e6, 0)
+            factory.createPlatform(QueueKind.WeeklyCycle, "Zero reserve", 600, 1e6, stranger, 5_000e6, 0)
         );
         assertEq(fund.issuer(), stranger);
         assertEq(line.reserveBpsOf(address(fund)), 0);
@@ -28,8 +28,8 @@ contract OpenHolesTest is CoreFixture {
         assertEq(bps, 99);
         assertEq(fee, 990_000);
 
-        vm.prank(issuer);
-        address band = factory.createPlatform(QueueKind.WeeklyCycle, "Band", 600, 1e6, 5_000e6, 750);
+        vm.prank(owner);
+        address band = factory.createPlatform(QueueKind.WeeklyCycle, "Band", 600, 1e6, issuer, 5_000e6, 750);
         (,,, string memory blocked) = line.quote(band, 100e6);
         assertEq(blocked, "reserve");
         assertEq(usdg.balanceOf(band), 0);
@@ -57,9 +57,9 @@ contract OpenHolesTest is CoreFixture {
     }
 
     function test_setNavAboveCashStillDrawsTheLine() public {
-        vm.prank(stranger);
+        vm.prank(owner);
         WeeklyCyclePlatform fund = WeeklyCyclePlatform(
-            factory.createPlatform(QueueKind.WeeklyCycle, "Marked cash", 600, 1e6, 5_000e6, 750)
+            factory.createPlatform(QueueKind.WeeklyCycle, "Marked cash", 600, 1e6, stranger, 5_000e6, 750)
         );
         (,,, string memory blocked) = line.quote(address(fund), 10e6);
         assertEq(blocked, "reserve");

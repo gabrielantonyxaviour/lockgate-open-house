@@ -33,7 +33,7 @@ contract Adversarial is Test {
         partner = makeAddr("partner");
         (lockgate, lockgateKey) = makeAddrAndKey("lockgate");
         token = new MockUSDG(address(this));
-        router = new PartnerRouter();
+        router = new PartnerRouter(address(this));
         grief = _vault();
         honest = _vault();
     }
@@ -127,6 +127,7 @@ contract Adversarial is Test {
         bytes memory init = abi.encodeCall(PartnerVaultAdmin.initialize, (partner, address(token), 1 days, 1 days));
         vault = PartnerVault(address(new ERC1967Proxy(address(impl), init)));
         token.mint(partner, 5_000 * U);
+        router.approveVault(address(vault), true);
         vm.startPrank(partner);
         vault.setProposer(lockgate);
         vault.setMandate(25, 30 days, 10_000, uint64(block.timestamp + 365 days));

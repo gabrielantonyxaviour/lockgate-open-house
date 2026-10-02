@@ -131,9 +131,9 @@ contract FailurePathsTest is CoreFixture {
     }
 
     function test_epochDustRollsAndQuarterlyUngatePays() public {
-        vm.prank(issuer);
+        vm.prank(owner);
         EpochQueuePlatform epoch = EpochQueuePlatform(
-            factory.createPlatform(QueueKind.Epoch, "Epoch dust", 600, 1e18, 1_000_000e6, 0)
+            factory.createPlatform(QueueKind.Epoch, "Epoch dust", 600, 1e18, issuer, 1_000_000e6, 0)
         );
         _oneUnit(epoch, investor);
         _oneUnit(epoch, issuer);
@@ -153,9 +153,9 @@ contract FailurePathsTest is CoreFixture {
         assertEq(epoch.cash(), 2);
         assertEq(epoch.currentCycleId(), 2);
 
-        vm.prank(issuer);
+        vm.prank(owner);
         QuarterlyWindowPlatform quarter = QuarterlyWindowPlatform(
-            factory.createPlatform(QueueKind.QuarterlyGated, "Quarter", 600, 1e6, 1_000_000e6, 0)
+            factory.createPlatform(QueueKind.QuarterlyGated, "Quarter", 600, 1e6, issuer, 1_000_000e6, 0)
         );
         _mint(investor, 5e6);
         vm.startPrank(investor);
@@ -177,9 +177,9 @@ contract FailurePathsTest is CoreFixture {
 
     /// @dev Two claims of 3 against cash 5. Each floor payment is 2. The leftover unit stays, and the next epoch still pays 0.
     function test_epochProRataLeavesOneUnitAndBothStayQueued() public {
-        vm.prank(issuer);
+        vm.prank(owner);
         EpochQueuePlatform epoch = EpochQueuePlatform(
-            factory.createPlatform(QueueKind.Epoch, "Epoch leftover", 600, 1e6, 1_000_000e6, 0)
+            factory.createPlatform(QueueKind.Epoch, "Epoch leftover", 600, 1e6, issuer, 1_000_000e6, 0)
         );
         _deposit(epoch, investor, 3);
         _deposit(epoch, issuer, 2);
@@ -242,18 +242,18 @@ contract FailurePathsTest is CoreFixture {
         vm.stopPrank();
         assertEq(share.balanceOf(investor), 1e18);
 
-        vm.prank(issuer);
+        vm.prank(owner);
         vm.expectRevert(FundFactory.BadKind.selector);
-        factory.createPlatform(QueueKind.None, "nope", 600, 1e6, 1, 0);
+        factory.createPlatform(QueueKind.None, "nope", 600, 1e6, issuer, 1, 0);
         vm.prank(owner);
         vm.expectRevert(FundFactory.BadParam.selector);
         factory.setDemoWindow(0);
     }
 
     function _week() internal returns (WeeklyCyclePlatform platform) {
-        vm.prank(issuer);
+        vm.prank(owner);
         platform = WeeklyCyclePlatform(
-            factory.createPlatform(QueueKind.WeeklyCycle, "Week", 600, 1e6, 1_000_000e6, 750)
+            factory.createPlatform(QueueKind.WeeklyCycle, "Week", 600, 1e6, issuer, 1_000_000e6, 750)
         );
         _post(address(platform), 20e6);
     }

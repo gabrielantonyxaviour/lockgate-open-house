@@ -204,9 +204,9 @@ contract RevertPathsTest is CoreFixture {
     }
 
     function test_platformZerosAndExitGuards() public {
-        vm.prank(issuer);
+        vm.prank(owner);
         WeeklyCyclePlatform platform = WeeklyCyclePlatform(
-            factory.createPlatform(QueueKind.WeeklyCycle, "Zeros", 600, 1e6, 1_000_000e6, 0)
+            factory.createPlatform(QueueKind.WeeklyCycle, "Zeros", 600, 1e6, issuer, 1_000_000e6, 0)
         );
         vm.expectRevert(PlatformStore.ZeroAmount.selector);
         platform.deposit(0);

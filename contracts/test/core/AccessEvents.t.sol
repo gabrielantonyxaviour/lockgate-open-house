@@ -213,9 +213,9 @@ contract AccessEventsTest is CoreFixture {
 
     function test_initializeEmitsConfigured() public {
         vm.recordLogs();
-        vm.prank(issuer);
+        vm.prank(owner);
         WeeklyCyclePlatform platform =
-            WeeklyCyclePlatform(factory.createPlatform(QueueKind.WeeklyCycle, "Week", 600, 1e6, 1, 0));
+            WeeklyCyclePlatform(factory.createPlatform(QueueKind.WeeklyCycle, "Week", 600, 1e6, issuer, 1, 0));
         Vm.Log[] memory logs = vm.getRecordedLogs();
         bytes32 topic = PlatformStore.Configured.selector;
         bool found;
@@ -233,9 +233,9 @@ contract AccessEventsTest is CoreFixture {
     }
 
     function test_issuerBanBlocksDepositAndStillLetsTheHolderQueue() public {
-        vm.prank(issuer);
+        vm.prank(owner);
         WeeklyCyclePlatform platform =
-            WeeklyCyclePlatform(factory.createPlatform(QueueKind.WeeklyCycle, "Ban", 600, 1e6, 1, 0));
+            WeeklyCyclePlatform(factory.createPlatform(QueueKind.WeeklyCycle, "Ban", 600, 1e6, issuer, 1, 0));
         address share = platform.share();
         _mint(issuer, 1e6);
         vm.startPrank(issuer);
@@ -257,9 +257,9 @@ contract AccessEventsTest is CoreFixture {
     }
 
     function test_emptyWindowEmitsTheRoll() public {
-        vm.prank(issuer);
+        vm.prank(owner);
         WeeklyCyclePlatform platform =
-            WeeklyCyclePlatform(factory.createPlatform(QueueKind.WeeklyCycle, "Roll", 600, 1e6, 1, 0));
+            WeeklyCyclePlatform(factory.createPlatform(QueueKind.WeeklyCycle, "Roll", 600, 1e6, issuer, 1, 0));
         uint64 opened = platform.nextWindow();
         vm.warp(opened);
         vm.expectEmit(true, false, false, true, address(platform));

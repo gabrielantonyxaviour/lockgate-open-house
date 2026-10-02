@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import {Ownable, Ownable2Step} from "@openzeppelin/contracts/access/Ownable2Step.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {AdvanceProposal} from "../interfaces/IAdvanceProposal.sol";
 import {Advance, AdvanceStatus, RejectReason} from "./Types.sol";
@@ -13,9 +14,11 @@ import {RouterLogic} from "./libraries/RouterLogic.sol";
 
 /// @title PartnerRouter
 /// @notice Picks a partner vault for an exit and remembers who funded it.
-/// @dev Immutable. No owner, no sweep, no upgrade. The only token movement is `relayRepay`,
-///      which pulls from the caller and forwards the same amount to the vault that funded that exit.
-contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
+/// @dev No sweep, no upgrade. The only token movement is `relayRepay`, which pulls from the caller and forwards the
+///      same amount to the vault that funded that exit. The owner (Lockgate) only curates the directory: a vault's
+///      own owner lists it after the router owner approved it. The router owner has no path to vault funds and
+///      cannot touch a record once written.
+contract PartnerRouter is IPartnerRouter, Ownable2Step, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     /// @dev One registration cannot spend the block inside `quote`. An honest `maxNav` fits under this.
@@ -26,6 +29,8 @@ contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
     uint256 public rrCursor;
     mapping(bytes32 => Record[]) private _records;
     mapping(bytes32 => bool) private _seen;
+    /// @notice Vaults the router owner allows to list themselves.
+    mapping(address => bool) public approvedVault;
 
     error NotOwner();
     error Registered();
@@ -35,26 +40,43 @@ contract PartnerRouter is IPartnerRouter, ReentrancyGuard {
     error BalanceMismatch();
     error Empty();
     error UnknownRecord();
+    error NotApproved();
 
     event VaultRegistered(address indexed vault, address indexed partner);
     event VaultRemoved(address indexed vault);
+    event VaultApproved(address indexed vault, bool approved);
+
+    constructor(address owner_) Ownable(owner_) {}
+
+    /// @notice Router owner allows or disallows a vault. Disallowing also delists it; its records stay repayable.
+    function approveVault(address vault, bool approved) external onlyOwner {
+        approvedVault[vault] = approved;
+        emit VaultApproved(vault, approved);
+        if (!approved && indexPlusOne[vault] != 0) _delist(vault);
+    }
     event ExitFunded(bytes32 indexed exitRef, address indexed vault, uint256 indexed advanceId, uint256 navValue, uint256 fee);
     event ExitRepaid(bytes32 indexed exitRef, address indexed vault, uint256 advanceId, uint256 amount);
 
-    /// @notice Partner lists a vault they own. A second listing reverts `Registered`.
+    /// @notice Partner lists a vault they own, once the router owner approved it. Both sides must agree. A second
+    ///         listing reverts `Registered`. An unlisted vault cannot report fundings, so it can never take a repayment.
     function register(address vault) external {
         if (indexPlusOne[vault] != 0) revert Registered();
         if (_owner(vault) != msg.sender) revert NotOwner();
+        if (!approvedVault[vault]) revert NotApproved();
         vaultList.push(vault);
         indexPlusOne[vault] = vaultList.length;
         emit VaultRegistered(vault, msg.sender);
     }
 
-    /// @notice Owner takes the vault off the directory. Recorded repayments stay readable.
+    /// @notice Vault owner takes the vault off the directory. Recorded repayments stay readable.
     function remove(address vault) external {
         if (_owner(vault) != msg.sender) revert NotOwner();
+        if (indexPlusOne[vault] == 0) revert UnknownVault();
+        _delist(vault);
+    }
+
+    function _delist(address vault) private {
         uint256 idxPlus = indexPlusOne[vault];
-        if (idxPlus == 0) revert UnknownVault();
         uint256 idx = idxPlus - 1;
         uint256 last = vaultList.length - 1;
         if (idx != last) {

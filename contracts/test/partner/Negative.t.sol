@@ -108,7 +108,7 @@ contract PartnerNegativeTest is VaultFixture {
         bytes memory moduleSig = _engineSig(vault, p);
         vm.expectRevert(PartnerVaultAdmin.NotApproved.selector);
         module.execute(p, moduleSig);
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
         vm.prank(makeAddr("stranger"));
         vm.expectRevert(PartnerRouter.NotOwner.selector);
         router.register(address(vault));

@@ -191,9 +191,9 @@ contract SecurityTest is CoreFixture {
     }
 
     function test_openQueueCapsAndDropsSettledHistory() public {
-        vm.prank(issuer);
+        vm.prank(owner);
         WeeklyCyclePlatform platform = WeeklyCyclePlatform(
-            factory.createPlatform(QueueKind.WeeklyCycle, "Cap", 600, 1e6, 1_000_000e6, 0)
+            factory.createPlatform(QueueKind.WeeklyCycle, "Cap", 600, 1e6, issuer, 1_000_000e6, 0)
         );
         uint256 slots = platform.MAX_OPEN();
         _mint(investor, (slots + 2) * 1e6);

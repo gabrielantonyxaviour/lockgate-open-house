@@ -30,7 +30,7 @@ contract RouterTest is Test {
         platform = makeAddr("platform");
         lockgate = makeAddr("lockgate");
         usdg = new MockUSDG();
-        router = new PartnerRouter();
+        router = new PartnerRouter(address(this));
         highFee = _vault(100, 5_000_000 * UNIT);
         lowFee = _vault(50, 2_000_000 * UNIT);
         midFee = _vault(80, 1_000_000 * UNIT);
@@ -140,6 +140,7 @@ contract RouterTest is Test {
                 )
             )
         );
+        router.approveVault(address(v), true);
         vm.startPrank(partner);
         v.setProposer(engine);
         v.setMandate(minFee, 30 days, 10_000, uint64(block.timestamp + 365 days));

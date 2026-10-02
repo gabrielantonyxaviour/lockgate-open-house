@@ -9,6 +9,8 @@ import {IMockUSDG} from "../interfaces/IMockUSDG.sol";
 import {UsdgTransfers} from "./UsdgTransfers.sol";
 
 /// @title OpenCreditVault
+/// @custom:status NOT DEPLOYED, SUPERSEDED. Door 2 bought investor shares, which breaks "investor positions never move".
+///                It is out of every deploy plan and demo; the source stays only for its existing unit tests.
 /// @notice sUSDai-style sandbox. Share price starts at 1 USDG and, on MockUSDG, compounds the cash at 9% APR.
 contract OpenCreditVault is ERC20, Ownable, ReentrancyGuard, IOpenCreditVault {
     /// @notice Mock yield, 900 bps a year. A real-USDG vault sets `mintYield` false.

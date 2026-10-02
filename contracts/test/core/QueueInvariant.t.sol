@@ -79,9 +79,9 @@ contract QueueInvariantTest is StdInvariant, CoreFixture {
     function setUp() public {
         _core();
         address actor = makeAddr("queue-actor");
-        vm.prank(issuer);
+        vm.prank(owner);
         platform = WeeklyCyclePlatform(
-            factory.createPlatform(QueueKind.WeeklyCycle, "Invariant book", 600, 1e6, 1_000_000e6, 750)
+            factory.createPlatform(QueueKind.WeeklyCycle, "Invariant book", 600, 1e6, issuer, 1_000_000e6, 750)
         );
         _post(address(platform), 100_000e6);
         handler = new QueueHandler(address(platform), address(line), address(usdg), actor);

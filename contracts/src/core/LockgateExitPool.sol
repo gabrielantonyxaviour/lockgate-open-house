@@ -11,6 +11,8 @@ import {ILockgateCreditLine} from "../interfaces/ILockgateCreditLine.sol";
 import {OpenCreditVault} from "./OpenCreditVault.sol";
 
 /// @title LockgateExitPool
+/// @custom:status NOT DEPLOYED, SUPERSEDED. Door 2 bought investor shares, which breaks "investor positions never move".
+///                It is out of every deploy plan and demo; the source stays only for its existing unit tests.
 /// @notice Buys open-token shares with the stage-1 credit line and holds the cooldown withdrawal.
 ///         Register this pool with `reserveBps` 0. `nextWindow` is `now + cooldown` at draw time.
 contract LockgateExitPool is Ownable, ReentrancyGuard, ILockgateExitPool {

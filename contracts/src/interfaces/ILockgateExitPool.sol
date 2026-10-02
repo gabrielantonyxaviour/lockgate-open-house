@@ -3,6 +3,7 @@ pragma solidity ^0.8.24;
 
 import {ICreditSource} from "./ICreditSource.sol";
 
+/// @custom:status NOT DEPLOYED, SUPERSEDED (door 2 moves investor positions). Kept only for existing unit tests.
 /// @notice Door 2. Lockgate buys open-token shares, pays the seller `nav - fee`, and queues the vault withdrawal.
 ///         `settle` claims that withdrawal and repays the credit line. Reserve on this source is 0.
 interface ILockgateExitPool is ICreditSource {

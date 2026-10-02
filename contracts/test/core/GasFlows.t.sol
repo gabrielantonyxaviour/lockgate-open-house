@@ -108,9 +108,9 @@ contract GasFlowsTest is CoreFixture {
     }
 
     function _week() internal returns (WeeklyCyclePlatform platform) {
-        vm.prank(issuer);
+        vm.prank(owner);
         platform = WeeklyCyclePlatform(
-            factory.createPlatform(QueueKind.WeeklyCycle, "Gas week", 600, 1e6, 1_000_000e6, 750)
+            factory.createPlatform(QueueKind.WeeklyCycle, "Gas week", 600, 1e6, issuer, 1_000_000e6, 750)
         );
         _post(address(platform), 750e6);
     }

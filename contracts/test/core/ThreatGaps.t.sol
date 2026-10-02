@@ -75,9 +75,9 @@ contract ThreatGapsTest is CoreFixture {
     }
 
     function test_strangerCannotMoveSharesOrIssuerControls() public {
-        vm.prank(issuer);
+        vm.prank(owner);
         WeeklyCyclePlatform platform = WeeklyCyclePlatform(
-            factory.createPlatform(QueueKind.WeeklyCycle, "Gate", 600, 1e6, 1_000_000e6, 0)
+            factory.createPlatform(QueueKind.WeeklyCycle, "Gate", 600, 1e6, issuer, 1_000_000e6, 0)
         );
         PlatformShare share = platform.shareToken();
         vm.prank(stranger);
@@ -131,9 +131,9 @@ contract ThreatGapsTest is CoreFixture {
     }
 
     function test_exitEarlyWithoutReserveStaysQueued() public {
-        vm.prank(issuer);
+        vm.prank(owner);
         WeeklyCyclePlatform platform = WeeklyCyclePlatform(
-            factory.createPlatform(QueueKind.WeeklyCycle, "Thin", 600, 1e6, 1_000_000e6, 750)
+            factory.createPlatform(QueueKind.WeeklyCycle, "Thin", 600, 1e6, issuer, 1_000_000e6, 750)
         );
         _mint(investor, 10e6);
         vm.startPrank(investor);

@@ -32,9 +32,10 @@ contract PartnerKeys is Test {
         PartnerVault impl = new PartnerVault();
         bytes memory init = abi.encodeCall(PartnerVaultAdmin.initialize, (partner, address(token), 1 days, 1 days));
         vault = PartnerVault(address(new ERC1967Proxy(address(impl), init)));
-        router = new PartnerRouter();
+        router = new PartnerRouter(address(this));
 
         token.mint(partner, 50_000 * U);
+        router.approveVault(address(vault), true);
         vm.startPrank(partner);
         vault.setProposer(lockgate);
         vault.setMandate(25, 30 days, 10_000, uint64(block.timestamp + 365 days));

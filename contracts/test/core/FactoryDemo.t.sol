@@ -42,8 +42,8 @@ contract FactoryDemoTest is CoreFixture {
     }
 
     function test_demoSeedAndExitClearsOnTheWindow() public {
-        vm.prank(issuer);
-        QuarterlyWindowPlatform platform = QuarterlyWindowPlatform(factory.createDemoFund("Harbour Credit"));
+        vm.prank(owner);
+        QuarterlyWindowPlatform platform = QuarterlyWindowPlatform(factory.createDemoFund("Harbour Credit", issuer));
         assertEq(platform.issuer(), issuer);
         assertEq(platform.nav(), 1_023_400);
         assertEq(platform.cash(), 2_000e6);
@@ -83,20 +83,20 @@ contract FactoryDemoTest is CoreFixture {
     function test_realAdapterCannotMintTheDemo() public {
         UsdgAdapter realish = new UsdgAdapter(address(usdg), false);
         FundFactory other = _factory(address(realish));
-        vm.prank(issuer);
+        vm.prank(owner);
         vm.expectRevert(FundFactory.DemoRequiresMock.selector);
-        other.createDemoFund("nope");
+        other.createDemoFund("nope", issuer);
     }
 
     function test_createPlatformDoesNotSeedCash() public {
-        vm.prank(issuer);
-        address fund = factory.createPlatform(QueueKind.WeeklyCycle, "Bare", 600, 1e6, 5_000e6, 500);
+        vm.prank(owner);
+        address fund = factory.createPlatform(QueueKind.WeeklyCycle, "Bare", 600, 1e6, issuer, 5_000e6, 500);
         assertEq(IERC20(usdg).balanceOf(fund), 0);
         assertEq(reserve.balanceOf(fund), 0);
         assertEq(line.limitOf(fund), 5_000e6);
-        vm.prank(issuer);
+        vm.prank(owner);
         vm.expectRevert(FundFactory.BadKind.selector);
-        factory.createPlatform(QueueKind.None, "none", 600, 1e6, 1, 0);
+        factory.createPlatform(QueueKind.None, "none", 600, 1e6, issuer, 1, 0);
     }
 
     /// @dev EIP-170 deployed max is 24576. EIP-3860 init max is 49152.
@@ -130,15 +130,16 @@ contract FactoryDemoTest is CoreFixture {
         FundFactory badFactory = _factory(address(new UsdgAdapter(address(bad), true)));
         vm.prank(owner);
         line.setRegistrar(address(badFactory), true);
+        vm.prank(owner);
         vm.expectRevert(abi.encodeWithSelector(SafeERC20.SafeERC20FailedOperation.selector, address(bad)));
-        badFactory.createDemoFund("False approve");
+        badFactory.createDemoFund("False approve", issuer);
         assertEq(badFactory.allFunds().length, 0);
         assertEq(line.sources().length, 0);
     }
 
     function test_initializeIsOnceOnTheCloneAndTheImplementation() public {
-        vm.prank(issuer);
-        address fund = factory.createPlatform(QueueKind.WeeklyCycle, "Once", 600, 1e6, 1, 0);
+        vm.prank(owner);
+        address fund = factory.createPlatform(QueueKind.WeeklyCycle, "Once", 600, 1e6, issuer, 1, 0);
         PlatformConfig memory cfg;
         cfg.token = address(usdg);
         cfg.creditLine = address(line);

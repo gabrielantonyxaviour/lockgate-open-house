@@ -5,15 +5,18 @@ import {QueueKind} from "./IQueueAdapter.sol";
 
 /// @notice One-click sandbox platforms. `createDemoFund` matches the MVP seed.
 interface IFundFactory {
-    /// @notice Caller becomes the issuer. Quarterly, and only when the token is MockUSDG. Posts the demo reserve and cash.
-    function createDemoFund(string calldata fundName) external returns (address fund);
+    /// @notice Owner only. `issuer` runs the fund. Quarterly, and only when the token is MockUSDG. Posts the demo
+    ///         reserve and cash.
+    function createDemoFund(string calldata fundName, address issuer) external returns (address fund);
 
-    /// @notice Anyone, once this factory is a registrar. Posts no cash. `reserveBps` may be 0.
+    /// @notice Owner only (Lockgate), so the limit and reserve rate registered on the line are Lockgate's. `issuer`
+    ///         runs the fund. Posts no cash.
     function createPlatform(
         QueueKind kind,
         string calldata fundName,
         uint64 interval,
         uint256 shareNav,
+        address issuer,
         uint256 limit,
         uint16 reserveBps
     ) external returns (address fund);

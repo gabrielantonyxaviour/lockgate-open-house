@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+/// @custom:status NOT DEPLOYED, SUPERSEDED (door 2 moves investor positions). Kept only for existing unit tests.
 /// @notice Open token anyone can hold. 18-decimal shares. NAV is 6-decimal USDG per 1e18 shares.
 ///         On a mock token the vault mints about 9% a year into itself. Real USDG does not auto-mint.
 interface IOpenCreditVault {

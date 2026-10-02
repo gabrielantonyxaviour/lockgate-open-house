@@ -82,9 +82,10 @@ contract PartnerEventsTest is VaultFixture {
         vault.cancel(7);
         _saw(vm.getRecordedLogs(), address(vault), keccak256("ProposalCancelled(uint256)"), _word(7), "");
 
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
         vm.prank(partner);
         vault.setRouter(address(router));
+        router.approveVault(address(vault), true);
         vm.prank(partner);
         router.register(address(vault));
         _deposit(50_000 * UNIT);

@@ -111,7 +111,7 @@ contract PartnerCallsTest is Test {
     uint256 internal constant ENGINE_PK = 0xA11CE;
 
     function test_registerReentryCannotListTheVault() public {
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
         DirectoryHook hook = new DirectoryHook();
         hook.configure(router, address(this), address(0), 1);
         bytes memory ret = _call(address(router), abi.encodeCall(PartnerRouter.register, (address(hook))));
@@ -120,21 +120,24 @@ contract PartnerCallsTest is Test {
     }
 
     function test_dirtyOwnerWordRevertsNotOwner() public {
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
         OddVault odd = new OddVault(address(this), 4);
+        router.approveVault(address(odd), true);
         vm.expectRevert(PartnerRouter.NotOwner.selector);
         router.register(address(odd));
         assertEq(router.vaultCount(), 0);
     }
 
     function test_removeReentryCannotPlantAVault() public {
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
         DirectoryHook hook = new DirectoryHook();
         Plant plant = new Plant(address(hook));
         hook.configure(router, address(this), address(plant), 0);
+        router.approveVault(address(hook), true);
         router.register(address(hook));
         DirectoryHook sibling = new DirectoryHook();
         sibling.configure(router, address(this), address(0), 0);
+        router.approveVault(address(sibling), true);
         router.register(address(sibling));
         hook.configure(router, address(this), address(plant), 2);
         bytes memory ret = _call(address(router), abi.encodeCall(PartnerRouter.remove, (address(hook))));
@@ -146,9 +149,10 @@ contract PartnerCallsTest is Test {
     }
 
     function test_notifyReentryCannotPushASecondRecord() public {
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
         DirectoryHook hook = new DirectoryHook();
         hook.configure(router, address(this), address(0), 0);
+        router.approveVault(address(hook), true);
         router.register(address(hook));
         hook.configure(router, address(this), address(0), 3);
         vm.prank(address(hook));
@@ -161,14 +165,15 @@ contract PartnerCallsTest is Test {
 
     function test_oddReturnsDoNotBlankTheQuote() public {
         (PartnerVault v,) = _open(100_000 * UNIT);
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
+        router.approveVault(address(v), true);
         vm.startPrank(v.owner());
         v.setRouter(address(router));
         router.register(address(v));
         vm.stopPrank();
-        router.register(address(new OddVault(address(this), 1)));
-        router.register(address(new OddVault(address(this), 2)));
-        router.register(address(new OddVault(address(this), 3)));
+        _approveAndList(router, address(new OddVault(address(this), 1)));
+        _approveAndList(router, address(new OddVault(address(this), 2)));
+        _approveAndList(router, address(new OddVault(address(this), 3)));
         IPartnerRouter.ExitRequest memory request = IPartnerRouter.ExitRequest({
             platform: makeAddr("platform"),
             recipient: makeAddr("platform"),
@@ -193,8 +198,9 @@ contract PartnerCallsTest is Test {
 
     function test_relayRepayClipUnderDonationRevertsBalanceMismatch() public {
         (PartnerVault v, WeirdUSDG token) = _open(100_000 * UNIT);
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
         address platform = makeAddr("platform");
+        router.approveVault(address(v), true);
         vm.startPrank(v.owner());
         v.setRouter(address(router));
         router.register(address(v));
@@ -268,5 +274,10 @@ contract PartnerCallsTest is Test {
         (uint8 vv, bytes32 r, bytes32 s) = vm.sign(ENGINE_PK, digest);
         vm.prank(v.owner());
         id = v.execute(p, abi.encodePacked(r, s, vv), "");
+    }
+
+    function _approveAndList(PartnerRouter r, address v) internal {
+        r.approveVault(v, true);
+        r.register(v);
     }
 }

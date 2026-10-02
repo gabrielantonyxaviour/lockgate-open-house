@@ -10,7 +10,6 @@ import {PartnerVault} from "../../src/partner/PartnerVault.sol";
 import {PartnerVaultAdmin} from "../../src/partner/PartnerVaultAdmin.sol";
 import {VaultFixture} from "./VaultFixture.sol";
 import {TokenAttacker, WeirdUSDG} from "./mocks/WeirdUSDG.sol";
-
 contract PartnerTokenTest is VaultFixture {
     function setUp() public {
         _deploy();
@@ -220,7 +219,8 @@ contract PartnerTokenTest is VaultFixture {
 
     function test_relayRepayRejectsFeeYankAndReentrantRouter() public {
         (PartnerVault v, WeirdUSDG token) = _weird();
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
+        router.approveVault(address(v), true);
         vm.startPrank(partner);
         v.setRouter(address(router));
         router.register(address(v));

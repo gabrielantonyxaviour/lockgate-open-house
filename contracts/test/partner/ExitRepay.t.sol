@@ -14,8 +14,10 @@ contract ExitRepayTest is VaultFixture {
 
     function setUp() public {
         _deploy();
-        router = new PartnerRouter();
+        router = new PartnerRouter(address(this));
         second = _proxy(partner);
+        router.approveVault(address(second), true);
+        router.approveVault(address(vault), true);
         vm.startPrank(partner);
         vault.setProposer(engine);
         second.setProposer(engine);

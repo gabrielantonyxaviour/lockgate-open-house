@@ -65,9 +65,9 @@ contract QueuesTest is CoreFixture {
     }
 
     function test_epochPaysProRata() public {
-        vm.prank(issuer);
+        vm.prank(owner);
         EpochQueuePlatform platform = EpochQueuePlatform(
-            factory.createPlatform(QueueKind.Epoch, "Epoch book", 600, 1e6, 1_000_000e6, 0)
+            factory.createPlatform(QueueKind.Epoch, "Epoch book", 600, 1e6, issuer, 1_000_000e6, 0)
         );
         _queueThree(WeeklyCyclePlatform(address(platform)));
         (, , uint256 payable_, uint256 shortfall) = platform.previewSettlement();
@@ -221,8 +221,8 @@ contract QueuesTest is CoreFixture {
     }
 
     function _seedWeekly() internal returns (WeeklyCyclePlatform platform) {
-        vm.prank(issuer);
-        platform = WeeklyCyclePlatform(factory.createPlatform(QueueKind.WeeklyCycle, "Weekly book", 600, 1e6, 1, 0));
+        vm.prank(owner);
+        platform = WeeklyCyclePlatform(factory.createPlatform(QueueKind.WeeklyCycle, "Weekly book", 600, 1e6, issuer, 1, 0));
     }
 
     function _queueThree(WeeklyCyclePlatform platform) internal {

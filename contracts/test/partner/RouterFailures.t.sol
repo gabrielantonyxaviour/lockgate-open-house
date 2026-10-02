@@ -27,7 +27,7 @@ contract RouterFailuresTest is Test {
         platform = makeAddr("platform");
         lockgate = makeAddr("lockgate");
         usdg = new MockUSDG();
-        router = new PartnerRouter();
+        router = new PartnerRouter(address(this));
         vault = _vault(1_000_000 * UNIT);
     }
 
@@ -74,6 +74,7 @@ contract RouterFailuresTest is Test {
                 )
             )
         );
+        router.approveVault(address(v), true);
         vm.startPrank(partner);
         v.setProposer(vm.addr(enginePk));
         v.setMandate(100, 30 days, 10_000, uint64(block.timestamp + 365 days));

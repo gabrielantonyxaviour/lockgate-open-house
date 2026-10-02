@@ -7,6 +7,13 @@ import {FacilityFixture} from "./FacilityFixture.sol";
 
 /// @notice A draw, a repayment, and a loss stay on one identity: unpaid drawn becomes deficit, cash does not move on the loss.
 contract LossSymmetryTest is FacilityFixture {
+    /// @dev The counterexample G9 recorded (e2e/FINDINGS.md, seed 0xac6077…3e), replayed on every run.
+    function test_recordedCounterexampleHolds() public {
+        testFuzz_unpaidDrawBecomesDeficitAndRepayRestoresSeniorFirst(
+            3, 79228162514264337593543950332, 486443499876322530418866, 59944674909726747, 2588
+        );
+    }
+
     function testFuzz_unpaidDrawBecomesDeficitAndRepayRestoresSeniorFirst(
         uint96 seniorRaw,
         uint96 juniorRaw,

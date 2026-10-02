@@ -114,7 +114,8 @@ contract PartnerQueueTest is CoreStack {
         bob = makeAddr("bob");
         vault = _vault(partner);
         queue = new MockPlatformQueue(token, vault);
-        router = new PartnerRouter();
+        router = new PartnerRouter(address(this));
+        router.approveVault(address(vault), true);
         vm.startPrank(partner);
         vault.setProposer(engine);
         vault.setMandate(100, 30 days, 10_000, uint64(block.timestamp + 365 days));

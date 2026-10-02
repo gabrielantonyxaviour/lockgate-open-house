@@ -15,7 +15,8 @@ contract WindDownTest is VaultFixture {
     function setUp() public {
         _deploy();
         _openMandate();
-        router = new PartnerRouter();
+        router = new PartnerRouter(address(this));
+        router.approveVault(address(vault), true);
         vm.startPrank(partner);
         vault.setRouter(address(router));
         router.register(address(vault));

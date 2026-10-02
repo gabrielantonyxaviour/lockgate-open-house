@@ -190,14 +190,15 @@ contract PartnerSecurityTest is VaultFixture {
     }
 
     function test_oneBadVaultDoesNotBlankTheQuote() public {
-        PartnerRouter router = new PartnerRouter();
+        PartnerRouter router = new PartnerRouter(address(this));
         vm.prank(partner);
         vault.setRouter(address(router));
+        router.approveVault(address(vault), true);
         vm.prank(partner);
         router.register(address(vault));
-        router.register(address(new RevertVault(address(this))));
-        router.register(address(new GasVault(address(this))));
-        router.register(address(new HugeNav(address(this))));
+        _approveAndList(router, address(new RevertVault(address(this))));
+        _approveAndList(router, address(new GasVault(address(this))));
+        _approveAndList(router, address(new HugeNav(address(this))));
         IPartnerRouter.ExitRequest memory request = IPartnerRouter.ExitRequest({
             platform: platform,
             recipient: platform,
@@ -221,5 +222,10 @@ contract PartnerSecurityTest is VaultFixture {
         assertEq(parts[0].fee, 1_000 * UNIT);
         assertEq(usdg.balanceOf(address(vault)), bal);
         assertEq(vault.advanceCount(), 0);
+    }
+
+    function _approveAndList(PartnerRouter r, address v) internal {
+        r.approveVault(v, true);
+        r.register(v);
     }
 }
