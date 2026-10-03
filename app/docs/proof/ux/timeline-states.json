@@ -1,0 +1,48 @@
+{
+  "provenance": "Explicit illustrative recovered fixture and existing repaid preview record on actual receipt route. No wallet transactions.",
+  "proof": [
+    {
+      "width": 375,
+      "state": "recovered",
+      "platformSettlementComplete": false,
+      "balanceCleared": true,
+      "overflow": 0
+    },
+    {
+      "width": 375,
+      "state": "repaid",
+      "platformSettlementComplete": true,
+      "balanceCleared": true,
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "state": "recovered",
+      "platformSettlementComplete": false,
+      "balanceCleared": true,
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "state": "repaid",
+      "platformSettlementComplete": true,
+      "balanceCleared": true,
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "state": "recovered",
+      "platformSettlementComplete": false,
+      "balanceCleared": true,
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "state": "repaid",
+      "platformSettlementComplete": true,
+      "balanceCleared": true,
+      "overflow": 0
+    }
+  ],
+  "errors": []
+}

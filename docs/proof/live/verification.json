@@ -1,0 +1,37 @@
+{
+  "checkedAt": "2026-10-03T21:37:54.219Z",
+  "expectedBundle": "/assets/index-CaKHjc0E.js",
+  "targets": [
+    {
+      "target": "https://openhouse.lockgate.finance",
+      "status": 200,
+      "snapshotMs": 4308,
+      "publicRead": "Block 315459048 · On-chain balances. Exit availability depends on platform terms and your position.",
+      "responsiveWidths": [
+        375,
+        768,
+        1440
+      ],
+      "missingWallet": "actionable error",
+      "factoryRegistration": "Actual owner read; owner-required state",
+      "networkSelection": "One unavailable, Sepolia restored",
+      "runtimeErrors": []
+    },
+    {
+      "target": "https://open-house.lockgate.finance",
+      "status": 200,
+      "snapshotMs": 4300,
+      "publicRead": "Block 315459100 · On-chain balances. Exit availability depends on platform terms and your position.",
+      "responsiveWidths": [
+        375,
+        768,
+        1440
+      ],
+      "missingWallet": "actionable error",
+      "factoryRegistration": "Actual owner read; owner-required state",
+      "networkSelection": "One unavailable, Sepolia restored",
+      "runtimeErrors": []
+    }
+  ],
+  "passed": true
+}

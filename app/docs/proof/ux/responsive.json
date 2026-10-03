@@ -1,0 +1,348 @@
+{
+  "capturedAt": "2026-10-03T20:40:40.064Z",
+  "source": "Explicit read-only illustrative layout preview",
+  "report": [
+    {
+      "route": "/",
+      "width": 375,
+      "overflow": 0,
+      "title": "Your capital.\nOn your timeline."
+    },
+    {
+      "route": "/start/investor",
+      "width": 375,
+      "overflow": 0,
+      "title": "Choose when your capital comes back."
+    },
+    {
+      "route": "/start/issuer",
+      "width": 375,
+      "overflow": 0,
+      "title": "Give your investors another option."
+    },
+    {
+      "route": "/overview",
+      "width": 375,
+      "overflow": 0,
+      "title": "Capital in motion."
+    },
+    {
+      "route": "/platforms",
+      "width": 375,
+      "overflow": 0,
+      "title": "A route to liquidity."
+    },
+    {
+      "route": "/positions",
+      "width": 375,
+      "overflow": 0,
+      "title": "Your next move."
+    },
+    {
+      "route": "/activity",
+      "width": 375,
+      "overflow": 0,
+      "title": "Every advance, accounted for."
+    },
+    {
+      "route": "/issuer",
+      "width": 375,
+      "overflow": 0,
+      "title": "Settle with confidence."
+    },
+    {
+      "route": "/operations",
+      "width": 375,
+      "overflow": 0,
+      "title": "Liquidity, under control."
+    },
+    {
+      "route": "/judge",
+      "width": 375,
+      "overflow": 0,
+      "title": "One exit. Follow the money."
+    },
+    {
+      "route": "/create",
+      "width": 375,
+      "overflow": 0,
+      "title": "Start a fresh platform cycle."
+    },
+    {
+      "route": "/capital",
+      "width": 375,
+      "overflow": 0,
+      "title": "Your vault. Your mandate."
+    },
+    {
+      "route": "/approvals",
+      "width": 375,
+      "overflow": 0,
+      "title": "The partner has the final word."
+    },
+    {
+      "route": "/onboarding",
+      "width": 375,
+      "overflow": 0,
+      "title": "Plan your exit facility."
+    },
+    {
+      "route": "/integration",
+      "width": 375,
+      "overflow": 0,
+      "title": "One rail. Clear responsibilities."
+    },
+    {
+      "route": "/settings",
+      "width": 375,
+      "overflow": 0,
+      "title": "Your workspace, your controls."
+    },
+    {
+      "route": "/platform/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25",
+      "width": 375,
+      "overflow": 0,
+      "title": "Weekly credit platform"
+    },
+    {
+      "route": "/exit/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25",
+      "width": 375,
+      "overflow": 0,
+      "title": "Your capital. Your timing."
+    },
+    {
+      "route": "/advance/1",
+      "width": 375,
+      "overflow": 0,
+      "title": "Advance #1"
+    },
+    {
+      "route": "/",
+      "width": 768,
+      "overflow": 0,
+      "title": "Your capital.\nOn your timeline."
+    },
+    {
+      "route": "/start/investor",
+      "width": 768,
+      "overflow": 0,
+      "title": "Choose when your capital comes back."
+    },
+    {
+      "route": "/start/issuer",
+      "width": 768,
+      "overflow": 0,
+      "title": "Give your investors another option."
+    },
+    {
+      "route": "/overview",
+      "width": 768,
+      "overflow": 0,
+      "title": "Capital in motion."
+    },
+    {
+      "route": "/platforms",
+      "width": 768,
+      "overflow": 0,
+      "title": "A route to liquidity."
+    },
+    {
+      "route": "/positions",
+      "width": 768,
+      "overflow": 0,
+      "title": "Your next move."
+    },
+    {
+      "route": "/activity",
+      "width": 768,
+      "overflow": 0,
+      "title": "Every advance, accounted for."
+    },
+    {
+      "route": "/issuer",
+      "width": 768,
+      "overflow": 0,
+      "title": "Settle with confidence."
+    },
+    {
+      "route": "/operations",
+      "width": 768,
+      "overflow": 0,
+      "title": "Liquidity, under control."
+    },
+    {
+      "route": "/judge",
+      "width": 768,
+      "overflow": 0,
+      "title": "One exit. Follow the money."
+    },
+    {
+      "route": "/create",
+      "width": 768,
+      "overflow": 0,
+      "title": "Start a fresh platform cycle."
+    },
+    {
+      "route": "/capital",
+      "width": 768,
+      "overflow": 0,
+      "title": "Your vault. Your mandate."
+    },
+    {
+      "route": "/approvals",
+      "width": 768,
+      "overflow": 0,
+      "title": "The partner has the final word."
+    },
+    {
+      "route": "/onboarding",
+      "width": 768,
+      "overflow": 0,
+      "title": "Plan your exit facility."
+    },
+    {
+      "route": "/integration",
+      "width": 768,
+      "overflow": 0,
+      "title": "One rail. Clear responsibilities."
+    },
+    {
+      "route": "/settings",
+      "width": 768,
+      "overflow": 0,
+      "title": "Your workspace, your controls."
+    },
+    {
+      "route": "/platform/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25",
+      "width": 768,
+      "overflow": 0,
+      "title": "Weekly credit platform"
+    },
+    {
+      "route": "/exit/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25",
+      "width": 768,
+      "overflow": 0,
+      "title": "Your capital. Your timing."
+    },
+    {
+      "route": "/advance/1",
+      "width": 768,
+      "overflow": 0,
+      "title": "Advance #1"
+    },
+    {
+      "route": "/",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Your capital.\nOn your timeline."
+    },
+    {
+      "route": "/start/investor",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Choose when your capital comes back."
+    },
+    {
+      "route": "/start/issuer",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Give your investors another option."
+    },
+    {
+      "route": "/overview",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Capital in motion."
+    },
+    {
+      "route": "/platforms",
+      "width": 1440,
+      "overflow": 0,
+      "title": "A route to liquidity."
+    },
+    {
+      "route": "/positions",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Your next move."
+    },
+    {
+      "route": "/activity",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Every advance, accounted for."
+    },
+    {
+      "route": "/issuer",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Settle with confidence."
+    },
+    {
+      "route": "/operations",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Liquidity, under control."
+    },
+    {
+      "route": "/judge",
+      "width": 1440,
+      "overflow": 0,
+      "title": "One exit. Follow the money."
+    },
+    {
+      "route": "/create",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Start a fresh platform cycle."
+    },
+    {
+      "route": "/capital",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Your vault. Your mandate."
+    },
+    {
+      "route": "/approvals",
+      "width": 1440,
+      "overflow": 0,
+      "title": "The partner has the final word."
+    },
+    {
+      "route": "/onboarding",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Plan your exit facility."
+    },
+    {
+      "route": "/integration",
+      "width": 1440,
+      "overflow": 0,
+      "title": "One rail. Clear responsibilities."
+    },
+    {
+      "route": "/settings",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Your workspace, your controls."
+    },
+    {
+      "route": "/platform/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Weekly credit platform"
+    },
+    {
+      "route": "/exit/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Your capital. Your timing."
+    },
+    {
+      "route": "/advance/1",
+      "width": 1440,
+      "overflow": 0,
+      "title": "Advance #1"
+    }
+  ]
+}

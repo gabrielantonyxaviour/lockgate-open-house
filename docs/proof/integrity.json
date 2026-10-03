@@ -1,0 +1,34 @@
+{
+  "passed": true,
+  "scope": "Local fork proof, independently checked against retained artifacts and current source",
+  "runs": [
+    {
+      "run": "run-1791063405834",
+      "receipts": 71,
+      "signedReceipts": 68,
+      "browserSigned": 52,
+      "engineSignatures": 2,
+      "artifacts": 49,
+      "sourceGitHead": "da155589d45f820cd50f7ad8ef3741bc16595809",
+      "capturedDirtySource": "",
+      "sourceTreeSha256": "7c594d66367d8edaca807b468c68d1541e8662adf634a6b7816ad61ae02dee03",
+      "allHashesMatch": true,
+      "allReceiptsSuccessful": true,
+      "sourceMatchesCurrent": true
+    },
+    {
+      "run": "remaining-1791063297328",
+      "receipts": 40,
+      "signedReceipts": 37,
+      "browserSigned": 23,
+      "engineSignatures": 0,
+      "artifacts": 15,
+      "sourceGitHead": "b62cc0eb453f4b36622b1da13a12ad3d70cc440b",
+      "capturedDirtySource": "M app/src/pages/Activity.tsx",
+      "sourceTreeSha256": "7c594d66367d8edaca807b468c68d1541e8662adf634a6b7816ad61ae02dee03",
+      "allHashesMatch": true,
+      "allReceiptsSuccessful": true,
+      "sourceMatchesCurrent": true
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "source": "Explicit illustrative UI fixture with two synthetic owners; no wallet signing or chain mutation",
+  "results": [
+    {
+      "width": 375,
+      "ownerBDefault": true,
+      "explicitSelectionPreserved": true,
+      "formResetsOnSwitch": true,
+      "accountChangeDiscardsSelection": true,
+      "oneControlInstance": true,
+      "consoleAndPageErrors": [],
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "ownerBDefault": true,
+      "explicitSelectionPreserved": true,
+      "formResetsOnSwitch": true,
+      "accountChangeDiscardsSelection": true,
+      "oneControlInstance": true,
+      "consoleAndPageErrors": [],
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "ownerBDefault": true,
+      "explicitSelectionPreserved": true,
+      "formResetsOnSwitch": true,
+      "accountChangeDiscardsSelection": true,
+      "oneControlInstance": true,
+      "consoleAndPageErrors": [],
+      "overflow": 0
+    }
+  ]
+}

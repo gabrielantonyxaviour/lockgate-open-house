@@ -1,0 +1,114 @@
+{
+  "provenance": "Explicit read-state fixture over actual application routes; normal unmodified missing-receipt route also checked. No wallet transactions.",
+  "proof": [
+    {
+      "width": 375,
+      "view": "receipt",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    },
+    {
+      "width": 375,
+      "view": "platform",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    },
+    {
+      "width": 375,
+      "view": "request",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    },
+    {
+      "width": 375,
+      "view": "exit-platform",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "view": "receipt",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "view": "platform",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "view": "request",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    },
+    {
+      "width": 768,
+      "view": "exit-platform",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "view": "receipt",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "view": "platform",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "view": "request",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    },
+    {
+      "width": 1440,
+      "view": "exit-platform",
+      "loading": true,
+      "missing": true,
+      "error": true,
+      "retryRestoresRecord": true,
+      "overflow": 0
+    }
+  ],
+  "errors": []
+}
