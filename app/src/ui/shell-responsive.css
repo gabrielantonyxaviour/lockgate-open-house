@@ -24,7 +24,7 @@
     padding: 30px 24px 48px;
   }
   .app-footer {
-    padding: 20px 24px;
+    padding: 10px 24px;
   }
   .guide-teaser {
     padding: 12px;
@@ -55,6 +55,7 @@
   }
   .app-body {
     margin-left: 0;
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
   }
   .topbar {
     height: 66px;
@@ -86,8 +87,8 @@
     padding: 26px 16px 35px;
   }
   .app-footer {
-    padding: 18px 16px 88px;
-    flex-direction: column;
+    padding: 10px 16px;
+    flex-wrap: wrap;
     line-height: 1.6;
   }
   .bottom-nav {

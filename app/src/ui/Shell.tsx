@@ -211,10 +211,10 @@ export function Shell({
         <footer className="app-footer">
           <div className="brand-credits">
             <span className="brand-asset">
-              <UsdgMark /> USDG
+              <UsdgMark size={18} /> USDG
             </span>
             <span className="muted">issued by</span>
-            <PaxosBrand />
+            <PaxosBrand width={70} />
           </div>
           <a href="#/integration">
             Contract addresses <ArrowUpRight size={12} />
