@@ -33,8 +33,8 @@ export default function JourneyStart({ role }: { role: "investor" | "issuer" }) 
         <h1>{investor ? "Choose when your capital comes back." : "Give your investors another option."}</h1>
         <p>
           {investor
-            ? "Review the positions in your wallet and compare settlement with an earlier payout. You’ll see the fee and minimum received before you sign."
-            : "Fund earlier investor exits through your platform’s credit line. Keep settlement cash, reserve coverage, and repayment obligations in view."}
+            ? "Find your positions and compare waiting with an earlier payout. Review the fee before you sign."
+            : "Manage earlier exits, settlement cash, and repayment through your platform’s credit line."}
         </p>
       </div>
       <div className="journey-benefits">

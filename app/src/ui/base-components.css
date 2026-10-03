@@ -25,7 +25,7 @@
   justify-content: space-between;
   gap: 20px;
   align-items: flex-end;
-  margin-bottom: 34px;
+  margin-bottom: 18px;
 }
 .page-head h1 {
   font-size: 36px;
@@ -93,7 +93,7 @@
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   border: 1px solid var(--rule);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-panel);
   background: #fff;
 }
 .metric {
@@ -179,3 +179,12 @@
   line-height: 1.7;
   font-size: 12px;
 }
+
+.panel > p,
+.panel > .stack > p {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--body);
+}
+.panel > p + p,
+.panel > p + .button { margin-top: 16px; }

@@ -2,6 +2,7 @@ import {formatUnits,type Abi,type AbiEvent,type Address,type Hash} from 'viem';
 import {z} from 'zod';
 import {creditLineAbi,platformAbi,vaultAbi} from './abi';
 import {reserveAbi} from './reserve-abi';
+import {facilityAbi} from './facility-abi';
 import {CHAIN,DEPLOYMENT} from './config';
 import {errorMessage,publicClient} from './client';
 export interface ChainEvent {id:string;hash:Hash;blockNumber:bigint;kind:'exit'|'repayment'|'reserve'|'partner'|'control';name:string;address:Address;description:string;amount?:bigint}
@@ -24,12 +25,13 @@ const movement:Record<string,{kind:ChainEvent['kind'];title:string;field?:string
  WindowProcessed:{kind:'control',title:'Settlement window processed'},NavUpdated:{kind:'control',title:'Issuer updated NAV'},GateSet:{kind:'control',title:'Issuer changed redemption gate'},
  SourceRegistered:{kind:'control',title:'Credit platform registered'},SourceUpdated:{kind:'control',title:'Credit platform terms updated'},SourceDeregistered:{kind:'control',title:'Credit platform deregistered'},CapsSet:{kind:'control',title:'Credit-line caps updated'},GraceSet:{kind:'control',title:'Repayment grace updated'},
  Paused:{kind:'control',title:'Credit line paused'},Unpaused:{kind:'control',title:'Credit line unpaused'},PausedSet:{kind:'control',title:'Partner vault pause updated'},MandateGlobalsSet:{kind:'control',title:'Partner mandate updated'},PlatformSet:{kind:'control',title:'Partner platform terms updated'},PayoutSet:{kind:'control',title:'Partner payout destination updated'},
+ FacilityDeposited:{kind:'control',title:'Facility tranche capital deposited',field:'assets'},Redeemed:{kind:'control',title:'Facility tranche shares redeemed',field:'assets'},InterestPaid:{kind:'repayment',title:'Facility lender interest paid',field:'amount'},Drawn:{kind:'control',title:'Facility borrower draw',field:'amount'},Repaid:{kind:'repayment',title:'Facility repayment',field:'amount'},RecoveryEntered:{kind:'control',title:'Facility entered recovery'},LossRecognized:{kind:'control',title:'Facility loss recognized',field:'amount'},LenderApproved:{kind:'control',title:'Facility lender permission updated'},
 };
 export function chainEventFromLog(log:DecodedLog):ChainEvent|null {
  if(log.removed || log.blockNumber===null || log.logIndex===null || !log.transactionHash || !log.eventName) return null;
  if(!hashSchema.safeParse(log.transactionHash).success || !addressSchema.safeParse(log.address).success || log.blockNumber<0n || !Number.isSafeInteger(log.logIndex) || log.logIndex<0) return null;
  const args=log.args && typeof log.args==='object' && !Array.isArray(log.args) ? log.args as Record<string,unknown> : {};
- const key=log.eventName==='Withdrawn' && 'assets' in args ? 'WithdrawnPartner' : log.eventName;
+ const key=log.eventName==='Withdrawn' && 'assets' in args ? 'WithdrawnPartner' : log.eventName==='Deposited' && 'tranche' in args ? 'FacilityDeposited' : log.eventName;
  const spec=movement[key];
  if(!spec) return null;
  const raw=spec.field ? args[spec.field] : undefined;
@@ -45,12 +47,19 @@ export function recentEventRange(toBlock:bigint):{fromBlock:bigint;toBlock:bigin
 export async function loadEvents():Promise<EventResult> {
  if(await publicClient.getChainId()!==CHAIN.id) throw new Error('Activity reads require Arbitrum Sepolia.');
  const {fromBlock,toBlock}=recentEventRange(await publicClient.getBlockNumber());
+ const warnings:string[]=[];
+ let platforms:readonly Address[]=[DEPLOYMENT.platform];
+ try {
+  platforms=await publicClient.readContract({address:DEPLOYMENT.creditLine,abi:creditLineAbi,functionName:'sources',blockNumber:toBlock});
+ } catch(error) {warnings.push(`The registered platform list could not be read; platform activity is incomplete: ${errorMessage(error)}`);}
+ const uniquePlatforms=Array.from(new Map(platforms.map(address=>[address.toLowerCase(),address])).values());
  const sources:{address:Address;abi:Abi;label:string}[]=[
-  {address:DEPLOYMENT.platform,abi:platformAbi,label:'Demo platform'},
+  ...uniquePlatforms.map(address=>({address,abi:platformAbi,label:`Platform ${address}`})),
   {address:DEPLOYMENT.creditLine,abi:creditLineAbi,label:'Lockgate credit line'},
   {address:DEPLOYMENT.reserve,abi:reserveAbi,label:'Platform reserve'},
   {address:DEPLOYMENT.vaultA,abi:vaultAbi,label:'Partner vault A'},
   {address:DEPLOYMENT.vaultB,abi:vaultAbi,label:'Partner vault B'},
+  {address:DEPLOYMENT.facility,abi:facilityAbi,label:'Institutional facility'},
  ];
  const results=await Promise.allSettled(sources.map(async source=>{
   const events=source.abi.filter((item):item is AbiEvent=>item.type==='event');
@@ -58,7 +67,6 @@ export async function loadEvents():Promise<EventResult> {
   return logs.map(log=>chainEventFromLog(log)).filter((event):event is ChainEvent=>event!==null);
  }));
  const all:ChainEvent[]=[];
- const warnings:string[]=[];
  results.forEach((result,index)=>result.status==='fulfilled' ? all.push(...result.value) : warnings.push(`${sources[index].label} recent activity could not be read: ${errorMessage(result.reason)}`));
  all.sort((a,b)=>a.blockNumber===b.blockNumber ? Number(b.id.split(':').at(-1))-Number(a.id.split(':').at(-1)) : a.blockNumber>b.blockNumber ? -1 : 1);
  if(all.length>100) warnings.push('Only the newest 100 events in this recent block range are shown.');

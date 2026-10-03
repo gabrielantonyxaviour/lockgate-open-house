@@ -26,6 +26,12 @@
   font-weight: 400;
   color: var(--body);
 }
+.topbar-actions {
+  flex-wrap: nowrap;
+  flex-shrink: 0;
+}
+.topbar > .row:first-child { min-width: 0; }
+.breadcrumb { overflow-wrap: anywhere; }
 .topbar .button {
   height: var(--control-height);
   min-height: var(--control-height);

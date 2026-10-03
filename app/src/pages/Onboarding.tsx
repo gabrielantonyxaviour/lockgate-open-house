@@ -110,17 +110,16 @@ export function Onboarding() {
     }
   };
   return (
-    <div className="stack">
+    <div className="stack onboarding-content">
       <PageHead
         eyebrow="PLATFORM ONBOARDING"
         title="Plan your exit facility."
         description="Prepare the commercial and integration details for a platform facility."
         action={<Badge>Local draft</Badge>}
       />
-      <a className="inline-link" href="#/create">Lockgate operator? Register the approved platform on-chain.</a>
+      <a className="inline-link" href="#/create">Operator? Register an approved platform.</a>
       <div className="notice">
-        This plan stays on your device until you export it. Saving does not submit an application, approve terms, or activate a
-        facility. Do not enter personal documents or confidential credentials.
+        Saved on this device until you export. This draft does not submit an application or activate a facility.
       </div>
       <nav className="stepper" aria-label="Application steps">
         {steps.map((label, index) => (
@@ -252,7 +251,7 @@ export function Onboarding() {
           <Panel title="Readiness checklist">
             <div className="stack">
               {(["company", "platform", "issuer", "limit", "tenor", "reserve"] as const).map((key) => (
-                <div className="row" key={key}>
+                <div className="readiness-row" key={key}>
                   <Badge tone={issue(key) ? "warn" : "good"}>{issue(key) ? "Needed" : "Entered"}</Badge>
                   <span>
                     {issue(key) ||
@@ -271,8 +270,7 @@ export function Onboarding() {
           </Panel>
           <Panel title="Before activation">
             <p>
-              Commercial review, legal agreements, reserve funding, integration testing, and owner-authorized deployment remain
-              separate steps. None are completed by this draft.
+              Activation requires agreed terms, funded reserves, a tested integration, and owner-authorized deployment.
             </p>
             <button className="button secondary" onClick={discard}>
               Clear local draft

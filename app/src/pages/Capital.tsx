@@ -1,3 +1,5 @@
+import PartnerOperations from "./PartnerOperations";
+import Facility from "./Facility";
 import { VaultControls } from "../ui/VaultControls";
 import { useState } from "react";
 import { useApp } from "../ui/context";
@@ -108,7 +110,8 @@ export default function Capital() {
               )}
             </Panel>
           </div>
-          <VaultControls vault={vault} permitted={owner} />
+          <VaultControls key={vault.address} vault={vault} permitted={owner} />
+          <PartnerOperations key={vault.address} vault={vault} />
           <Panel title="Partner-funded advances">
             {vault.advances?.length ? (
               <div className="table-wrap">
@@ -153,15 +156,7 @@ export default function Capital() {
       ) : (
         <Empty title="Partner vaults unavailable">Refresh chain data to read the deployed vaults.</Empty>
       )}
-      <Panel title="Institutional facility" eyebrow="SECONDARY CAPITAL STRUCTURE">
-        <div className="notice">
-          A senior/junior facility is deployed against Lockgate’s own book. This release exposes its contract reference; lender
-          onboarding and facility transactions are not enabled here.
-        </div>
-        <a href="#/integration" className="inline-link text-small">
-          Inspect facility contract
-        </a>
-      </Panel>
+      <Facility />
     </div>
   );
 }

@@ -22,8 +22,7 @@ export default function Welcome() {
           <span className="eyebrow">THE EARLY EXIT RAIL</span>
           <h1>Capital shouldn’t have to wait.</h1>
           <p>
-            Investors can review an earlier exit. Platforms can fund it with a credit line and repay at settlement. Choose where
-            you’d like to start.
+            Choose an investor or platform workspace for this wallet.
           </p>
         </div>
         <div className="entry-choices">
@@ -31,7 +30,7 @@ export default function Welcome() {
             <Wallet size={24} strokeWidth={1.3} aria-hidden="true" />
             <span className="eyebrow">FOR INVESTORS</span>
             <h2>I want an earlier exit.</h2>
-            <p>Find your position, compare waiting with exiting now, and review the exact payout before confirming.</p>
+            <p>Compare waiting with an earlier payout, including the fee.</p>
             <span className="entry-choice-action">
               Explore my exit <ArrowRight size={16} />
             </span>
@@ -40,7 +39,7 @@ export default function Welcome() {
             <Building2 size={24} strokeWidth={1.3} aria-hidden="true" />
             <span className="eyebrow">FOR PLATFORMS</span>
             <h2>I want to offer earlier exits.</h2>
-            <p>Manage your facility, understand settlement demand, and give investors another way to access their capital.</p>
+            <p>Manage settlement cash, investor access, and your facility.</p>
             <span className="entry-choice-action">
               Open my platform <ArrowRight size={16} />
             </span>

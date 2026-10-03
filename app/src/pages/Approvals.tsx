@@ -6,7 +6,7 @@ import type { TransactionState } from "../chain/model";
 import { useApp } from "../ui/context";
 import { Panel, PageHead, Empty, Badge, Explorer, money, date } from "../ui/primitives";
 export default function Approvals() {
-  const { account, connect, preview, refresh } = useApp();
+  const { account, connect, preview, refresh, refreshAfterTransaction } = useApp();
   const [input, setInput] = useState("");
   const [checked, setChecked] = useState<ProposalReview | null>(null);
   const [error, setError] = useState("");
@@ -37,7 +37,7 @@ export default function Approvals() {
     setError("");
     try {
       await approveProposal(checked, account, setState);
-      await refresh();
+      await (refreshAfterTransaction ?? refresh)();
     } catch (e) {
       setError(errorMessage(e));
     } finally {

@@ -5,7 +5,7 @@ import type { PartnerVault } from "../chain/model";
 import { useApp } from "./context";
 import { Panel } from "./primitives";
 import { errorMessage, checkedAddress } from "../chain/client";
-import { parseAmount } from "../chain/amounts";
+import { parseNonnegativeAmount } from "../chain/amounts";
 export function VaultControls({ vault, permitted }: { vault: PartnerVault; permitted: boolean }) {
   const { review } = useApp();
   const [fee, setFee] = useState(String(vault.mandate.minFeeBps));
@@ -128,7 +128,7 @@ export function VaultControls({ vault, permitted }: { vault: PartnerVault; permi
             className="button secondary"
             onClick={() =>
               run(() => {
-                parseAmount(limit);
+                parseNonnegativeAmount(limit);
                 review(
                   {
                     kind: "vaultSetPlatform",

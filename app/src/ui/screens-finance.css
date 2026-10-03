@@ -93,7 +93,7 @@
   text-align: left;
   background: #fff;
   border: 1px solid var(--rule);
-  border-radius: var(--radius-control);
+  border-radius: var(--radius-panel);
   padding: 24px;
 }
 .vault-card.selected {
@@ -131,3 +131,9 @@ details p {
   margin-top: 10px;
   color: var(--muted);
 }
+
+.facility-content { padding-top: 20px; border-top: 1px solid var(--rule); }
+.facility-heading h2 { font-size: 26px; letter-spacing: -0.035em; margin-top: 8px; }
+.facility-claim, .facility-actions { margin-top: 18px; }
+
+.partner-operation-note { margin: 12px 0 20px; }

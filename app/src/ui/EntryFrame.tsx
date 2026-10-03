@@ -3,9 +3,8 @@ import type { Shell } from "./Shell";
 import { Select } from "./Select";
 import { NETWORKS, type NetworkId } from "../chain/networks";
 import { ArbitrumMark, UsdgMark, PaxosBrand } from "./Brand";
-import { short } from "./primitives";
-import { Wallet, ArrowLeft } from "lucide-react";
-import { go } from "./router";
+import { WalletButton } from "./WalletButton";
+import { ArrowLeft } from "lucide-react";
 export function EntryFrame({
   children,
   route,
@@ -50,14 +49,7 @@ export function EntryFrame({
               icon: <ArbitrumMark />,
             }))}
           />
-          <button
-            className="button secondary wallet-button"
-            onClick={account ? () => go("/settings") : onConnect}
-            disabled={busy}
-          >
-            <Wallet size={14} />
-            {account ? short(account) : busy ? "Connecting…" : "Connect wallet"}
-          </button>
+          <WalletButton account={account} busy={busy} onConnect={onConnect} chainId={chainId} selectedNetwork={selectedNetwork} />
         </div>
       </header>
       {preview && (

@@ -1,10 +1,9 @@
 import { NAV } from "./navigation";
 import { ScreenSearch } from "./ScreenSearch";
 import { useState, useRef, useEffect, type ReactNode } from "react";
-import { Menu, X, Search, ArrowRight, ArrowUpRight, Wallet, BookOpen } from "lucide-react";
+import { Menu, X, Search, ArrowRight, ArrowUpRight, BookOpen } from "lucide-react";
 import { Select } from "./Select";
-import { short } from "./primitives";
-import { go } from "./router";
+import { WalletButton } from "./WalletButton";
 import { useDialog } from "./dialog";
 import { type NetworkId, NETWORKS } from "../chain/networks";
 import { ArbitrumMark, PaxosBrand, UsdgMark } from "./Brand";
@@ -53,6 +52,14 @@ export function Shell({
         ? "partner"
         : lastJourney;
   const group = initialGroup;
+  const mobilePaths = group === "partner" ? ["/capital", "/approvals", "/activity"]
+    : group === "issuer" ? ["/platforms", "/issuer", "/activity"]
+      : group === "operations" ? ["/platforms", "/operations", "/activity"]
+        : ["/platforms", "/positions", "/activity"];
+  const mobileLabels: Record<string, string> = {
+    "/positions": "My exits", "/issuer": "Issuer", "/operations": "Operations",
+    "/capital": "Capital", "/approvals": "Approvals",
+  };
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.closest("input,textarea,select")) return;
@@ -182,14 +189,7 @@ export function Shell({
                 icon: <ArbitrumMark />,
               }))}
             />
-            <button
-              className="button secondary wallet-button"
-              onClick={account ? () => go("/settings") : onConnect}
-              disabled={busy}
-            >
-              <Wallet size={14} />
-              {account ? short(account) : busy ? "Connecting…" : "Connect wallet"}
-            </button>
+            <WalletButton account={account} busy={busy} onConnect={onConnect} chainId={chainId} selectedNetwork={selectedNetwork} />
           </div>
         </header>
         {preview && (
@@ -225,10 +225,10 @@ export function Shell({
         </footer>
       </div>
       <nav className="bottom-nav" aria-label="Mobile navigation">
-        {NAV.filter((n) => ["/platforms", "/positions", "/activity"].includes(n.path)).map((n) => (
+        {mobilePaths.map((path) => NAV.find((item) => item.path === path)!).map((n) => (
           <a href={`#${n.path}`} key={n.path} className={route.startsWith(n.path) ? "active" : ""}>
             <n.icon size={17} />
-            <span>{n.path === "/positions" ? "My exits" : n.label}</span>
+            <span>{mobileLabels[n.path] || n.label}</span>
           </a>
         ))}
         <button onClick={() => setMenu(true)}>

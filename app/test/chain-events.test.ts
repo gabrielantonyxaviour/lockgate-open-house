@@ -4,6 +4,7 @@ import {DEPLOYMENT} from '../src/chain/config';
 const hash=`0x${'11'.repeat(32)}`;
 const log=()=>({address:DEPLOYMENT.platform,transactionHash:hash,blockNumber:100n,logIndex:2,eventName:'ExitAdvanced',args:{usdgOut:990000n}});
 describe('bounded chain activity',()=>{
+ it('distinguishes facility tranche funding from partner deposits',()=>{expect(chainEventFromLog({...log(),eventName:'Deposited',args:{assets:1000000n,tranche:0}})?.description).toContain('Facility tranche');expect(chainEventFromLog({...log(),eventName:'Deposited',args:{assets:1000000n}})?.description).toContain('Partner capital');});
  it('limits the inclusive range to 10000 blocks',()=>{const r=recentEventRange(100000n);expect(r.toBlock-r.fromBlock+1n).toBe(10000n);expect(recentEventRange(10n)).toEqual({fromBlock:0n,toBlock:10n});expect(()=>recentEventRange(-1n)).toThrow();});
  it('preserves actual hash, log identifier and exact units',()=>{const event=chainEventFromLog(log());expect(event).toMatchObject({id:`${hash}:2`,hash,blockNumber:100n,kind:'exit',amount:990000n});expect(event?.description).toContain('0.99 USDG');});
  it('ignores reorged, pending and unknown events',()=>{expect(chainEventFromLog({...log(),removed:true})).toBeNull();expect(chainEventFromLog({...log(),blockNumber:null})).toBeNull();expect(chainEventFromLog({...log(),transactionHash:null})).toBeNull();expect(chainEventFromLog({...log(),eventName:'Unrelated'})).toBeNull();});

@@ -130,6 +130,7 @@
   .table-wrap tbody tr:last-child {
     border-bottom: 0;
   }
+  .table-wrap tbody th,
   .table-wrap td {
     display: block;
     border: 0;
@@ -138,9 +139,11 @@
     overflow-wrap: anywhere;
     font-size: 11px;
   }
+  .table-wrap tbody th,
   .table-wrap td:first-child {
     grid-column: 1/-1;
   }
+  .table-wrap tbody th:before,
   .table-wrap td:before {
     content: attr(data-label);
     display: block;
@@ -160,4 +163,20 @@
   .table-wrap .mono {
     font-size: 10px;
   }
+}
+
+.integration-content p { font-size: 13px; line-height: 1.75; }
+.integration-content .key-values > div { align-items: flex-start; line-height: 1.65; }
+.integration-content .key-values dt { min-width: 100px; }
+.integration-content .key-values dd { max-width: 320px; }
+.integration-content .table-wrap td:last-child { overflow-wrap: anywhere; }
+.readiness-row { display: flex; gap: 12px; align-items: flex-start; font-size: 12px; line-height: 1.7; }
+.readiness-row .badge { flex-shrink: 0; }
+.onboarding-content .stepper { border-bottom: 1px solid var(--rule); padding-bottom: 6px; margin-bottom: 4px; }
+.onboarding-content .stepper .active { background: var(--fill); border-radius: var(--radius-control); }
+@media (max-width: 560px) {
+  .integration-content .table-wrap td:last-child { grid-column: 1 / -1; }
+  .integration-content .key-values > div { flex-direction: column; gap: 5px; }
+  .integration-content .key-values dd { text-align: left; }
+  .onboarding-content .stepper { flex-wrap: wrap; gap: 3px 6px; }
 }

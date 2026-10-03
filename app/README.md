@@ -17,7 +17,7 @@ Development URL: http://127.0.0.1:5197. The default mode reads deployed Arbitrum
 
 ## Screens
 
-Public live overview; wallet connection and equal investor/platform journey choice; platform directory/detail; positions and requests; live exit quote; receipt and advance lifecycle; activity; issuer settlement and controls; own-book operations; partner vaults/mandates; partner proposal review; platform onboarding draft; integration references; settings/help. The optional judge guide follows connected-wallet contract state. Custom Radix Select controls support keyboard navigation and typeahead. Search opens with `/` or Cmd/Ctrl-K.
+Public live overview; wallet connection and equal investor/platform journey choice; platform directory/detail; positions and requests; live exit quote; receipt and advance lifecycle; activity; issuer settlement and controls; own-book operations; partner vaults/mandates, reserves and repayment; partner proposal review; senior/junior institutional facility; platform onboarding draft; integration references; settings/help. The optional judge guide follows connected-wallet contract state. Custom Radix Select controls support keyboard navigation and typeahead. Search opens with `/` or Cmd/Ctrl-K. The wallet dialog includes account, network, USDG, gas balance, explorer access and disconnect. A remembered connection restores only already-authorized accounts, without prompting.
 
 ## Transaction boundary
 
@@ -30,7 +30,7 @@ Permissions are determined by current owner/issuer/partner contracts and checked
 - Real Paxos test USDG on Arbitrum Sepolia; platform contracts are demonstrations. The network selector also supports Arbitrum One wallet switching; One displays an unavailable desk until its deployment is configured. Sepolia addresses are never reused on One.
 - Partner proposals require imported complete engine JSON. The UI validates the chain, vault, terms, filed digest, nonce and mandate before partner approval. A hosted automatic proposal feed is not connected.
 - Onboarding stores a bounded local planning draft and exports JSON. It does not submit documents, execute legal verification, accept facility terms, or activate a platform.
-- Partner vaults currently require partner funding. The institutional senior/junior facility is linked read-only; lender onboarding is not enabled.
+- Partner vaults and the institutional facility require funding. Facility deposits require governor approval; draws require the designated borrower and borrowing capacity. Lenders can redeem available idle principal and claim paid interest. Recovery follows the contract waterfall. Connecting an arbitrary wallet does not grant these roles.
 - Histories and queues are bounded; a larger deployment needs an indexed event/history service. Historical Advanced requests may have cleared advances; a Late advance with zero remaining is shown as recovered.
 - RPC failures leave live data unavailable or visibly stale. They never silently switch to a populated preview.
 - `wrangler.jsonc` serves the same Open House app at `openhouse.lockgate.finance` and `open-house.lockgate.finance`. `app.lockgate.finance` is not configured by this project.
@@ -44,3 +44,5 @@ Interface styling follows [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md). Adapt registry
 Visitors see public contract metrics and explanatory platform windows immediately; wallet connection reveals the investor/platform choice. The optional `/#/judge` walkthrough checks the actual wallet, selected platform, gas balance, USDG, positions, permissions, and due windows. Old repaid receipts are historical inspection, not proof that a visitor completed the journey. Fresh platform registration is available to the factory owner at `/#/create`.
 
 `LOCKGATE_FORK_TEST=1 npm run test:e2e -- test/fork-flow.spec.ts` runs an opt-in local Arbitrum Sepolia fork with a browser wallet, real contract receipts, deposit, quoted early exit, and repayment settlement. It broadcasts only to loopback Anvil; it requires `anvil`. Normal browser tests skip this scenario.
+
+`LOCKGATE_SIGNED_FORK_TEST=1 npm run test:e2e -- test/signed-wallet-flow.spec.ts --workers=1` runs the expanded persona journey using public Anvil accounts to sign raw transactions. Its EIP1193 adapter uses the application's normal wallet boundary; receipts come from actual contract execution on loopback port 19548. Setup role handovers are recorded separately. The facility uses a genuine local deployment of the same compiled artifact because the public deployment's borrower key is unavailable. These tests do not exercise a browser extension's popup or broadcast to the public network. Proof manifests include receipt hashes, balances, fixture provenance and recording hashes.

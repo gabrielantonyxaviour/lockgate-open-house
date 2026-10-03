@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
 import { RefreshCw } from "lucide-react";
-import { loadSnapshot, errorMessage } from "./chain/client";
-import { connectWallet, subscribeWallet, switchNetwork, walletChainId } from "./chain/wallet";
+import { loadSnapshot, errorMessage, checkedAddress } from "./chain/client";
+import { connectWallet, getProvider, subscribeWallet, switchNetwork, walletChainId } from "./chain/wallet";
 import type { Action, Snapshot } from "./chain/model";
 import { AppContext } from "./ui/context";
 import { Shell } from "./ui/Shell";
@@ -15,6 +15,11 @@ import { EntryFrame } from "./ui/EntryFrame";
 import { go } from "./ui/router";
 import { type NetworkId } from "./chain/networks";
 import { useInputModality } from "./ui/input-modality";
+const connectionKey = "lockgate.wallet.connected.v1";
+function rememberConnection(connected: boolean) {
+  try { if (connected) localStorage.setItem(connectionKey, "1"); else localStorage.removeItem(connectionKey); }
+  catch { /* A connection still works when browser storage is unavailable. */ }
+}
 export default function App() {
   useInputModality();
   const route = useRoute();
@@ -32,8 +37,37 @@ export default function App() {
   const [review, setReview] = useState<Review | null>(null);
   const [, preferenceRevision] = useState(0);
   const requestId = useRef(0);
+  const currentAccount = useRef(account);
+  currentAccount.current = account;
   const pendingReads = useRef(new Map<string, Promise<Snapshot>>());
-  const refresh = useCallback(async () => {
+  const disconnect = useCallback(() => {
+    requestId.current++;
+    rememberConnection(false);
+    setAccount(undefined);
+    setChainId(undefined);
+    setSnapshot(null);
+    setReview(null);
+    setError("");
+    go("/");
+  }, []);
+  useEffect(() => {
+    let active = true;
+    const restore = async () => {
+      try {
+        if (localStorage.getItem(connectionKey) !== "1") return;
+        const accounts = await getProvider().request({ method: "eth_accounts" });
+        if (!Array.isArray(accounts) || !accounts[0]) { rememberConnection(false); return; }
+        const address = checkedAddress(accounts[0]);
+        const networkId = await walletChainId();
+        if (active) { setAccount(address); setChainId(networkId); }
+      } catch { /* Restore never prompts; explicit connect remains available. */ }
+    };
+    void restore();
+    return () => { active = false; };
+  }, []);
+  const refresh = useCallback(async (fresh = false) => {
+    if (account !== currentAccount.current) return;
+    if (fresh) pendingReads.current.clear();
     const id = ++requestId.current;
     if (selectedNetwork === 42161) {
       setSnapshot(null);
@@ -51,11 +85,13 @@ export default function App() {
       const key = account || "observer";
       let pending = pendingReads.current.get(key);
       if (!pending) {
-        pending = loadSnapshot(account).finally(() => pendingReads.current.delete(key));
+        pending = loadSnapshot(account).finally(() => {
+          if (pendingReads.current.get(key) === pending) pendingReads.current.delete(key);
+        });
         pendingReads.current.set(key, pending);
       }
       const result = await pending;
-      if (id === requestId.current) {
+      if (id === requestId.current && account === currentAccount.current) {
         setSnapshot(result);
         setError("");
       }
@@ -78,8 +114,10 @@ export default function App() {
     setConnecting(true);
     try {
       const address = await connectWallet();
+      const networkId = await walletChainId();
       setAccount(address);
-      setChainId(await walletChainId());
+      setChainId(networkId);
+      rememberConnection(true);
       setError("");
       if ((location.hash.slice(1) || location.pathname || "/") === "/") go("/choose");
     } catch (e) {
@@ -93,6 +131,9 @@ export default function App() {
     try {
       return subscribeWallet(
         (items) => {
+          requestId.current++;
+          setSnapshot(null);
+          rememberConnection(Boolean(items[0]));
           setAccount(items[0]);
         },
         (id) => {
@@ -155,7 +196,7 @@ export default function App() {
   const path = route.split("?")[0];
   const Frame = (!account && !preview) || (path === "/" || path === "/choose") || path.startsWith("/start/") || path === "/judge" ? EntryFrame : Shell;
   return (
-    <AppContext.Provider value={{ snapshot, account, preview, loading, error, refresh, connect, review: openReview }}>
+    <AppContext.Provider value={{ snapshot, account, walletChainId: chainId, preview, loading, error, refresh: () => refresh(), refreshAfterTransaction: () => refresh(true), connect, disconnect, review: openReview }}>
       <Frame
         route={path}
         account={account}
@@ -172,7 +213,7 @@ export default function App() {
         {error && (
           <div className="notice error global-notice" role="alert">
             {error}
-            <button className="button secondary" onClick={refresh}>
+            <button className="button secondary" onClick={() => void refresh()}>
               Retry
             </button>
           </div>
@@ -183,7 +224,7 @@ export default function App() {
               {loading ? "Refreshing…" : `Read at block ${snapshot.blockNumber}`} ·{" "}
               {new Date(snapshot.observedAt).toLocaleTimeString()}
             </span>
-            <button onClick={refresh} aria-label="Refresh chain data" disabled={loading}>
+            <button onClick={() => void refresh()} aria-label="Refresh chain data" disabled={loading}>
               <RefreshCw size={12} />
             </button>
             {Date.now() - snapshot.observedAt > 120_000 && <strong>Data may be stale</strong>}
@@ -194,11 +235,7 @@ export default function App() {
           account={account}
           networkId={selectedNetwork}
           onSepolia={() => void network(421614)}
-          onDisconnect={() => {
-            setAccount(undefined);
-            setChainId(undefined);
-            setReview(null);
-          }}
+          onDisconnect={disconnect}
         />
       </Frame>
       {review && <Transaction review={review} onClose={() => setReview(null)} />}

@@ -6,7 +6,7 @@ import { UsdgMark } from "../ui/Brand";
 import "../ui/public-home.css";
 
 export default function PublicHome() {
-  const { snapshot, account, loading, error, connect, refresh } = useApp();
+  const { snapshot, account, loading, error, connect, refresh, preview } = useApp();
   const [connecting, setConnecting] = useState(false);
   const line = snapshot?.creditLine;
   const total = line ? line.capital + line.outstanding : 0n;
@@ -30,8 +30,7 @@ export default function PublicHome() {
           <span className="eyebrow">THE EARLY EXIT RAIL</span>
           <h1 id="public-title">Your capital.<br />On your timeline.</h1>
           <p>
-            Review an earlier exit from your tokenized position. Lockgate provides USDG through a platform credit line,
-            repaid first when the platform settles.
+            Exit an eligible position early for USDG. Your platform draws the credit and repays from settlement cash.
           </p>
           <a className="public-text-link" href="#/platforms">
             Explore connected platforms <ArrowUpRight size={15} />
@@ -63,7 +62,7 @@ export default function PublicHome() {
             <h2 id="public-network-title">Inside the exit rail</h2>
           </div>
           <div className="public-read-status">
-            <span>{snapshot ? `${stale ? "Last read" : "Read"} at ${observedAt?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : loading ? "Reading chain data…" : "Awaiting chain data"}</span>
+            <span>{preview ? "Layout preview" : snapshot ? `${stale ? "Last read" : "Read"} at ${observedAt?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : loading ? "Reading chain data…" : "Awaiting chain data"}</span>
             <button className="icon-button" onClick={refresh} disabled={loading} aria-label="Refresh public data">
               <RefreshCw size={13} />
             </button>
@@ -98,7 +97,7 @@ export default function PublicHome() {
         )}
         {snapshot && (
           <p className="public-data-note">
-            Block {snapshot.blockNumber.toString()} · {stale ? "Data may be stale. Refresh before making a decision." : "On-chain balances. Exit availability depends on platform terms and your position."}
+            {preview ? "Illustrative balances · Transactions disabled" : <>Block {snapshot.blockNumber.toString()} · {stale ? "Data may be stale. Refresh before making a decision." : "On-chain balances. Exit availability depends on platform terms and your position."}</>}
           </p>
         )}
       </section>
@@ -121,7 +120,7 @@ export default function PublicHome() {
             <span><i />Idle capital <b>{line ? `${idleShare.toFixed(1)}%` : "—"}</b></span>
             <span><i />Outstanding <b>{line ? `${(total > 0n ? 100 - idleShare : 0).toFixed(1)}%` : "—"}</b></span>
           </div>
-          <p className="public-card-note">A facility balance is not an exit quote. Your platform’s limits, reserve, and settlement terms determine availability.</p>
+          <p className="public-card-note">Exit availability depends on platform limits, reserves, and settlement terms.</p>
         </section>
         <section className="panel public-how" aria-labelledby="public-how-title">
           <span className="eyebrow">HOW AN EARLIER EXIT WORKS</span>
@@ -146,7 +145,7 @@ export default function PublicHome() {
               const due = platform.nextWindow > 0n && platform.nextWindow <= BigInt(Math.floor(Date.now() / 1000));
               return (
                 <a className="public-platform-row" href={`#/platform/${platform.address}`} key={platform.address}>
-                  <div className="public-platform-name"><strong>{platform.name}</strong><small>{platform.gated ? "Permissioned access" : "Open access"}</small></div>
+                  <div className="public-platform-name"><strong>{platform.name}</strong><small>{platform.gated ? "Redemptions paused" : "Redemptions open"}</small></div>
                   <div className="public-platform-window"><span>{date(platform.nextWindow)}</span>{due && <Badge tone="warn">Window due</Badge>}</div>
                   <div className="public-platform-amount"><Money value={platform.queuedValue} /><small> USDG queued</small></div>
                   <ArrowUpRight size={17} aria-hidden="true" />

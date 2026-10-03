@@ -13,19 +13,19 @@ export interface Review {
   account: string;
 }
 export function Transaction({ review, onClose }: { review: Review; onClose: () => void }) {
-  const { snapshot, refresh, account } = useApp();
+  const { snapshot, refresh, refreshAfterTransaction, account, walletChainId } = useApp();
   const [state, setState] = useState<TransactionState | null>(null);
   const dialog = useRef<HTMLDivElement>(null);
   const pending = Boolean(state && !["error", "success"].includes(state.phase));
   useDialog(dialog, onClose, pending);
   const submit = async () => {
-    if (!snapshot || !account || review.account !== account) {
+    if (!snapshot || !account || review.account.toLowerCase() !== account.toLowerCase()) {
       setState({ phase: "error", message: "The wallet changed. Close this review and start again." });
       return;
     }
     try {
       await sendAction(review.action, snapshot, setState);
-      await refresh();
+      await (refreshAfterTransaction || refresh)();
     } catch (error) {
       setState((current) => ({
         ...current,
@@ -35,6 +35,19 @@ export function Transaction({ review, onClose }: { review: Review; onClose: () =
     }
   };
   const action = review.action;
+  const walletChanged = account?.toLowerCase() !== review.account.toLowerCase();
+  const wrongNetwork = walletChainId !== undefined && walletChainId !== 421614;
+  const labels: Record<string, string> = {
+    requestId: "Redemption request", advanceId: "Advance", platformKind: "Redemption schedule",
+    name: "Platform name", interval: "Window interval · seconds", shareNav: "NAV · USDG per share",
+    issuer: "Issuer wallet", limit: "Credit limit · USDG", reserveBps: "Reserve requirement · bps",
+    riskBps: "Risk premium · bps", maxUtilizationBps: "Utilization cap · bps",
+    maxConcentrationBps: "Concentration cap · bps", seconds: "Repayment grace · seconds",
+    minFeeBps: "Fee floor · bps", maxTenor: "Maximum tenor · seconds", concentrationBps: "Concentration cap · bps",
+    expiry: "Mandate expiry", approved: "Platform approved", checkGate: "Check redemption gate",
+    maxNavAge: "Maximum NAV age · seconds", gated: "Pause new redemptions", allowed: "Wallet eligible",
+    paused: "Pause new advances", tranche: "Capital tranche", lender: "Lender wallet",
+  };
   return (
     <div className="dialog-backdrop">
       <div className="transaction-dialog" ref={dialog} tabIndex={-1} role="dialog" aria-modal="true" aria-labelledby="tx-title">
@@ -46,6 +59,9 @@ export function Transaction({ review, onClose }: { review: Review; onClose: () =
         </div>
         <h2 id="tx-title">{state?.phase === "success" ? "Transaction confirmed" : review.title}</h2>
         <p>{review.description}</p>
+        {(walletChanged || wrongNetwork) && <div className="notice warn" role="alert">
+          {walletChanged ? "Your wallet account changed. Start a new review before signing." : "Switch your wallet to Arbitrum Sepolia before signing."}
+        </div>}
         <dl className="key-values">
           <div>
             <dt>Network</dt>
@@ -77,7 +93,7 @@ export function Transaction({ review, onClose }: { review: Review; onClose: () =
             <div>
               <dt>Amount</dt>
               <dd>
-                {action.amount} {["exitNow", "requestRedeem"].includes(action.kind) ? "shares" : "USDG"}
+                {action.amount} {["exitNow", "requestRedeem", "facilityRedeem"].includes(action.kind) ? "shares" : action.kind === "setNav" ? "USDG per share" : "USDG"}
               </dd>
             </div>
           )}
@@ -93,18 +109,13 @@ export function Transaction({ review, onClose }: { review: Review; onClose: () =
             .filter(([k]) => !["kind", "platform", "vault", "account", "amount", "quotedAt", "minUsdgOut"].includes(k))
             .map(([key, value]) => (
               <div key={key}>
-                <dt>{key}</dt>
-                <dd>{String(value)}</dd>
+                <dt>{labels[key] || key.replace(/([A-Z])/g, " $1")}</dt>
+                <dd>{key === "tranche" ? value === 0 ? "Senior" : "Junior" : typeof value === "boolean" ? value ? "Yes" : "No" : String(value)}</dd>
               </div>
             ))}
-          <div>
-            <dt>Operation</dt>
-            <dd className="mono">{action.kind}</dd>
-          </div>
         </dl>
         <div className="notice">
-          A confirmed blockchain transaction cannot be undone. USDG funding actions may require an exact-amount token approval
-          first.
+          Confirmed transactions are final. Funding may require a separate USDG approval.
         </div>
         {state && (
           <div className={`tx-progress ${state.phase === "error" ? "tx-error" : ""}`} role="status" aria-live="polite">
@@ -127,11 +138,11 @@ export function Transaction({ review, onClose }: { review: Review; onClose: () =
           {state?.phase !== "success" && (
             <button
               className="button"
-              disabled={pending || !account || review.account !== account || state?.confirmationUnknown}
+              disabled={pending || !account || walletChanged || wrongNetwork || state?.confirmationUnknown}
               onClick={submit}
             >
               {pending
-                ? "Waiting for wallet…"
+                ? state?.phase === "pending" ? "Confirming on chain…" : state?.phase === "checking" ? "Checking transaction…" : "Waiting for wallet…"
                 : state?.confirmationUnknown
                   ? "Check explorer before retrying"
                   : state?.phase === "error"

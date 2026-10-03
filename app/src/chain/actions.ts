@@ -3,10 +3,13 @@ import { z } from 'zod';
 import { creditLineAbi, platformAbi, tokenAbi, vaultAbi } from './abi';
 import { DEPLOYMENT, CHAIN } from './config';
 import { checkedAddress, errorMessage, publicClient, quoteExit, quoteRequest } from './client';
-import { assertFreshQuote, checkedUint, parseAmount } from './amounts';
+import { assertFreshQuote, checkedUint, parseAmount, parseNonnegativeAmount } from './amounts';
 import { authorizedWallet } from './wallet';
 import { factoryAbi } from './factory-abi';
 import { actionSchema } from './action-schema';
+import { buildFacilityAction } from './facility-actions';
+import { buildPartnerOperation } from './partner-actions';
+import type { FacilityAction } from './facility-model';
 import type { Action, OnTransactionState, Snapshot } from './model';
 export interface PreparedAction { address:Address; abi:Abi; functionName:string; args:readonly unknown[]; approval?:{spender:Address; amount:bigint} }
 const same = (a:Address,b:Address)=>isAddressEqual(a,b);
@@ -21,7 +24,17 @@ export function buildAction(action:Action,snapshot:Snapshot,account:Address):Pre
  let functionName:string=action.kind;
  let approval:PreparedAction['approval'];
  const requireOperator = ()=>{if(!same(snapshot.creditLine.owner,account)) throw new Error('Only the Lockgate owner can perform this action.');};
- const amount = ()=>'amount' in action ? parseAmount(action.amount) : 0n;
+ const amount = ()=>'amount' in action ? (['setSourceTerms','registerSource','vaultSetPlatform'].includes(action.kind) ? parseNonnegativeAmount(action.amount) : parseAmount(action.amount)) : 0n;
+ if(action.kind.startsWith('facility')) {
+  const prepared=buildFacilityAction(action as FacilityAction,snapshot,account);
+  if(prepared.approval && prepared.approval.amount>snapshot.usdgBalance) throw new Error('Amount exceeds your USDG balance.');
+  return prepared;
+ }
+ if(action.kind==='vaultPostReserve' || action.kind==='vaultRepay' || action.kind==='vaultMarkLate') {
+  const prepared=buildPartnerOperation(action,snapshot);
+  if(prepared.approval && prepared.approval.amount>snapshot.usdgBalance) throw new Error('Amount exceeds your USDG balance.');
+  return prepared;
+ }
  if(action.kind==='createPlatform') {address=DEPLOYMENT.factory;abi=factoryAbi;args.push(action.platformKind,action.name.trim(),action.interval,parseAmount(action.shareNav),checkedAddress(action.issuer),parseAmount(action.limit),action.reserveBps);}
  else if(action.kind==='registerSource') {requireOperator();args.push(checkedAddress(action.platform),amount(),action.reserveBps);}
  else if('platform' in action && !('vault' in action)) {

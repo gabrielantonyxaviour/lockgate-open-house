@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { Platform } from "../chain/model";
 import { useApp } from "../ui/context";
 import { Panel } from "../ui/primitives";
-import { parseAmount } from "../chain/amounts";
+import { parseAmount, parseNonnegativeAmount } from "../chain/amounts";
 import { errorMessage, checkedAddress } from "../chain/client";
 export function IssuerControls({ platform, permitted }: { platform: Platform; permitted: boolean }) {
   const { review } = useApp();
@@ -202,7 +202,7 @@ export function OperatorControls({ permitted }: { permitted: boolean }) {
               disabled={!permitted || !selected}
               onClick={() =>
                 attempt(() => {
-                  parseAmount(limit);
+                  parseNonnegativeAmount(limit);
                   review(
                     {
                       kind: "setSourceTerms",

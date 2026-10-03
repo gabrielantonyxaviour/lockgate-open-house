@@ -38,7 +38,7 @@ export async function switchNetwork(id:SupportedNetworkId=421614): Promise<void>
 export async function authorizedWallet(expected:Address) {
  const provider = getProvider();
  const accounts = await provider.request({method:'eth_accounts'});
- if(!Array.isArray(accounts) || !accounts.some(a=>typeof a==='string' && a.toLowerCase()===expected.toLowerCase())) throw new Error('The selected account is no longer authorized in this wallet.');
+ if(!Array.isArray(accounts) || typeof accounts[0]!=='string' || accounts[0].toLowerCase()!==expected.toLowerCase()) throw new Error('The selected account changed. Refresh the connected wallet before signing.');
  assertWalletChain(await walletChainId());
  return createWalletClient({account:expected,chain:CHAIN,transport:custom(provider)});
 }

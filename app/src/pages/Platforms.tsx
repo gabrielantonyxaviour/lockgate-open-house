@@ -174,6 +174,12 @@ export function PlatformDetail({ address }: { address: string }) {
                       ? "Process window"
                       : "Connect to process window"}
               </button>
+              <FundingForm
+                kind="postReserve"
+                platform={p.address}
+                title="Post platform reserve"
+                description="Fund this platform’s loss reserve with USDG. Any funded wallet can contribute; this does not buy shares or add settlement cash."
+              />
             </Panel>
             <Panel title="Your position">
               <dl className="key-values">

@@ -16,6 +16,7 @@ describe('exact token amount boundaries',()=>{
  it('rejects old and future quotes',()=>{expect(()=>assertFreshQuote(0,60001)).toThrow();expect(()=>assertFreshQuote(2,1)).toThrow();});
 });
 describe('transaction authority boundaries',()=>{
+ it('allows zero credit limits while preserving positive transfer amounts',()=>{const s=snapshot();expect(buildAction({kind:'setSourceTerms',platform:DEPLOYMENT.platform,amount:'0',reserveBps:750,riskBps:0},s,owner).args).toEqual([DEPLOYMENT.platform,0n,750,0]);expect(buildAction({kind:'vaultSetPlatform',vault:DEPLOYMENT.vaultA,platform:DEPLOYMENT.platform,approved:false,amount:'0',reserveBps:750,checkGate:true,maxNavAge:60n},s,owner).args[2]).toBe(0n);expect(()=>buildAction({kind:'deposit',platform:DEPLOYMENT.platform,amount:'0'},s,owner)).toThrow('positive');});
  it('refuses mainnet and Ethereum Sepolia',()=>{expect(()=>assertWalletChain(42161)).toThrow();expect(()=>assertWalletChain(11155111)).toThrow();expect(()=>assertWalletChain(421614)).not.toThrow();});
  it('never allows preview broadcast',()=>{const s=snapshot();s.mode='preview';expect(()=>buildAction({kind:'pause'},s,owner)).toThrow('Preview');});
  it('does not trust role display flags as authority',()=>{const s=snapshot();s.account=outsider;expect(()=>buildAction({kind:'pause'},s,outsider)).toThrow('owner');expect(()=>buildAction({kind:'setGated',platform:DEPLOYMENT.platform,gated:true},s,outsider)).toThrow('issuer');});

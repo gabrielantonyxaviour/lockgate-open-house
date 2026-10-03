@@ -30,7 +30,7 @@ const lifecycle = [
 
 export function Integration() {
   return (
-    <div className="stack">
+    <div className="stack integration-content">
       <PageHead
         eyebrow="INTEGRATION"
         title="One rail. Clear responsibilities."
@@ -47,7 +47,7 @@ export function Integration() {
               <ArbitrumMark />
               <strong>Arbitrum</strong>
             </div>
-            <p>Deployed on Arbitrum Sepolia. The network selector also supports Arbitrum One.</p>
+            <p>Contracts are deployed on Arbitrum Sepolia. Arbitrum One is not yet available.</p>
           </div>
           <div className="stack">
             <div className="brand-credits">
@@ -123,9 +123,9 @@ export function Integration() {
             <tbody>
               {contracts.map(([name, address, role]) => (
                 <tr key={address}>
-                  <th scope="row">{name}</th>
-                  <td>{role}</td>
-                  <td>
+                  <th scope="row" data-label="Contract">{name}</th>
+                  <td data-label="Role">{role}</td>
+                  <td data-label="Explorer address">
                     <a className="mono" href={`https://sepolia.arbiscan.io/address/${address}`} target="_blank" rel="noreferrer">
                       {address}
                       <span className="muted"> ↗</span>

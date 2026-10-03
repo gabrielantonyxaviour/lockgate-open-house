@@ -169,6 +169,7 @@ test('styled select supports keyboard options, Escape and focus restoration', as
 });
 
 test('observer network selection never presents Sepolia balances on Arbitrum One', async ({ page }) => {
+  await page.route('https://sepolia-rollup.arbitrum.io/**', route => route.abort());
   await page.goto(preview('/overview'));
   await choose(page, 'Network', 'Arbitrum One');
   await expect(page.getByRole('heading', { name: 'The exit desk is coming to Arbitrum One.' })).toBeVisible();
@@ -179,7 +180,9 @@ test('observer network selection never presents Sepolia balances on Arbitrum One
   await choose(page, 'Network', 'Arbitrum Sepolia');
   await expect(page.getByRole('combobox', { name: 'Network', exact: true })).toHaveText('Arbitrum Sepolia');
   await expect(page.getByRole('heading', { name: 'The exit desk is coming to Arbitrum One.' })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: 'Capital in motion.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Chain data unavailable' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Capital in motion.' })).toHaveCount(0);
+  await expect(page.getByText(/Illustrative data/)).toHaveCount(0);
 });
 
 for (const reject of [false, true]) {
