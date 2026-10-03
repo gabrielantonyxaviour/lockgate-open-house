@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { X, ArrowRight } from "lucide-react";
 import { useDialog } from "./dialog";
+import { useApp } from "./context";
 import { NAV } from "./navigation";
 export function ScreenSearch({
   search,
@@ -11,9 +12,12 @@ export function ScreenSearch({
   onChange: (v: string) => void;
   onClose: () => void;
 }) {
+  const {snapshot,account} = useApp();
+  const matching = snapshot?.account?.toLowerCase() === account?.toLowerCase() && Boolean(account);
+  const allowed = (group:string,path:string) => group === "investor" || path === "/settings" || path === "/integration" || (matching && ((group === "issuer" || path === "/onboarding") && Boolean(snapshot?.roles.issuerPlatforms.length) || group === "partner" && Boolean(snapshot?.roles.partnerVaults.length) || group === "operations" && Boolean(snapshot?.roles.operator)));
   const ref = useRef<HTMLElement>(null);
   useDialog(ref, onClose);
-  const found = NAV.filter((n) => n.label.toLowerCase().includes(search.toLowerCase()));
+  const found = NAV.filter((n) => allowed(n.group,n.path) && n.label.toLowerCase().includes(search.toLowerCase()));
   return (
     <div className="dialog-backdrop" onClick={onClose}>
       <section

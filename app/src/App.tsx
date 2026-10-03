@@ -9,22 +9,12 @@ import { Shell } from "./ui/Shell";
 import { useRoute } from "./ui/router";
 import { previewSnapshot } from "./ui/preview";
 import { Transaction, type Review } from "./ui/Transaction";
-import { Guide } from "./ui/Guide";
-import Overview from "./pages/Overview";
-import Platforms, { PlatformDetail } from "./pages/Platforms";
-import Positions from "./pages/Positions";
-import Exit from "./pages/Exit";
-import Activity, { AdvanceDetail } from "./pages/Activity";
-import { Issuer, Operations } from "./pages/Workspaces";
-import Capital from "./pages/Capital";
-import Approvals from "./pages/Approvals";
-import { Onboarding } from "./pages/Onboarding";
-import { Integration } from "./pages/Integration";
-import { Settings, loadPreferences } from "./pages/Settings";
-import { Empty } from "./ui/primitives";
+import { loadPreferences } from "./pages/Settings";
+import { AppRoutes } from "./ui/AppRoutes";
+import { EntryFrame } from "./ui/EntryFrame";
+import { go } from "./ui/router";
 import { type NetworkId } from "./chain/networks";
 import { useInputModality } from "./ui/input-modality";
-import { NetworkUnavailable } from "./ui/NetworkUnavailable";
 export default function App() {
   useInputModality();
   const route = useRoute();
@@ -40,7 +30,6 @@ export default function App() {
   const [connecting, setConnecting] = useState(false);
   const [error, setError] = useState("");
   const [review, setReview] = useState<Review | null>(null);
-  const [guide, setGuide] = useState(false);
   const [, preferenceRevision] = useState(0);
   const requestId = useRef(0);
   const pendingReads = useRef(new Map<string, Promise<Snapshot>>());
@@ -92,6 +81,7 @@ export default function App() {
       setAccount(address);
       setChainId(await walletChainId());
       setError("");
+      if ((location.hash.slice(1) || location.pathname || "/") === "/") go("/choose");
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -162,108 +152,18 @@ export default function App() {
     else url.searchParams.set("preview", "1");
     history.replaceState(null, "", url);
   };
-  const [path, query = ""] = route.split("?");
-  const segments = path.split("/").filter(Boolean);
-  const utility = ["/onboarding", "/integration", "/settings", "/approvals"].includes(path);
-  let content;
-  if (selectedNetwork === 42161) content = <NetworkUnavailable onSepolia={() => void network(421614)} />;
-  else if (!snapshot && !utility)
-    content = loading ? (
-      <div className="loading-state" role="status">
-        <RefreshCw size={22} className="spin" />
-        <h1>Reading the exit desk.</h1>
-        <p>Fetching balances, terms, and permissions from Arbitrum Sepolia.</p>
-      </div>
-    ) : (
-      <Empty
-        title="Chain data unavailable"
-        action={
-          <button className="button" onClick={refresh}>
-            Retry connection
-          </button>
-        }
-      >
-        No illustrative values replace live balances. You can use the labelled layout preview to review the screens.
-      </Empty>
-    );
-  else
-    switch (segments[0]) {
-      case "overview":
-        content = <Overview />;
-        break;
-      case "platforms":
-        content = <Platforms />;
-        break;
-      case "platform":
-        content = <PlatformDetail key={path} address={segments[1] || ""} />;
-        break;
-      case "positions":
-        content = <Positions />;
-        break;
-      case "exit":
-        content = <Exit key={route} address={segments[1] || ""} params={new URLSearchParams(query)} />;
-        break;
-      case "activity":
-        content = <Activity />;
-        break;
-      case "advance":
-        content = <AdvanceDetail id={segments[1] || ""} />;
-        break;
-      case "issuer":
-        content = <Issuer />;
-        break;
-      case "operations":
-        content = <Operations />;
-        break;
-      case "capital":
-        content = <Capital />;
-        break;
-      case "approvals":
-        content = <Approvals />;
-        break;
-      case "onboarding":
-        content = <Onboarding />;
-        break;
-      case "integration":
-        content = <Integration />;
-        break;
-      case "settings":
-        content = (
-          <Settings
-            account={account}
-            onGuide={() => setGuide(true)}
-            onDisconnect={() => {
-              setAccount(undefined);
-              setChainId(undefined);
-              setReview(null);
-            }}
-          />
-        );
-        break;
-      default:
-        content = (
-          <Empty
-            title="Screen not found"
-            action={
-              <a className="button" href="#/overview">
-                Return to overview
-              </a>
-            }
-          >
-            Choose a screen from the navigation.
-          </Empty>
-        );
-    }
+  const path = route.split("?")[0];
+  const Frame = (!account && !preview) || (path === "/" || path === "/choose") || path.startsWith("/start/") || path === "/judge" ? EntryFrame : Shell;
   return (
     <AppContext.Provider value={{ snapshot, account, preview, loading, error, refresh, connect, review: openReview }}>
-      <Shell
+      <Frame
         route={path}
         account={account}
         preview={preview}
         onPreview={togglePreview}
         onConnect={connect}
         busy={connecting}
-        onGuide={() => setGuide(true)}
+        onGuide={() => go("/judge")}
         chainId={chainId}
         selectedNetwork={selectedNetwork}
         switching={switching || Boolean(review)}
@@ -277,7 +177,7 @@ export default function App() {
             </button>
           </div>
         )}
-        {snapshot && !preview && (
+        {snapshot && !preview && path !== "/" && (
           <div className="data-status">
             <span>
               {loading ? "Refreshing…" : `Read at block ${snapshot.blockNumber}`} ·{" "}
@@ -289,9 +189,18 @@ export default function App() {
             {Date.now() - snapshot.observedAt > 120_000 && <strong>Data may be stale</strong>}
           </div>
         )}
-        {content}
-      </Shell>
-      {guide && <Guide onClose={() => setGuide(false)} />}{" "}
+        <AppRoutes
+          route={route}
+          account={account}
+          networkId={selectedNetwork}
+          onSepolia={() => void network(421614)}
+          onDisconnect={() => {
+            setAccount(undefined);
+            setChainId(undefined);
+            setReview(null);
+          }}
+        />
+      </Frame>
       {review && <Transaction review={review} onClose={() => setReview(null)} />}
     </AppContext.Provider>
   );

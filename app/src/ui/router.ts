@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 export function useRoute() {
-  const read = () => location.hash.slice(1) || "/overview";
+  const read = () => location.hash.slice(1) || location.pathname || "/";
   const [route, setRoute] = useState(read);
   useEffect(() => {
     const change = () => {

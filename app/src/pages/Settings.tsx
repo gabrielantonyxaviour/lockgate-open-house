@@ -1,4 +1,5 @@
 import { Select } from "../ui/Select";
+import { useApp } from "../ui/context";
 import { useState } from "react";
 import { z } from "zod";
 import { Badge, PageHead, Panel } from "../ui/primitives";
@@ -29,6 +30,7 @@ export function Settings({
   onGuide: () => void;
   onDisconnect: () => void;
 }) {
+  const { snapshot } = useApp();
   const [preferences, setPreferences] = useState(loadPreferences);
   const [message, setMessage] = useState("");
   const update = (next: Preferences) => {
@@ -57,6 +59,7 @@ export function Settings({
       />
       <div className="grid-two">
         <Panel title="Wallet & network">
+          {snapshot?.roles.operator && <a className="inline-link" href="#/operations">Open Lockgate operations</a>}
           <div className="stack">
             <Badge tone={account ? "good" : "muted"}>{account ? "Wallet connected" : "Read-only access"}</Badge>
             <dl className="key-values">

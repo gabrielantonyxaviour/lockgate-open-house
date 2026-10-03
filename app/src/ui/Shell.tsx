@@ -13,7 +13,6 @@ export function Shell({
   route,
   account,
   onConnect,
-  onGuide,
   preview,
   onPreview,
   busy,
@@ -39,14 +38,21 @@ export function Shell({
   const navRef = useRef<HTMLElement>(null);
   useDialog(navRef, () => setMenu(false), false, menu);
   const [search, setSearch] = useState<string | null>(null);
+  let lastJourney = "investor";
+  try {
+    const value = JSON.parse(localStorage.getItem("lockgate.journey.v1") || "null");
+    if (value?.version === 1 && value.role === "issuer") lastJourney = "issuer";
+  } catch {
+    /* Use investor navigation for an unrecorded journey. */
+  }
   const initialGroup = route.startsWith("/issuer")
     ? "issuer"
     : route.startsWith("/operations")
       ? "operations"
       : route.startsWith("/capital") || route.startsWith("/approvals")
         ? "partner"
-        : "investor";
-  const [group, setGroup] = useState(initialGroup);
+        : lastJourney;
+  const group = initialGroup;
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.closest("input,textarea,select")) return;
@@ -58,9 +64,7 @@ export function Shell({
     window.addEventListener("keydown", key);
     return () => window.removeEventListener("keydown", key);
   }, []);
-  useEffect(() => {
-    setGroup(initialGroup);
-  }, [initialGroup]);
+
   const title =
     NAV.find((n) => route.startsWith(n.path))?.label ||
     (route.startsWith("/exit") ? "Exit today" : route.startsWith("/advance") ? "Advance detail" : "Platform detail");
@@ -91,32 +95,31 @@ export function Shell({
         <button className="icon-button mobile-close" aria-label="Close navigation" onClick={() => setMenu(false)}>
           <X size={16} />
         </button>
-        <label className="workspace">
-          <span className="eyebrow">WORKSPACE</span>
-          <div>
-            <Select
-              value={group}
-              onValueChange={(value) => {
-                setGroup(value);
-                go(value === "investor" ? "/overview" : value === "partner" ? "/capital" : `/${value}`);
-                setMenu(false);
-              }}
-              label="Workspace"
-              options={[
-                { value: "investor", label: "Investor exit desk" },
-                { value: "issuer", label: "Platform issuer" },
-                { value: "operations", label: "Lockgate operations" },
-                { value: "partner", label: "Capital partner" },
-              ]}
-            />
-          </div>
-        </label>
+        <div className="workspace">
+          <span className="eyebrow">{group === "investor" ? "YOUR EXIT DESK" : "YOUR WORKSPACE"}</span>
+          <strong className="workspace-name">
+            {group === "issuer"
+              ? "Platform liquidity"
+              : group === "partner"
+                ? "Capital partner"
+                : group === "operations"
+                  ? "Lockgate operations"
+                  : "Investor exit desk"}
+          </strong>
+          <a className="inline-link" href="#/choose">
+            Change journey
+          </a>
+        </div>
         <button className="search-button" onClick={() => setSearch("")}>
           <Search size={14} /> Find a screen <kbd>/</kbd>
         </button>
         <nav aria-label="Main navigation">
           <span className="nav-label">{group === "investor" ? "YOUR EXIT DESK" : "WORKSPACE"}</span>
-          {NAV.filter((n) => n.group === group || n.path === "/platforms" || n.path === "/activity").map((n) => (
+          {NAV.filter(
+            (n) =>
+              (n.group === group || n.path === "/platforms" || n.path === "/activity") &&
+              !(group === "investor" && n.path === "/overview"),
+          ).map((n) => (
             <a
               key={n.path}
               href={`#${n.path}`}
@@ -129,7 +132,7 @@ export function Shell({
             </a>
           ))}
           <span className="nav-label resources-label">RESOURCES</span>
-          {NAV.filter((n) => n.group === "resources").map((n) => (
+          {NAV.filter((n) => n.group === "resources" && (group !== "investor" || n.path === "/settings")).map((n) => (
             <a
               key={n.path}
               className={`nav-item ${route === n.path ? "active" : ""}`}
@@ -144,11 +147,11 @@ export function Shell({
         <div className="sidebar-bottom">
           <div className="guide-teaser">
             <BookOpen size={17} />
-            <strong>See the full cycle.</strong>
-            <p>From an early exit to platform repayment.</p>
-            <button onClick={onGuide}>
-              Are you a judge? <ArrowRight size={13} />
-            </button>
+            <strong>Help when you need it.</strong>
+            <p>Wallet connections, exits, and platform settlement.</p>
+            <a className="inline-link" href="#/settings">
+              Get help <ArrowRight size={13} />
+            </a>
           </div>
           <a href="https://lockgate.finance" target="_blank" rel="noreferrer" className="site-link">
             About Lockgate <ArrowUpRight size={13} />
@@ -222,7 +225,7 @@ export function Shell({
         </footer>
       </div>
       <nav className="bottom-nav" aria-label="Mobile navigation">
-        {NAV.filter((n) => ["/overview", "/platforms", "/positions"].includes(n.path)).map((n) => (
+        {NAV.filter((n) => ["/platforms", "/positions", "/activity"].includes(n.path)).map((n) => (
           <a href={`#${n.path}`} key={n.path} className={route.startsWith(n.path) ? "active" : ""}>
             <n.icon size={17} />
             <span>{n.path === "/positions" ? "My exits" : n.label}</span>

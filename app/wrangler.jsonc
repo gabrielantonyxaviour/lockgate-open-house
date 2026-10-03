@@ -1,6 +1,9 @@
 {
   "name": "lockgate-open-house",
   "compatibility_date": "2026-10-01",
-  "assets": { "directory": "./dist" },
-  "routes": [{ "pattern": "open-house.lockgate.finance", "custom_domain": true }]
+  "assets": { "directory": "./dist", "not_found_handling": "single-page-application" },
+  "routes": [
+    { "pattern": "openhouse.lockgate.finance", "custom_domain": true },
+    { "pattern": "open-house.lockgate.finance", "custom_domain": true }
+  ]
 }

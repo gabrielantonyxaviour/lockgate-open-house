@@ -2,7 +2,7 @@ import { test, expect, type Page } from '@playwright/test';
 
 const platform = '0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25';
 const routes = ['/overview', '/platforms', '/positions', '/activity', '/issuer', '/operations',
-  '/capital', '/approvals', '/onboarding', '/integration', '/settings', `/platform/${platform}`, `/exit/${platform}`, '/advance/1'];
+  '/judge', '/create', '/capital', '/approvals', '/onboarding', '/integration', '/settings', `/platform/${platform}`, `/exit/${platform}`, '/advance/1'];
 const preview = (route: string) => `/?preview=1#${route}`;
 async function choose(page: Page, label: string, option: string) {
   await page.getByRole('combobox', { name: label, exact: true }).click();

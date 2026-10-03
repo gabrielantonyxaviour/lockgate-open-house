@@ -8,7 +8,7 @@ import { AdvanceTable } from "./Activity";
 import { OperatorControls, IssuerControls } from "./Controls";
 export function Issuer() {
   const { snapshot, account, preview, connect } = useApp();
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState(() => new URLSearchParams(location.hash.split("?")[1]).get("platform") || "");
   const p = snapshot?.platforms.find((p) => p.address === selected) || snapshot?.platforms[0];
   const permitted = p && account?.toLowerCase() === p.issuer.toLowerCase();
   return (
@@ -133,6 +133,7 @@ export function Operations() {
         description="Manage own-book capital and platform limits. Operational writes require the credit-line owner."
         action={<Badge tone={l.paused ? "warn" : "good"}>{l.paused ? "Paused" : "Not paused"}</Badge>}
       />
+      <a className="button secondary" href="#/create">Register a platform</a>
       <div className="metrics">
         <Metric label="Idle capital" value={money(l.capital)} caption="USDG available before platform checks" />
         <Metric label="Outstanding principal" value={money(l.outstanding)} caption="Own-book funded advances" />

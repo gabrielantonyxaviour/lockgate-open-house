@@ -117,6 +117,7 @@ export function Onboarding() {
         description="Prepare the commercial and integration details for a platform facility."
         action={<Badge>Local draft</Badge>}
       />
+      <a className="inline-link" href="#/create">Lockgate operator? Register the approved platform on-chain.</a>
       <div className="notice">
         This plan stays on your device until you export it. Saving does not submit an application, approve terms, or activate a
         facility. Do not enter personal documents or confidential credentials.

@@ -13,6 +13,7 @@ export interface ProposalReference { nonce: bigint; digest: Hash; used: boolean 
 export interface Snapshot { mode: 'live' | 'preview'; blockNumber: bigint; observedAt: number; account?: Address; usdgBalance: bigint; roles: { operator: boolean; issuerPlatforms: Address[]; partnerVaults: Address[] }; platforms: Platform[]; creditLine: CreditLine; vaults: PartnerVault[]; warnings: string[] }
 export interface ExitQuote { navValue: bigint; fee: bigint; usdgOut: bigint; available: boolean; reason: string; blockNumber: bigint; quotedAt: number }
 export type Action =
+ | { kind: 'createPlatform'; platformKind: 1|2|3; name: string; interval: bigint; shareNav: string; issuer: Address; limit: string; reserveBps: number }
  | { kind: 'deposit' | 'depositCash' | 'requestRedeem'; platform: Address; amount: string }
  | { kind: 'exitNow'; platform: Address; amount: string; minUsdgOut: bigint; quotedAt: number }
  | { kind: 'exitEarly'; platform: Address; requestId: bigint; minUsdgOut: bigint; quotedAt: number }
@@ -33,5 +34,5 @@ export type Action =
  | { kind: 'postReserve'; platform: Address; amount: string }
  | { kind: 'markLate'; advanceId: bigint }
  | { kind: 'vaultDeposit' | 'vaultWithdraw'; vault: Address; amount: string };
-export interface TransactionState { phase: 'checking' | 'approval' | 'confirming' | 'pending' | 'success' | 'error'; hash?: Hash; confirmationUnknown?: boolean; message: string }
+export interface TransactionState { phase: 'checking' | 'approval' | 'confirming' | 'pending' | 'success' | 'error'; hash?: Hash; confirmationUnknown?: boolean; createdPlatform?: Address; message: string }
 export type OnTransactionState = (state: TransactionState) => void;

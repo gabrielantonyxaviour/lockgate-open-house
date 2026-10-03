@@ -1,10 +1,11 @@
-import { isAddressEqual, type Abi, type Address, type Hash } from 'viem';
+import { decodeEventLog, isAddressEqual, type Abi, type Address, type Hash } from 'viem';
 import { z } from 'zod';
 import { creditLineAbi, platformAbi, tokenAbi, vaultAbi } from './abi';
 import { DEPLOYMENT, CHAIN } from './config';
 import { checkedAddress, errorMessage, publicClient, quoteExit, quoteRequest } from './client';
 import { assertFreshQuote, checkedUint, parseAmount } from './amounts';
 import { authorizedWallet } from './wallet';
+import { factoryAbi } from './factory-abi';
 import { actionSchema } from './action-schema';
 import type { Action, OnTransactionState, Snapshot } from './model';
 export interface PreparedAction { address:Address; abi:Abi; functionName:string; args:readonly unknown[]; approval?:{spender:Address; amount:bigint} }
@@ -21,7 +22,8 @@ export function buildAction(action:Action,snapshot:Snapshot,account:Address):Pre
  let approval:PreparedAction['approval'];
  const requireOperator = ()=>{if(!same(snapshot.creditLine.owner,account)) throw new Error('Only the Lockgate owner can perform this action.');};
  const amount = ()=>'amount' in action ? parseAmount(action.amount) : 0n;
- if(action.kind==='registerSource') {requireOperator();args.push(checkedAddress(action.platform),amount(),action.reserveBps);}
+ if(action.kind==='createPlatform') {address=DEPLOYMENT.factory;abi=factoryAbi;args.push(action.platformKind,action.name.trim(),action.interval,parseAmount(action.shareNav),checkedAddress(action.issuer),parseAmount(action.limit),action.reserveBps);}
+ else if(action.kind==='registerSource') {requireOperator();args.push(checkedAddress(action.platform),amount(),action.reserveBps);}
  else if('platform' in action && !('vault' in action)) {
   checkedAddress(action.platform);
   const platform=snapshot.platforms.find(p=>same(p.address,action.platform));
@@ -89,6 +91,10 @@ export async function sendAction(action:Action,snapshot:Snapshot,onState:OnTrans
   onState({phase:'checking',message:'Checking permissions and current contract state.'});
   const prepared=buildAction(action,snapshot,account);
   if(await publicClient.getChainId()!==CHAIN.id) throw new Error('The RPC is not Arbitrum Sepolia.');
+  if(action.kind==='createPlatform') {
+   const owner=await publicClient.readContract({address:DEPLOYMENT.factory,abi:factoryAbi,functionName:'owner'});
+   if(!isAddressEqual(owner,account)) throw new Error('Only the actual factory owner can create a platform.');
+  }
   if(action.kind==='exitNow' || action.kind==='exitEarly') {
    const fresh=action.kind==='exitNow' ? await quoteExit(action.platform,parseAmount(action.amount,18)) : await quoteRequest(action.platform,action.requestId);
    if(!fresh.available) throw new Error(fresh.reason || 'This exit is not available.');
@@ -120,7 +126,17 @@ export async function sendAction(action:Action,snapshot:Snapshot,onState:OnTrans
   const receipt=await publicClient.waitForTransactionReceipt({hash});
   awaitingReceipt=false;
   if(receipt.status!=='success') throw new Error('The contract transaction reverted.');
-  onState({phase:'success',hash,message:'Transaction confirmed on Arbitrum Sepolia.'});
+  let createdPlatform:Address|undefined;
+  if(action.kind==='createPlatform') {
+   for(const log of receipt.logs ?? []) {
+    if(!isAddressEqual(log.address,DEPLOYMENT.factory)) continue;
+    try {
+     const decoded=decodeEventLog({abi:factoryAbi,data:log.data,topics:log.topics});
+     if(decoded.eventName==='PlatformCreated') createdPlatform=checkedAddress(decoded.args.fund);
+    } catch { /* Other factory receipt events are not platform creation. */ }
+   }
+  }
+  onState({phase:'success',hash,createdPlatform,message:action.kind==='createPlatform'?'Platform created. Fund its position and reserve separately before attempting an exit.':'Transaction confirmed on Arbitrum Sepolia.'});
   return hash;
  } catch(error) {
   onState({phase:'error',hash:lastHash,confirmationUnknown:awaitingReceipt,message:awaitingReceipt ? 'Transaction submitted; confirmation is unverified. Check the transaction in the explorer before retrying.' : errorMessage(error)});

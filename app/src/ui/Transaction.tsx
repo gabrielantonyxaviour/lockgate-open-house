@@ -117,6 +117,7 @@ export function Transaction({ review, onClose }: { review: Review; onClose: () =
               {state.message}
             </div>
             {state.hash && <Explorer hash={state.hash}>View transaction</Explorer>}
+            {state.createdPlatform && <div className="row"><a className="button secondary" href={`#/platform/${state.createdPlatform}`} onClick={onClose}>Open platform</a><a className="inline-link" href={`#/judge?platform=${state.createdPlatform}`} onClick={onClose}>Open walkthrough</a></div>}
           </div>
         )}
         <div className="row between">

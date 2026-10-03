@@ -1,0 +1,25 @@
+import {beforeEach,describe,expect,it,vi} from 'vitest';
+import {encodeAbiParameters,encodeEventTopics,type Address,type Hash} from 'viem';
+const mocks=vi.hoisted(()=>({chain:vi.fn(),read:vi.fn(),simulate:vi.fn(),wait:vi.fn(),wallet:vi.fn(),write:vi.fn()}));
+vi.mock('../src/chain/client',async importOriginal=>({...await importOriginal<typeof import('../src/chain/client')>(),publicClient:{getChainId:mocks.chain,readContract:mocks.read,simulateContract:mocks.simulate,waitForTransactionReceipt:mocks.wait}}));
+vi.mock('../src/chain/wallet',()=>({authorizedWallet:mocks.wallet}));
+import {buildAction,sendAction} from '../src/chain/actions';
+import {factoryAbi} from '../src/chain/factory-abi';
+import {DEPLOYMENT} from '../src/chain/config';
+import {previewSnapshot} from '../src/ui/preview';
+import type {Action,TransactionState} from '../src/chain/model';
+const owner:Address='0x1111111111111111111111111111111111111111';const other:Address='0x2222222222222222222222222222222222222222';const created:Address='0x3333333333333333333333333333333333333333';const hash=`0x${'11'.repeat(32)}` as Hash;
+const action=():Extract<Action,{kind:'createPlatform'}>=>({kind:'createPlatform',platformKind:1,name:'Open House credit',interval:1800n,shareNav:'1',issuer:owner,limit:'100',reserveBps:750});
+function snapshot(){const s=previewSnapshot();s.mode='live';s.account=owner;s.creditLine.owner=other;s.roles.operator=false;return s;}
+beforeEach(()=>{vi.resetAllMocks();mocks.chain.mockResolvedValue(421614);mocks.read.mockResolvedValue(owner);mocks.simulate.mockImplementation(async request=>({request}));mocks.wallet.mockResolvedValue({writeContract:mocks.write});mocks.write.mockResolvedValue(hash);mocks.wait.mockResolvedValue({status:'success',logs:[]});});
+describe('owner-only real platform creation',()=>{
+ it('targets the actual factory with exact units and no USDG approval or seeding',()=>{const call=buildAction(action(),snapshot(),owner);expect(call.address).toBe(DEPLOYMENT.factory);expect(call.functionName).toBe('createPlatform');expect(call.args).toEqual([1,'Open House credit',1800n,1000000n,owner,100000000n,750]);expect(call.approval).toBeUndefined();});
+ it.each([1,2,3] as const)('supports deployed queue kind %i',kind=>{expect(buildAction({...action(),platformKind:kind},snapshot(),owner).args[0]).toBe(kind);});
+ it('rejects unsigned and preview submission',async()=>{const s=snapshot();s.account=undefined;await expect(sendAction(action(),s)).rejects.toThrow('Connect');s.account=owner;s.mode='preview';await expect(sendAction(action(),s)).rejects.toThrow('Preview');expect(mocks.write).not.toHaveBeenCalled();});
+ it.each([{platformKind:0},{platformKind:4},{name:'   '},{name:'x'.repeat(65)},{name:'Name\nControl'},{interval:0n},{interval:59n},{interval:31536001n},{shareNav:'0'},{shareNav:'1.0000001'},{limit:'0'},{reserveBps:499},{reserveBps:1001},{issuer:'0x0000000000000000000000000000000000000000'}].map((patch,index)=>[index,patch] as const))('rejects invalid creation input case %i',(_,patch)=>expect(()=>buildAction({...action(),...patch} as Action,snapshot(),owner)).toThrow());
+ it('verifies factory ownership instead of trusting credit-line role flags',async()=>{const s=snapshot();s.creditLine.owner=owner;s.roles.operator=true;mocks.read.mockResolvedValue(other);await expect(sendAction(action(),s)).rejects.toThrow('actual factory owner');expect(mocks.simulate).not.toHaveBeenCalled();expect(mocks.write).not.toHaveBeenCalled();});
+ it('allows actual factory owner even if credit-line owner differs',async()=>{await sendAction(action(),snapshot());expect(mocks.read).toHaveBeenCalledWith(expect.objectContaining({address:DEPLOYMENT.factory,functionName:'owner'}));expect(mocks.write).toHaveBeenCalledTimes(1);});
+ it('refuses mainnet before reading ownership or writing',async()=>{mocks.chain.mockResolvedValue(42161);await expect(sendAction(action(),snapshot())).rejects.toThrow('RPC');expect(mocks.read).not.toHaveBeenCalled();expect(mocks.write).not.toHaveBeenCalled();});
+ it('returns the actual created address from the successful receipt event',async()=>{const topics=encodeEventTopics({abi:factoryAbi,eventName:'PlatformCreated',args:{fund:created,issuer:owner}});const data=encodeAbiParameters([{type:'uint8'},{type:'string'}],[1,'Open House credit']);mocks.wait.mockResolvedValue({status:'success',logs:[{address:DEPLOYMENT.factory,topics,data}]});const states:TransactionState[]=[];await sendAction(action(),snapshot(),state=>states.push(state));expect(states.at(-1)).toMatchObject({phase:'success',hash,createdPlatform:created});});
+ it('does not report a created address from an unrelated contract log',async()=>{const topics=encodeEventTopics({abi:factoryAbi,eventName:'PlatformCreated',args:{fund:created,issuer:owner}});const data=encodeAbiParameters([{type:'uint8'},{type:'string'}],[1,'Open House credit']);mocks.wait.mockResolvedValue({status:'success',logs:[{address:other,topics,data}]});const states:TransactionState[]=[];await sendAction(action(),snapshot(),state=>states.push(state));expect(states.at(-1)?.createdPlatform).toBeUndefined();});
+});
