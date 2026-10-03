@@ -36,3 +36,5 @@ Permissions are determined by current owner/issuer/partner contracts and checked
 - `wrangler.jsonc` points to `dist` at the previously established hosting target. This task does not deploy or enable automatic publishing.
 
 Current contract addresses are from `../docs/DEPLOYMENTS.md`; source truth is `../contracts`. The older outer `SPEC.md` describes superseded permissionless creation and Door2 and must not be used as an integration contract.
+
+Interface styling follows [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md). Adapt registry components to shared tokens rather than preserving each reference’s styling.

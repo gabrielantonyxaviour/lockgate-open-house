@@ -24,9 +24,10 @@
   color: var(--body);
 }
 .topbar .button {
-  min-height: 34px;
+  height: var(--control-height);
+  min-height: var(--control-height);
   font-size: 11px;
-  padding: 7px 12px;
+  padding: 8px 12px;
 }
 .network-banner {
   display: flex;
@@ -86,7 +87,7 @@
   justify-content: space-between;
 }
 
-.network-select { width: auto; min-width: 188px; min-height: 40px; font-size: 11px; padding: 7px 10px; border-radius: 6px; }
+.network-select { height: var(--control-height); width: auto; min-width: 188px; min-height: var(--control-height); font-size: 11px; padding: 8px 12px; border-radius: var(--radius-control); }
 .brand-credits, .brand-asset { display: flex; align-items: center; gap: 8px; }
 .brand-credits { gap: 12px; }
 @media (max-width: 560px) { .network-select { min-width: 0; gap: 6px; font-size: 10px; padding: 6px; } .topbar-actions { gap: 6px; } }

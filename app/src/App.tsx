@@ -23,8 +23,10 @@ import { Integration } from "./pages/Integration";
 import { Settings, loadPreferences } from "./pages/Settings";
 import { Empty } from "./ui/primitives";
 import { type NetworkId } from "./chain/networks";
+import { useInputModality } from "./ui/input-modality";
 import { NetworkUnavailable } from "./ui/NetworkUnavailable";
 export default function App() {
+  useInputModality();
   const route = useRoute();
   const [account, setAccount] = useState<Address>();
   const [chainId, setChainId] = useState<number>();

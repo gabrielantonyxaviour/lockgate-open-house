@@ -212,3 +212,23 @@ for (const reject of [false, true]) {
     }
   });
 }
+
+test('header controls share geometry and reduced motion keeps menus still', async ({ page }) => {
+  await page.goto(preview('/overview'));
+  const network = page.getByRole('combobox', { name: 'Network', exact: true });
+  const wallet = page.getByRole('button', { name: 'Connect wallet', exact: true });
+  const geometry = (element: Element) => ({ radius: getComputedStyle(element).borderRadius, height: element.getBoundingClientRect().height });
+  expect(await network.evaluate(geometry)).toEqual(await wallet.evaluate(geometry));
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await network.click();
+  const menu = page.getByRole('listbox');
+  await expect(menu).toBeVisible();
+  expect(await menu.evaluate(element => getComputedStyle(element).animationName)).toBe('none');
+  await page.keyboard.press('Escape');
+  await network.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('html')).toHaveAttribute('data-input', 'keyboard');
+  await expect(page.getByRole('option', { name: 'Arbitrum Sepolia', exact: true })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(network).toBeFocused();
+});

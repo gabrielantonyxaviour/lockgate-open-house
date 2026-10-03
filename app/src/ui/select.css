@@ -4,10 +4,10 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 42px;
+  min-height: var(--control-height);
   padding: 11px 12px;
   border: 1px solid var(--rule);
-  border-radius: 4px;
+  border-radius: var(--radius-control);
   background: var(--paper);
   color: var(--ink);
   font: 400 12px var(--font-body);
@@ -55,7 +55,7 @@
   max-height: var(--radix-select-content-available-height);
   overflow: hidden;
   border: 1px solid var(--rule);
-  border-radius: 6px;
+  border-radius: var(--radius-panel);
   background: var(--paper);
   box-shadow: 0 8px 30px #0b0b0c14;
 }
@@ -68,7 +68,7 @@
   align-items: center;
   min-height: 38px;
   padding: 9px 32px 9px 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-item);
   font: 400 12px/1.5 var(--font-body);
   color: var(--body);
   cursor: pointer;

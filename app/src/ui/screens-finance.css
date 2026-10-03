@@ -19,7 +19,7 @@
 .exposure-bar {
   height: 5px;
   background: var(--fill);
-  border-radius: 2px;
+  border-radius: var(--radius-detail);
   overflow: hidden;
   margin: 16px 0 10px;
 }
@@ -93,7 +93,7 @@
   text-align: left;
   background: #fff;
   border: 1px solid var(--rule);
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   padding: 24px;
 }
 .vault-card.selected {

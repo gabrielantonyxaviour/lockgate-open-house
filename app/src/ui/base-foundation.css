@@ -1,4 +1,12 @@
 :root {
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-item: 6px;
+  --radius-detail: 2px;
+  --radius-pill: 999px;
+  --control-height: 42px;
+  --motion-fast: 160ms;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ink: #0b0b0c;
   --body: #3f3f46;
   --muted: #71717a;
@@ -75,7 +83,7 @@ textarea {
   width: 100%;
   padding: 12px;
   border: 1px solid var(--rule);
-  border-radius: 5px;
+  border-radius: var(--radius-control);
   background: #fff;
   color: var(--ink);
 }
@@ -103,20 +111,20 @@ button {
   background: var(--ink);
   color: #fff;
   border: 1px solid var(--ink);
-  border-radius: 999px;
-  min-height: 40px;
+  border-radius: var(--radius-control);
+  min-height: var(--control-height);
   padding: 9px 17px;
   font-size: 13px;
   font-weight: 500;
   white-space: nowrap;
   transition:
-    background 0.18s,
-    transform 0.18s;
+    background var(--motion-fast) ease,
+    transform var(--motion-fast) var(--ease-out);
 }
 .button:hover:not(:disabled) {
   background: #303033;
 }
-.button:active:not(:disabled) {
+html[data-input="pointer"] .button:active:not(:disabled) {
   transform: scale(0.98);
 }
 .button.secondary {
@@ -139,7 +147,7 @@ button {
   display: grid;
   place-items: center;
   border: 1px solid var(--rule);
-  border-radius: 6px;
+  border-radius: var(--radius-control);
   background: #fff;
 }
 .inline-link {
