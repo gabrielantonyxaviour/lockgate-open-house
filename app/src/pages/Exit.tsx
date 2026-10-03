@@ -7,7 +7,7 @@ import { quoteExit, quoteRequest, errorMessage } from "../chain/client";
 import type { ExitQuote } from "../chain/model";
 import { PageHead, Panel, Badge, money, date, Empty } from "../ui/primitives";
 export default function Exit({ address, params }: { address: string; params: URLSearchParams }) {
-  const { snapshot, account, connect, review, preview } = useApp();
+  const { snapshot, account, connect, review, preview, loading, error: readError, refresh } = useApp();
   const platform = snapshot?.platforms.find((p) => p.address.toLowerCase() === address.toLowerCase());
   const requestId = params.get("request");
   const request = platform?.requests.find((r) => String(r.id) === requestId);
@@ -60,11 +60,19 @@ export default function Exit({ address, params }: { address: string; params: URL
       clearTimeout(timer);
     };
   }, [amount, request, platform?.address, preview, queued, version]);
-  if (!platform) return <Empty title="Select a platform">Open a platform to start an exit.</Empty>;
+  if ((!platform || (requestId && !request)) && loading)
+    return <div className="loading-state" role="status"><h1>{platform ? "Reading request…" : "Reading platform…"}</h1><p>Fetching the latest redemption data.</p></div>;
+  if (!platform)
+    return <Empty title="Platform unavailable"
+      action={<button className="button secondary" onClick={() => void refresh()}>Refresh platform</button>}>
+      {readError ? "The latest platform record could not be read. Try refreshing. " : "This address is not in the registered platform snapshot. "}
+      <a className="inline-link" href="#/platforms">Return to platforms</a>
+    </Empty>;
   if (requestId && !request)
     return (
-      <Empty title="Request unavailable">
-        This request does not belong to the connected wallet or is not in the loaded history.
+      <Empty title="Request unavailable"
+        action={<button className="button secondary" onClick={() => void refresh()}>Refresh request</button>}>
+        {readError ? "The latest request could not be read. Try refreshing." : "This request does not belong to the connected wallet or is not in the loaded history."}
       </Empty>
     );
   const fresh = quote && now - quote.quotedAt <= 60_000;

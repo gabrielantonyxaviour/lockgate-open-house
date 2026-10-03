@@ -112,13 +112,16 @@ export default function Platforms() {
   );
 }
 export function PlatformDetail({ address }: { address: string }) {
-  const { snapshot, review, account, connect, preview } = useApp();
+  const { snapshot, review, account, connect, preview, loading, error, refresh } = useApp();
   const [tab, setTab] = useState("Overview");
   const p = snapshot?.platforms.find((p) => p.address.toLowerCase() === address.toLowerCase());
+  if (!p && loading)
+    return <div className="loading-state" role="status"><h1>Reading platform…</h1><p>Fetching the latest platform record.</p></div>;
   if (!p)
     return (
-      <Empty title="Platform unavailable">
-        This address is not in the registered platform snapshot.{" "}
+      <Empty title="Platform unavailable"
+        action={<button className="button secondary" onClick={() => void refresh()}>Refresh platform</button>}>
+        {error ? "The latest platform record could not be read. Try refreshing. " : "This address is not in the registered platform snapshot. "}
         <a href="#/platforms" className="inline-link">
           Return to platforms
         </a>

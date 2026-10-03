@@ -7,8 +7,13 @@ import { Panel, PageHead, money, date, Badge, Explorer, Empty, Metric } from "..
 import { FundingForm } from "../ui/FundingForm";
 export default function Capital() {
   const { snapshot, account, preview } = useApp();
-  const [selected, setSelected] = useState("");
-  const vault = snapshot?.vaults.find((v) => v.address === selected) || snapshot?.vaults[0];
+  const accountKey = account?.toLowerCase() ?? "";
+  const [selection, setSelection] = useState({ account: accountKey, address: "" });
+  if (selection.account !== accountKey) setSelection({ account: accountKey, address: "" });
+  const selected = selection.account === accountKey ? selection.address : "";
+  const vault = snapshot?.vaults.find((v) => v.address === selected)
+    || snapshot?.vaults.find((v) => v.owner.toLowerCase() === accountKey)
+    || snapshot?.vaults[0];
   const owner = Boolean(vault && account?.toLowerCase() === vault.owner.toLowerCase() && !preview);
   return (
     <div className="stack">
@@ -22,7 +27,7 @@ export default function Capital() {
           <button
             className={`vault-card ${v.address === vault?.address ? "selected" : ""}`}
             key={v.address}
-            onClick={() => setSelected(v.address)}
+            onClick={() => setSelection({ account: accountKey, address: v.address })}
           >
             <div className="row between">
               <span>{v.name}</span>
@@ -110,8 +115,8 @@ export default function Capital() {
               )}
             </Panel>
           </div>
-          <VaultControls key={vault.address} vault={vault} permitted={owner} />
-          <PartnerOperations key={vault.address} vault={vault} />
+          <VaultControls key={`controls:${vault.address}`} vault={vault} permitted={owner} />
+          <PartnerOperations key={`operations:${vault.address}`} vault={vault} />
           <Panel title="Partner-funded advances">
             {vault.advances?.length ? (
               <div className="table-wrap">

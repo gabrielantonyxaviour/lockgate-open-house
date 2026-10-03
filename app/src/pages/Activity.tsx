@@ -95,12 +95,15 @@ export default function Activity() {
   );
 }
 export function AdvanceDetail({ id }: { id: string }) {
-  const { snapshot, review, preview, account, connect } = useApp();
+  const { snapshot, review, preview, account, connect, loading, error, refresh } = useApp();
   const a = snapshot?.creditLine.advances.find((a) => String(a.id) === id);
+  if (!a && loading)
+    return <div className="loading-state" role="status"><h1>Reading receipt…</h1><p>Fetching the latest advance record.</p></div>;
   if (!a)
     return (
-      <Empty title="Advance not found">
-        Return to the{" "}
+      <Empty title={error ? "Receipt unavailable" : "Advance not found"}
+        action={<button className="button secondary" onClick={() => void refresh()}>Refresh receipt</button>}>
+        {error ? "The latest receipt could not be read. Try refreshing, or return to the " : "Return to the "}
         <a className="inline-link" href="#/activity">
           advance ledger
         </a>{" "}
