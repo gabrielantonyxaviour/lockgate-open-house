@@ -1,0 +1,1 @@
+{"compilerOptions":{"target":"ES2023","lib":["ES2023","DOM"],"module":"ESNext","moduleResolution":"bundler","jsx":"react-jsx","strict":true,"skipLibCheck":true,"noEmit":true,"allowImportingTsExtensions":true,"types":["vite/client"],"esModuleInterop":true},"include":["src","test","vite.config.ts"]}

@@ -1,0 +1,25 @@
+import {
+  LayoutDashboard,
+  Layers,
+  ArrowUpRight,
+  Activity,
+  Building2,
+  Shield,
+  Landmark,
+  Inbox,
+  Plug,
+  Settings,
+} from "lucide-react";
+export const NAV = [
+  { path: "/overview", label: "Overview", icon: LayoutDashboard, group: "investor" },
+  { path: "/platforms", label: "Platforms", icon: Layers, group: "investor" },
+  { path: "/positions", label: "My positions & exits", icon: ArrowUpRight, group: "investor" },
+  { path: "/activity", label: "Activity", icon: Activity, group: "investor" },
+  { path: "/issuer", label: "Issuer workspace", icon: Building2, group: "issuer" },
+  { path: "/operations", label: "Lockgate operations", icon: Shield, group: "operations" },
+  { path: "/capital", label: "Partner capital", icon: Landmark, group: "partner" },
+  { path: "/approvals", label: "Approval inbox", icon: Inbox, group: "partner" },
+  { path: "/onboarding", label: "Platform onboarding", icon: Building2, group: "resources" },
+  { path: "/integration", label: "Integration & system", icon: Plug, group: "resources" },
+  { path: "/settings", label: "Settings & help", icon: Settings, group: "resources" },
+];

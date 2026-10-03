@@ -1,0 +1,157 @@
+.table-wrap {
+  overflow-x: auto;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 12px;
+}
+th {
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--rule);
+  white-space: nowrap;
+}
+td {
+  padding: 18px 14px;
+  border-bottom: 1px solid #f0f0f2;
+  vertical-align: middle;
+}
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+td strong {
+  font-weight: 500;
+}
+td small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+td.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+td .button {
+  min-height: 32px;
+  font-size: 11px;
+  padding: 6px 12px;
+}
+.tabs {
+  display: flex;
+  gap: 22px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+.tabs button,
+.tabs a {
+  padding: 12px 0;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  white-space: nowrap;
+  font-size: 12px;
+}
+.tabs .active {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+.key-values {
+  display: grid;
+  gap: 0;
+}
+.key-values > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 13px 0;
+  border-bottom: 1px solid #f1f1f3;
+  font-size: 12px;
+}
+.key-values > div:last-child {
+  border: none;
+}
+.key-values dt {
+  color: var(--muted);
+}
+.key-values dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.divider {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 4px 0;
+}
+.check-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+  padding: 9px 0;
+}
+.check-icon {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.check-icon.complete {
+  color: #fff;
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.stepper {
+  display: flex;
+  gap: 0;
+  align-items: center;
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+.stepper button,
+.stepper > span {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  border: 0;
+  background: transparent;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--muted);
+  padding: 10px;
+}
+.stepper .active {
+  color: var(--ink);
+}
+.stepper b {
+  border: 1px solid var(--rule);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+}
+.stepper .active b {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}

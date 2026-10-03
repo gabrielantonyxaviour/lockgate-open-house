@@ -1,0 +1,100 @@
+.filter-bar {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+.filter-bar > select {
+  width: auto;
+  margin-left: auto;
+  font-size: 11px;
+  padding: 9px 25px 9px 10px;
+}
+.search-field {
+  position: relative;
+  flex: 1;
+  max-width: 360px;
+  min-width: 180px;
+}
+.search-field svg {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  color: var(--muted);
+}
+.search-field input {
+  padding-left: 36px;
+  font-size: 11px;
+}
+.waterfall {
+  display: flex;
+  flex-direction: column;
+  margin: 8px 0 22px;
+}
+.waterfall > div:not(.notice) {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--rule);
+}
+.flow-number {
+  height: 28px;
+  width: 28px;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 10px var(--font-mono);
+  flex-shrink: 0;
+}
+.waterfall strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.waterfall p {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.waterfall b {
+  font: 500 20px var(--font-head);
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
+  letter-spacing: -0.02em;
+}
+.waterfall b small {
+  display: block;
+  font: 9px var(--font-body);
+  color: var(--muted);
+  margin-top: 4px;
+}
+.waterfall .notice {
+  margin-top: 16px;
+}
+.funding-form {
+  border-top: 1px solid var(--rule);
+  margin-top: 24px;
+  padding-top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.funding-form .row {
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+.funding-form input {
+  width: 100%;
+  flex: 1;
+}
+.funding-form .button {
+  flex-shrink: 0;
+  font-size: 11px;
+}
+.funding-form h3 {
+  font-size: 15px;
+}

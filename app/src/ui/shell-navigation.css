@@ -1,0 +1,143 @@
+.app-shell {
+  min-height: 100vh;
+}
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 232px;
+  background: #fbfbfc;
+  border-right: 1px solid var(--rule);
+  padding: 32px 18px 20px;
+  display: flex;
+  flex-direction: column;
+  z-index: 30;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font: 600 25px/1 var(--font-head);
+  letter-spacing: -1px;
+  padding: 0 10px;
+}
+.brand img {
+  width: 23px;
+  height: 25px;
+}
+.brand-dot {
+  margin-left: -8px;
+  color: #a2a2a8;
+}
+.workspace {
+  margin: 35px 6px 18px;
+}
+.workspace > .eyebrow {
+  display: block;
+  margin-bottom: 10px;
+}
+.workspace > div {
+  position: relative;
+}
+.workspace select {
+  appearance: none;
+  border: 1px solid var(--rule);
+  font-size: 12px;
+  padding: 11px 30px 11px 10px;
+}
+.workspace svg {
+  position: absolute;
+  right: 10px;
+  top: 13px;
+  pointer-events: none;
+}
+.search-button {
+  margin: 0 6px 20px;
+  background: #fff;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 9px;
+  color: var(--muted);
+  font-size: 11px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.search-button kbd {
+  margin-left: auto;
+  background: var(--fill);
+  padding: 0 4px;
+}
+.nav-label {
+  font: 9px var(--font-mono);
+  letter-spacing: 0.08em;
+  color: #92929a;
+  display: block;
+  margin: 14px 10px 8px;
+}
+.nav-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  border-radius: 4px;
+  padding: 12px 11px;
+  font-size: 12px;
+  color: #64646f;
+  margin: 3px 0;
+}
+.nav-item:hover {
+  background: #f0f0f2;
+  color: var(--ink);
+}
+.nav-item.active {
+  color: var(--ink);
+  background: #ececee;
+  font-weight: 500;
+}
+.resources-label {
+  margin-top: 25px;
+}
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 24px 6px 0;
+}
+.guide-teaser {
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  background: white;
+  padding: 14px;
+}
+.guide-teaser > svg {
+  margin-bottom: 8px;
+}
+.guide-teaser strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+.guide-teaser p {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 6px 0 12px;
+}
+.guide-teaser button {
+  border: 0;
+  padding: 0;
+  background: none;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.site-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 18px;
+}

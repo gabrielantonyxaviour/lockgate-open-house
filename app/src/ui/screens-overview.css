@@ -1,0 +1,140 @@
+.overview-hero {
+  display: grid;
+  grid-template-columns: 1.35fr 1fr;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  background: #fff;
+}
+.hero-main {
+  padding: 30px 32px;
+}
+.hero-number {
+  font: 500 clamp(42px, 4.2vw, 62px)/1.15 var(--font-head);
+  letter-spacing: -0.055em;
+  margin: 16px 0;
+  font-variant-numeric: tabular-nums;
+}
+.hero-number > span {
+  font: 400 14px var(--font-body);
+  letter-spacing: 0;
+  color: var(--muted);
+  margin-left: 12px;
+}
+.hero-caption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.hero-caption > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.hero-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 26px;
+}
+.hero-side {
+  padding: 28px 30px;
+  background: #fafafa;
+  border-left: 1px solid var(--rule);
+  border-radius: 0 6px 6px 0;
+}
+.cycle-row {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+  align-items: flex-start;
+}
+.cycle-row > span {
+  font: 10px var(--font-mono);
+  color: #8d8d96;
+  padding-top: 3px;
+}
+.cycle-row strong {
+  font-size: 12px;
+  font-weight: 500;
+}
+.cycle-row p {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 5px;
+  line-height: 1.5;
+}
+.allocation-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  gap: 12px;
+}
+.allocation-heading strong {
+  font: 500 26px var(--font-head);
+  letter-spacing: -0.025em;
+}
+.allocation-heading strong span {
+  font: 400 11px var(--font-body);
+  color: var(--muted);
+}
+.allocation-heading > span {
+  font-size: 10px;
+  color: var(--muted);
+}
+.allocation-bar {
+  display: flex;
+  height: 32px;
+  gap: 3px;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 22px;
+  background: #e9e9ed;
+}
+.allocation-bar > span {
+  background: var(--ink);
+  min-width: 0;
+}
+.allocation-bar > i {
+  flex: 1;
+  background: repeating-linear-gradient(120deg, #e9e9ed, #e9e9ed 3px, #d8d8de 3px, #d8d8de 4px);
+}
+.allocation-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.allocation-legend > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+}
+.allocation-legend strong {
+  margin-left: auto;
+  font-weight: 500;
+}
+.legend-dot {
+  height: 7px;
+  width: 7px;
+  border-radius: 1px;
+  background: var(--ink);
+}
+.legend-dot.faint {
+  background: #d8d8de;
+}
+.window-time {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+}
+.window-time strong {
+  font: 500 23px var(--font-head);
+  letter-spacing: -0.025em;
+}
+.overview-note {
+  font-size: 10px;
+  color: var(--muted);
+  padding: 6px;
+}

@@ -1,0 +1,69 @@
+.data-status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+  color: #8b8b94;
+  font: 9px var(--font-mono);
+}
+.data-status button {
+  border: 0;
+  background: none;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  padding: 3px;
+}
+.data-status strong {
+  color: #956121;
+  font-weight: 400;
+}
+.global-notice {
+  margin-bottom: 22px;
+  align-items: center;
+  justify-content: space-between;
+}
+.loading-state {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  color: var(--muted);
+}
+.loading-state h1 {
+  font-size: 26px;
+  color: var(--ink);
+}
+.loading-state p {
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.7;
+}
+.spin {
+  animation: spin 1.3s linear infinite;
+}
+.tx-error {
+  background: #fff5f4;
+  color: #8e3c37;
+}
+.tx-progress .inline-link {
+  display: flex;
+  margin-top: 10px;
+  font-size: 11px;
+}
+html[data-density="compact"] td {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+html[data-density="compact"] .key-values > div {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

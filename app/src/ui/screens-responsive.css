@@ -1,0 +1,163 @@
+@media (max-width: 1000px) {
+  .overview-hero {
+    grid-template-columns: 1fr 1fr;
+  }
+  .hero-main {
+    padding: 26px;
+  }
+  .hero-side {
+    padding: 24px;
+  }
+  .hero-caption {
+    gap: 8px;
+  }
+  .hero-actions {
+    flex-wrap: wrap;
+  }
+  .exit-layout {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 560px) {
+  .overview-hero {
+    grid-template-columns: 1fr;
+  }
+  .hero-main {
+    padding: 24px;
+  }
+  .hero-number {
+    font-size: 48px;
+  }
+  .hero-side {
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+    border-radius: 0 0 6px 6px;
+    padding: 22px 24px;
+  }
+  .cycle-row {
+    margin-top: 16px;
+  }
+  .position-heading {
+    align-items: flex-start;
+  }
+  .position-heading h2 {
+    font-size: 20px;
+  }
+  .position-summary {
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+  .position-summary > div:last-child {
+    grid-column: 1/-1;
+  }
+  .position-summary .date-value {
+    margin: 0;
+    font-size: 18px;
+  }
+  .position-summary strong {
+    font-size: 25px;
+  }
+  .waterfall > div:not(.notice) {
+    gap: 9px;
+  }
+  .waterfall b {
+    font-size: 17px;
+  }
+  .waterfall p {
+    max-width: 145px;
+  }
+  .allocation-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .allocation-heading strong {
+    font-size: 24px;
+  }
+  .window-time strong {
+    font-size: 20px;
+  }
+  .funding-form .row {
+    flex-wrap: wrap;
+  }
+  .funding-form input {
+    min-width: 140px;
+  }
+  .filter-bar {
+    gap: 12px;
+  }
+  .search-field {
+    min-width: 100%;
+    max-width: none;
+  }
+  .filter-bar > select {
+    margin-left: 0;
+  }
+  .quote-assurance {
+    font-size: 10px;
+  }
+  .activity-row {
+    font-size: 11px;
+    gap: 8px;
+  }
+  .data-status {
+    justify-content: flex-start;
+    font-size: 8px;
+  }
+  .global-notice {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 560px) {
+  .table-wrap table,
+  .table-wrap tbody {
+    display: block;
+  }
+  .table-wrap thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+  .table-wrap tbody tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    padding: 18px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .table-wrap tbody tr:last-child {
+    border-bottom: 0;
+  }
+  .table-wrap td {
+    display: block;
+    border: 0;
+    padding: 0;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: 11px;
+  }
+  .table-wrap td:first-child {
+    grid-column: 1/-1;
+  }
+  .table-wrap td:before {
+    content: attr(data-label);
+    display: block;
+    color: var(--muted);
+    font-size: 9px;
+    margin-bottom: 7px;
+  }
+  .table-wrap td[data-label="Actions"] {
+    grid-column: 1/-1;
+  }
+  .table-wrap .row {
+    gap: 8px;
+  }
+  .table-wrap td .button {
+    min-height: 36px;
+  }
+  .table-wrap .mono {
+    font-size: 10px;
+  }
+}
