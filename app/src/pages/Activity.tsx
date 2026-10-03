@@ -179,11 +179,11 @@ export function AdvanceDetail({ id }: { id: string }) {
                 <small>{date(a.drawnAt)}</small>
               </div>
             </li>
-            <li className={a.remaining === 0n ? "complete" : ""}>
+            <li className={a.remaining === 0n && a.status !== "Late" ? "complete" : ""}>
               <span />
               <div>
-                <strong>Platform settlement</strong>
-                <p>Lockgate is repaid before remaining investor requests.</p>
+                <strong>{a.status === "Late" ? "Platform repayment due" : "Platform settlement"}</strong>
+                <p>{a.status === "Late" ? "The platform missed its repayment deadline." : "Lockgate is repaid before remaining investor requests."}</p>
                 <small>Due {date(a.dueAt)}</small>
               </div>
             </li>
