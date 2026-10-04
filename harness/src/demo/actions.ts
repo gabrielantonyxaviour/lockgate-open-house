@@ -18,7 +18,7 @@ const quoteTypes={Quote:[
 const quoteDomain=(settlement:Address)=>({name:'LockgateTestSettlement',version:'1',chainId:chain.id,verifyingContract:settlement} as const);
 const tx=async(index:number,address:Address,abi:Abi,functionName:string,args:readonly unknown[])=>{
  const hash=await walletAt(index).writeContract({address,abi,functionName,args});
- const receipt=await publicClient.waitForTransactionReceipt({hash});
+ const receipt=await publicClient.waitForTransactionReceipt({hash,confirmations:process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?3:1});
  if(receipt.status!=='success') err(`${functionName} transaction reverted`,'CHAIN_REVERT',409);
  return hash;
 };
@@ -174,7 +174,7 @@ export async function mintPosition(account:Address):Promise<ReceiptRecord> {
  const id=keccak256(toHex(newId('holding')));
  const hash=await tx(1,m.registry,registryAbi,'registerHolding',[id,identityHash(identity.identityRef),parseUnits('100000',6),3,true]);
  p.minted.push({id,identityId:identity.id,name:'Alder Private Credit TEST position',originator:m.originators[0].name,originatorAddress:m.originators[0].address,units:'100000'});
- const r:ReceiptRecord={id:newId('receipt'),title:'TEST position registered',status:'confirmed',hash,amount:'100000',createdAt:new Date().toISOString(),account,detail:'Originator-authorized local fixture transaction'};
+ const r:ReceiptRecord={id:newId('receipt'),title:'TEST position registered',status:'confirmed',hash,amount:'100000',createdAt:new Date().toISOString(),account,detail:'Originator-authorized position issuance'};
  p.receipts.unshift(r);save();return r;
 }
 
@@ -182,15 +182,15 @@ export async function faucet(account:Address):Promise<ReceiptRecord> {
  const p=profile(account),m=manifest();if(p.faucetHash) err('TEST faucet already used for this wallet','FAUCET_USED',409);
  const amount=parseUnits('10000',6);
  const hash=await tx(0,m.asset,tokenAbi,'mint',[account,amount]);p.faucetHash=hash;
- const r:ReceiptRecord={id:newId('receipt'),title:'TEST USDG funded',status:'confirmed',hash,amount:'10000',createdAt:new Date().toISOString(),account,detail:'Local-only 6-decimal ERC20 mint'};
+ const r:ReceiptRecord={id:newId('receipt'),title:'TEST USDG funded',status:'confirmed',hash,amount:'10000',createdAt:new Date().toISOString(),account,detail:'Testnet six-decimal ERC20 issuance'};
  p.receipts.unshift(r);save();return r;
 }
 
 export async function gasGrant(account:Address):Promise<ReceiptRecord> {
- const p=profile(account);if(p.gasHash) err('Local gas grant already used for this wallet','GAS_USED',409);
- const hash=await walletAt(0).sendTransaction({to:account,value:parseEther('0.01')});
- const mined=await publicClient.waitForTransactionReceipt({hash});if(mined.status!=='success')err('Gas transfer reverted','CHAIN_REVERT',409);
+ const p=profile(account);if(p.gasHash) err('Test gas grant already used for this wallet','GAS_USED',409);
+ const hash=await walletAt(0).sendTransaction({to:account,value:parseEther(process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?'0.0005':'0.01')});
+ const mined=await publicClient.waitForTransactionReceipt({hash,confirmations:process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?3:1});if(mined.status!=='success')err('Gas transfer reverted','CHAIN_REVERT',409);
  p.gasHash=hash;
- const r:ReceiptRecord={id:newId('receipt'),title:'Local TEST gas funded',status:'confirmed',hash,amount:'0.01 ETH',createdAt:new Date().toISOString(),account,detail:'Disposable Anvil gas only'};
+ const r:ReceiptRecord={id:newId('receipt'),title:'Test gas funded',status:'confirmed',hash,amount:`${process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?'0.0005':'0.01'} ETH`,createdAt:new Date().toISOString(),account,detail:'Test ETH for signing transactions'};
  p.receipts.unshift(r);save();return r;
 }

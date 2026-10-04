@@ -1,10 +1,11 @@
 import { parseEventLogs, type Abi, type Address, type Hex } from 'viem';
 import { artifact, manifest, publicClient } from './shared.js';
+import { chainLogs } from './chain-logs.js';
 
 const abi=artifact('DemoRegistry').abi as Abi;
 export type ChainHolding={id:Hex;originatorAddress:Address;identity:Hex;units:bigint;name:string;instrument:string;originator:string};
 export async function allHoldings():Promise<ChainHolding[]> {
- const m=manifest(),logs=await publicClient.getLogs({address:m.registry,fromBlock:0n,toBlock:'latest'});
+ const m=manifest(),logs=await chainLogs(m.registry);
  const events=parseEventLogs({abi,logs,eventName:'HoldingRegistered',strict:false});
  return events.map(event=>{
   const a=event.args as {id:Hex;originator:Address;identity:Hex;units:bigint};

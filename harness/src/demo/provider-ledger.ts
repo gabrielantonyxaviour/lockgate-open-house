@@ -1,9 +1,10 @@
 import { decodeFunctionData, parseEventLogs, type Abi, type Address } from 'viem';
 import { artifact, publicClient } from './shared.js';
+import { chainLogs } from './chain-logs.js';
 const abi=artifact('DemoFirmVault').abi as Abi;
 /** Replays real unit-changing events; cash-only claim payments do not burn book units twice. */
 export async function providerLedger(vault:Address,account:Address,currentUnits:bigint,currentNav:bigint,totalUnits:bigint) {
- const logs=await publicClient.getLogs({address:vault,fromBlock:0n,toBlock:'latest'});
+ const logs=await chainLogs(vault);
  const events=parseEventLogs({abi,logs,strict:false});
  let units=0n,basis=0n,realizedIncome=0n,realizedLoss=0n;
  const remove=(removed:bigint,assets:bigint)=>{

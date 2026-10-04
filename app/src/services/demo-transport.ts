@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { Address, Hex } from 'viem';
 const address = z.string().regex(/^0x[\da-f]{40}$/i);
 const hex = z.string().regex(/^0x[\da-f]*$/i);
-export const configuration = z.object({ chainId:z.literal(421614), rpcUrl:z.string().url(), asset:address, registry:address, settlement:address }).passthrough();
+export const configuration = z.object({ chainId:z.literal(421614), rpcUrl:z.string().url(), asset:address, registry:address, settlement:address, network:z.string().optional() }).passthrough();
 export type Configuration = z.infer<typeof configuration>;
 export type Quote = { holdingId:Hex; vault:Address; investor:Address; identity:Hex; units:bigint; payout:bigint; repayment:bigint; route:number; deadline:bigint; maturity:bigint; nonce:bigint; agreementHash:Hex };
 export const quoteSchema = z.object({ holdingId:hex, vault:address, investor:address, identity:hex, units:z.coerce.bigint().positive(), payout:z.coerce.bigint().positive(), repayment:z.coerce.bigint().positive(), route:z.union([z.literal(1),z.literal(2)]), deadline:z.coerce.bigint().positive(), maturity:z.coerce.bigint().positive(), nonce:z.coerce.bigint().nonnegative(), agreementHash:hex });

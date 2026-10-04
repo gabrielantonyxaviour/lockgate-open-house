@@ -8,6 +8,7 @@ import { demoState, publicStats, receiptFromHash } from './state.js';
 import { findEnquiry, newId, newSession, profile, save, saveEnquiry, session, setEnquiryStatus } from './store.js';
 import { workspaceAction } from './workspace.js';
 import { enqueueAcknowledgement } from './email.js';
+import { proxyRpc } from './rpc-proxy.js';
 
 const address=z.string().refine(isAddress,'Invalid wallet address').transform(x=>getAddress(x));
 const hex=z.string().regex(/^0x[0-9a-fA-F]+$/).transform(x=>x as Hex);
@@ -28,7 +29,7 @@ function bearer(req:IncomingMessage):Address {
  return account;
 }
 function config() {
- const m=manifest();return {chainId:m.chainId,rpcUrl:m.rpcUrl,asset:m.asset,registry:m.registry,settlement:m.settlement,vaults:m.vaults,originators:m.originators,abis:{asset:artifact('MockUSDG').abi,registry:artifact('DemoRegistry').abi,settlement:artifact('DemoSettlement').abi,vault:artifact('DemoFirmVault').abi},network:'LOCAL TEST ONLY',walletRpcUrl:m.rpcUrl};
+ const m=manifest();return {chainId:m.chainId,rpcUrl:m.rpcUrl,asset:m.asset,registry:m.registry,settlement:m.settlement,vaults:m.vaults,originators:m.originators,abis:{asset:artifact('MockUSDG').abi,registry:artifact('DemoRegistry').abi,settlement:artifact('DemoSettlement').abi,vault:artifact('DemoFirmVault').abi},network:process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?'Arbitrum Sepolia':'Local EVM test network',walletRpcUrl:'https://sepolia-rollup.arbitrum.io/rpc'};
 }
 async function handle(req:IncomingMessage,res:ServerResponse) {
  const origin=req.headers.origin;if(origin&&!allowedOrigins.has(origin)) err('Untrusted browser origin','ORIGIN_FORBIDDEN',403);
@@ -37,16 +38,17 @@ async function handle(req:IncomingMessage,res:ServerResponse) {
  if(req.method==='POST'&&!req.headers['content-type']?.startsWith('application/json')) err('Use application/json','CONTENT_TYPE_REQUIRED',415);
  const path=new URL(req.url??'/',`http://127.0.0.1:8788`).pathname;
  if(!path.startsWith('/api/demo/')) err('Route not found','NOT_FOUND',404);
- if(await publicClient.getChainId()!==chain.id) err('Local chain is unavailable or wrong','CHAIN_UNAVAILABLE',503);
+ if(path==='/api/demo/rpc/421614'&&req.method==='POST')return json(res,200,await proxyRpc(await body(req)));
+ if(await publicClient.getChainId()!==chain.id) err('Arbitrum Sepolia is unavailable or the RPC uses another chain','CHAIN_UNAVAILABLE',503);
  if(path==='/api/demo/config'&&req.method==='GET') return json(res,200,config());
  if(path==='/api/demo/public'&&req.method==='GET') return json(res,200,await publicStats());
  if(path==='/api/demo/challenge'&&req.method==='POST') {
   const v=z.object({account:address,chainId:z.number().int()}).parse(await body(req));
-  if(v.chainId!==chain.id) err('Connect the local TEST chain 421614','WRONG_CHAIN',409);
+  if(v.chainId!==chain.id) err('Connect Arbitrum Sepolia','WRONG_CHAIN',409);
   const nonce=randomBytes(16).toString('hex');
   for(const [key,item] of challenges)if(item.expiresAt<Date.now())challenges.delete(key);
   if(challenges.size>=1000) err('Too many pending challenges','RATE_LIMITED',429);
-  const message=`Lockgate local TEST wallet session\nAccount: ${v.account}\nChain: ${chain.id}\nNonce: ${nonce}\nExpires: ${new Date(Date.now()+5*60_000).toISOString()}`;
+  const message=`Lockgate wallet sign-in\nAccount: ${v.account}\nNetwork: Arbitrum Sepolia (${chain.id})\nOrigin: ${origin??'http://127.0.0.1:5197'}\nNonce: ${nonce}\nExpires: ${new Date(Date.now()+5*60_000).toISOString()}\nThis signature signs you in. It does not move funds.`;
   challenges.set(nonce,{account:v.account,chainId:v.chainId,message,expiresAt:Date.now()+5*60_000});
   return json(res,200,{message,nonce});
  }
@@ -124,8 +126,9 @@ async function handle(req:IncomingMessage,res:ServerResponse) {
 }
 
 const server=createServer((req,res)=>{handle(req,res).catch(e=>{
- const status=e instanceof z.ZodError?400:typeof e?.status==='number'?e.status:500;
- const code=e instanceof z.ZodError?'INVALID_INPUT':typeof e?.code==='string'?e.code:'INTERNAL_ERROR';
+ const known=typeof e?.status==='number'&&typeof e?.code==='string'&&/^[A-Z_]+$/.test(e.code);
+ const status=e instanceof z.ZodError?400:known?e.status:500;
+ const code=e instanceof z.ZodError?'INVALID_INPUT':known?e.code:'INTERNAL_ERROR';
  const error=status>=500?'Demo service could not complete the request':e instanceof z.ZodError?e.issues[0]?.message??'Invalid input':e?.message??'Request failed';
  json(res,status,{error,code});
 });});

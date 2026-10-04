@@ -1,76 +1,78 @@
 {
   "chainId": 421614,
-  "rpcUrl": "http://127.0.0.1:8545",
-  "asset": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
-  "registry": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
-  "settlement": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+  "network": "arbitrum-sepolia",
+  "deploymentBlock": "315657224",
+  "rpcUrl": "http://127.0.0.1:5197/api/demo/rpc/421614",
+  "asset": "0x8384cc8a4c0882fac0949c205b444bdc1ed24437",
+  "registry": "0xaad84eaf1c6d5927cb9fb60e7dfefd479141b9cd",
+  "settlement": "0x19714952a72b52aff86fd4654a5bb6a52974359a",
   "vaults": [
     {
       "id": "firm-1",
       "name": "Northstar Investment Firm Liquidity Vehicle",
       "firm": "Northstar Investment Firm",
-      "address": "0x4c5859f0f772848b2d91f1d83e2fe57935348029",
-      "manager": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
-      "termsHash": "0x05b942298499c20df593d96a8cd48c136f5191106b34307765c3a2406d0dd586",
-      "termsText": "Lockgate local TEST vehicle terms v1 — Northstar Investment Firm. This fictional firm-managed vehicle accepts only 6-decimal local TEST USDG on chain 421614; it is not a live investment product.\n\nThe firm accepts a wallet-bound TEST identity and an exact subscription amount before a provider deposits. Deposits receive nontransferable book units priced from the vehicle net asset value at the time of deposit.\n\nVehicle cash may fund permitted early exits. A purchase acquires claim rights; a financing discharges the investor claim and creates a separate originator repayment obligation. Mandate limits and available cash restrict each reserve.\n\nWithdrawals are paid immediately only while there is no open queue and enough available cash. Otherwise a request enters a first-in, first-out queue. Queued units remain exposed to changes in net asset value until filled; filled amounts must be claimed.\n\nCapital is at risk. Delayed recovery or impairment can reduce principal and net asset value; income is not guaranteed. TEST identity verification is a fixture, not production KYC, legal eligibility, or approval."
+      "address": "0x85e8f2f086d2ccd829200642a73308b3352d9830",
+      "manager": "0xe6e892D87B5480388c403ebAAb37338959cEFC2D",
+      "termsHash": "0xd443133f00c6268bd40e5517f794fe05abc9b86d4094d0ad87e5987edc0649f0",
+      "termsText": "Lockgate Arbitrum Sepolia TEST vehicle terms v1 — Northstar Investment Firm. This fictional firm-managed vehicle accepts only 6-decimal testnet TEST USDG on chain 421614; it is not a live investment product.\n\nThe firm accepts a wallet-bound TEST identity and an exact subscription amount before a provider deposits. Deposits receive nontransferable book units priced from the vehicle net asset value at the time of deposit.\n\nVehicle cash may fund permitted early exits. A purchase acquires claim rights; a financing discharges the investor claim and creates a separate originator repayment obligation. Mandate limits and available cash restrict each reserve.\n\nWithdrawals are paid immediately only while there is no open queue and enough available cash. Otherwise a request enters a first-in, first-out queue. Queued units remain exposed to changes in net asset value until filled; filled amounts must be claimed.\n\nCapital is at risk. Delayed recovery or impairment can reduce principal and net asset value; income is not guaranteed. TEST identity verification is a fixture, not production KYC, legal eligibility, or approval."
     },
     {
       "id": "firm-2",
       "name": "Meridian Investment Firm Liquidity Vehicle",
       "firm": "Meridian Investment Firm",
-      "address": "0x5f3f1dbd7b74c6b46e8c44f98792a1daf8d69154",
-      "manager": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
-      "termsHash": "0x0f073fbbff61164ba75212a1e16476eca9a1394bed984d306ac233589b9ca7c6",
-      "termsText": "Lockgate local TEST vehicle terms v1 — Meridian Investment Firm. This fictional firm-managed vehicle accepts only 6-decimal local TEST USDG on chain 421614; it is not a live investment product.\n\nThe firm accepts a wallet-bound TEST identity and an exact subscription amount before a provider deposits. Deposits receive nontransferable book units priced from the vehicle net asset value at the time of deposit.\n\nVehicle cash may fund permitted early exits. A purchase acquires claim rights; a financing discharges the investor claim and creates a separate originator repayment obligation. Mandate limits and available cash restrict each reserve.\n\nWithdrawals are paid immediately only while there is no open queue and enough available cash. Otherwise a request enters a first-in, first-out queue. Queued units remain exposed to changes in net asset value until filled; filled amounts must be claimed.\n\nCapital is at risk. Delayed recovery or impairment can reduce principal and net asset value; income is not guaranteed. TEST identity verification is a fixture, not production KYC, legal eligibility, or approval."
+      "address": "0x18ccfbc8b95d4bb70b9a70a50950d5f52c92eca9",
+      "manager": "0x6ff08472840650bacB3b3fD0CF91019549bffC14",
+      "termsHash": "0x3dbbb08e6e03e17e25f3ad7fb5536ea30a61229dbdc9bec41923de9293890a82",
+      "termsText": "Lockgate Arbitrum Sepolia TEST vehicle terms v1 — Meridian Investment Firm. This fictional firm-managed vehicle accepts only 6-decimal testnet TEST USDG on chain 421614; it is not a live investment product.\n\nThe firm accepts a wallet-bound TEST identity and an exact subscription amount before a provider deposits. Deposits receive nontransferable book units priced from the vehicle net asset value at the time of deposit.\n\nVehicle cash may fund permitted early exits. A purchase acquires claim rights; a financing discharges the investor claim and creates a separate originator repayment obligation. Mandate limits and available cash restrict each reserve.\n\nWithdrawals are paid immediately only while there is no open queue and enough available cash. Otherwise a request enters a first-in, first-out queue. Queued units remain exposed to changes in net asset value until filled; filled amounts must be claimed.\n\nCapital is at risk. Delayed recovery or impairment can reduce principal and net asset value; income is not guaranteed. TEST identity verification is a fixture, not production KYC, legal eligibility, or approval."
     },
     {
       "id": "firm-3",
       "name": "Anchor Capital Firm Liquidity Vehicle",
       "firm": "Anchor Capital Firm",
-      "address": "0xcd8a1c3ba11cf5ecfa6267617243239504a98d90",
-      "manager": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
-      "termsHash": "0xe7f9dcb1bc08566315e3127c8f6e55d4888965d8d9f1555c20151f333a8c5e2e",
-      "termsText": "Lockgate local TEST vehicle terms v1 — Anchor Capital Firm. This fictional firm-managed vehicle accepts only 6-decimal local TEST USDG on chain 421614; it is not a live investment product.\n\nThe firm accepts a wallet-bound TEST identity and an exact subscription amount before a provider deposits. Deposits receive nontransferable book units priced from the vehicle net asset value at the time of deposit.\n\nVehicle cash may fund permitted early exits. A purchase acquires claim rights; a financing discharges the investor claim and creates a separate originator repayment obligation. Mandate limits and available cash restrict each reserve.\n\nWithdrawals are paid immediately only while there is no open queue and enough available cash. Otherwise a request enters a first-in, first-out queue. Queued units remain exposed to changes in net asset value until filled; filled amounts must be claimed.\n\nCapital is at risk. Delayed recovery or impairment can reduce principal and net asset value; income is not guaranteed. TEST identity verification is a fixture, not production KYC, legal eligibility, or approval."
+      "address": "0xb86a62933709c0ef5f08450da54f87cb80c4e6db",
+      "manager": "0x07D49BA4a9C30b9C4efd26BF1cEd8CDbaEF389e6",
+      "termsHash": "0x7dcaf123df961282643501a75fdc72e1718c14633da65650ec6f182ced95c153",
+      "termsText": "Lockgate Arbitrum Sepolia TEST vehicle terms v1 — Anchor Capital Firm. This fictional firm-managed vehicle accepts only 6-decimal testnet TEST USDG on chain 421614; it is not a live investment product.\n\nThe firm accepts a wallet-bound TEST identity and an exact subscription amount before a provider deposits. Deposits receive nontransferable book units priced from the vehicle net asset value at the time of deposit.\n\nVehicle cash may fund permitted early exits. A purchase acquires claim rights; a financing discharges the investor claim and creates a separate originator repayment obligation. Mandate limits and available cash restrict each reserve.\n\nWithdrawals are paid immediately only while there is no open queue and enough available cash. Otherwise a request enters a first-in, first-out queue. Queued units remain exposed to changes in net asset value until filled; filled amounts must be claimed.\n\nCapital is at risk. Delayed recovery or impairment can reduce principal and net asset value; income is not guaranteed. TEST identity verification is a fixture, not production KYC, legal eligibility, or approval."
     },
     {
       "id": "firm-4",
       "name": "Bluewater Investment Firm Liquidity Vehicle",
       "firm": "Bluewater Investment Firm",
-      "address": "0x2bdcc0de6be1f7d2ee689a0342d76f52e8efaba3",
-      "manager": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
-      "termsHash": "0x688cc0b356b16f18c998ae21eed24279903786f800cb3cfea058574f26c4582d",
-      "termsText": "Lockgate local TEST vehicle terms v1 — Bluewater Investment Firm. This fictional firm-managed vehicle accepts only 6-decimal local TEST USDG on chain 421614; it is not a live investment product.\n\nThe firm accepts a wallet-bound TEST identity and an exact subscription amount before a provider deposits. Deposits receive nontransferable book units priced from the vehicle net asset value at the time of deposit.\n\nVehicle cash may fund permitted early exits. A purchase acquires claim rights; a financing discharges the investor claim and creates a separate originator repayment obligation. Mandate limits and available cash restrict each reserve.\n\nWithdrawals are paid immediately only while there is no open queue and enough available cash. Otherwise a request enters a first-in, first-out queue. Queued units remain exposed to changes in net asset value until filled; filled amounts must be claimed.\n\nCapital is at risk. Delayed recovery or impairment can reduce principal and net asset value; income is not guaranteed. TEST identity verification is a fixture, not production KYC, legal eligibility, or approval."
+      "address": "0x888eec371102040d10d4a085ae51f1d51175ee89",
+      "manager": "0x7dc6eFd92Bb5F6983F9113Dc76f41AeA21b0E529",
+      "termsHash": "0xa7a10abd41b760a68e7041b997c1456c45db334ab5178ef958991697ce481240",
+      "termsText": "Lockgate Arbitrum Sepolia TEST vehicle terms v1 — Bluewater Investment Firm. This fictional firm-managed vehicle accepts only 6-decimal testnet TEST USDG on chain 421614; it is not a live investment product.\n\nThe firm accepts a wallet-bound TEST identity and an exact subscription amount before a provider deposits. Deposits receive nontransferable book units priced from the vehicle net asset value at the time of deposit.\n\nVehicle cash may fund permitted early exits. A purchase acquires claim rights; a financing discharges the investor claim and creates a separate originator repayment obligation. Mandate limits and available cash restrict each reserve.\n\nWithdrawals are paid immediately only while there is no open queue and enough available cash. Otherwise a request enters a first-in, first-out queue. Queued units remain exposed to changes in net asset value until filled; filled amounts must be claimed.\n\nCapital is at risk. Delayed recovery or impairment can reduce principal and net asset value; income is not guaranteed. TEST identity verification is a fixture, not production KYC, legal eligibility, or approval."
     },
     {
       "id": "firm-5",
       "name": "Pioneer Securities Firm Liquidity Vehicle",
       "firm": "Pioneer Securities Firm",
-      "address": "0x7bc06c482dead17c0e297afbc32f6e63d3846650",
-      "manager": "0xBcd4042DE499D14e55001CcbB24a551F3b954096",
-      "termsHash": "0x87144166e03dc2426f6c9d594d335596706960148f7e5606a7430b83f3ded758",
-      "termsText": "Lockgate local TEST vehicle terms v1 — Pioneer Securities Firm. This fictional firm-managed vehicle accepts only 6-decimal local TEST USDG on chain 421614; it is not a live investment product.\n\nThe firm accepts a wallet-bound TEST identity and an exact subscription amount before a provider deposits. Deposits receive nontransferable book units priced from the vehicle net asset value at the time of deposit.\n\nVehicle cash may fund permitted early exits. A purchase acquires claim rights; a financing discharges the investor claim and creates a separate originator repayment obligation. Mandate limits and available cash restrict each reserve.\n\nWithdrawals are paid immediately only while there is no open queue and enough available cash. Otherwise a request enters a first-in, first-out queue. Queued units remain exposed to changes in net asset value until filled; filled amounts must be claimed.\n\nCapital is at risk. Delayed recovery or impairment can reduce principal and net asset value; income is not guaranteed. TEST identity verification is a fixture, not production KYC, legal eligibility, or approval."
+      "address": "0x7d8eba41e1ba848059836b7bf5e5bc9331c5307d",
+      "manager": "0x4CbDB7B4c3B067aD5Ad3fC6EE5311c176AF9508c",
+      "termsHash": "0x1c917967319988914017f0c4a0c65adac9cfa8292a7b688a9d0c0873a538a02c",
+      "termsText": "Lockgate Arbitrum Sepolia TEST vehicle terms v1 — Pioneer Securities Firm. This fictional firm-managed vehicle accepts only 6-decimal testnet TEST USDG on chain 421614; it is not a live investment product.\n\nThe firm accepts a wallet-bound TEST identity and an exact subscription amount before a provider deposits. Deposits receive nontransferable book units priced from the vehicle net asset value at the time of deposit.\n\nVehicle cash may fund permitted early exits. A purchase acquires claim rights; a financing discharges the investor claim and creates a separate originator repayment obligation. Mandate limits and available cash restrict each reserve.\n\nWithdrawals are paid immediately only while there is no open queue and enough available cash. Otherwise a request enters a first-in, first-out queue. Queued units remain exposed to changes in net asset value until filled; filled amounts must be claimed.\n\nCapital is at risk. Delayed recovery or impairment can reduce principal and net asset value; income is not guaranteed. TEST identity verification is a fixture, not production KYC, legal eligibility, or approval."
     }
   ],
   "originators": [
     {
       "name": "Alder Credit Platform",
-      "address": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
+      "address": "0x82130f97959Bb7410c6Fff67c3df43ca8499179D"
     },
     {
       "name": "Birch Receivables",
-      "address": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC"
+      "address": "0x247fAe34F12B748719033001Bc79a65Fb8f6B064"
     },
     {
       "name": "Cedar Income Trust",
-      "address": "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+      "address": "0x786415eA0339fbbb330060Dfc101f90e08790466"
     },
     {
       "name": "Dune Asset Network",
-      "address": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+      "address": "0xD02C845327d2cC408bc87A8528ff4A051291D000"
     },
     {
       "name": "Elm Yield Platform",
-      "address": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc"
+      "address": "0xd2a94b36fbd9801F965dc8489608cA824667Ca93"
     }
   ]
 }

@@ -1,9 +1,11 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { parseUnits, parseEther, type Abi, type Address, type Hex } from 'viem';
-import { accountAt, artifact, chain, firms, identities, identityHash, manifestPath, fixturePath, organizationTerms, originators, positions, publicClient, rpc, terms, vehicleTermsText, walletAt, type Manifest } from './shared.js';
+import { accountAt, artifact, chain, firms, identities, identityHash, manifestPath, fixturePath, organizationTerms, originators, positions, publicClient, publicNetwork, rpc, terms, vehicleTermsText, walletAt, type Manifest } from './shared.js';
+import { seedPublicSepolia } from './public-seed.js';
 
 async function main() {
+ if(publicNetwork){await seedPublicSepolia(process.argv.includes('--execute'));return;}
  if (await publicClient.getChainId() !== chain.id) throw new Error('Refusing non-local or wrong-chain RPC');
  const head = await publicClient.getBlockNumber();
  if (head !== 0n) throw new Error('Seed requires a fresh local Anvil chain; existing state is preserved');
@@ -87,4 +89,10 @@ async function main() {
  if(checks.some(c=>c.cash!=='500000000000'||c.providerCount!=='1'||c.capConfigured!==true||c.capBps!=='2000'))throw new Error('Seeded vault balance or cap assertion failed');
  process.stdout.write(`${JSON.stringify({chainId:chain.id,asset,registry,settlement,originators:orgs.length,firms:vaults.length,holdings:holdings.length,vaultChecks:checks})}\n`);
 }
-main().catch(e=>{process.stderr.write(`${e instanceof Error?e.message:'seed failed'}\n`);process.exitCode=1;});
+main().catch(e=>{
+ if(publicNetwork){
+  const detail=typeof e?.shortMessage==='string'?e.shortMessage.replaceAll(rpc,'[private RPC]').replace(/https?:\/\/\S+/g,'[private RPC]').replace(/0x[0-9a-fA-F]{64}/g,'[hex]').slice(0,180):'';
+  process.stderr.write(`Sepolia bootstrap failed (${e instanceof Error?e.name:'unknown'}): ${detail||'inspect private journal and preflight'}\n`);
+ }else process.stderr.write(`${e instanceof Error?e.message:'seed failed'}\n`);
+ process.exitCode=1;
+});

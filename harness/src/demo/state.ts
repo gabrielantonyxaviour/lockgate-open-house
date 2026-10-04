@@ -6,6 +6,9 @@ import { allHoldings } from './holdings.js';
 import { providerLedger } from './provider-ledger.js';
 import { classifyReceipt } from './receipt-classifier.js';
 
+const publicNetwork=process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia';
+const environment=publicNetwork?'Arbitrum Sepolia':'Local EVM test network';
+const gasAmount=publicNetwork?'0.0005':'0.01';
 const registryAbi=artifact('DemoRegistry').abi as Abi;
 const vaultAbi=artifact('DemoFirmVault').abi as Abi;
 const tokenAbi=artifact('MockUSDG').abi as Abi;
@@ -83,7 +86,7 @@ export async function demoState(account:Address) {
  const profileView={identity:binding?identity:undefined,roles:p.role?[p.role]:[],activeRole:p.role,onboarding:binding?'TEST identity bound':p.role?'Select and bind a TEST identity':undefined};
  const status=!binding?'unavailable':identity?.fixtureCase==='mismatch'?'mismatch':positions.length?'matched':'empty';
  const workspace=await workspaceState(account);
- return {profile:profileView,positions,positionStatus:status,vehicles,withdrawals,reservations,agreements,receipts:p.receipts,workspace,setup:{gas:formatEther(gas),usdg:money(usdg),canGetGas:!p.gasHash,gasAmount:'0.01',canMint:Boolean(binding&&p.role==='investor'&&identity?.fixtureCase!=='mismatch'),canFund:Boolean(binding&&p.role==='provider'),mintDescription:'100,000 TEST units in Alder Private Credit, recorded to your bound identity',fundingAmount:'10000',message:'Local Anvil TEST asset; no public funds or production KYC.'},deploymentReady:true,environment:'Local EVM test network'};
+ return {profile:profileView,positions,positionStatus:status,vehicles,withdrawals,reservations,agreements,receipts:p.receipts,workspace,setup:{gas:formatEther(gas),usdg:money(usdg),canGetGas:!p.gasHash,gasAmount,canMint:Boolean(binding&&p.role==='investor'&&identity?.fixtureCase!=='mismatch'),canFund:Boolean(binding&&p.role==='provider'),mintDescription:'100,000 TEST units in Alder Private Credit, recorded to your bound identity',fundingAmount:'10000',message:publicNetwork?'Transactions settle on Arbitrum Sepolia.':'Local EVM test network.'},deploymentReady:true,environment};
 }
 
 export async function publicStats(){
@@ -94,7 +97,7 @@ export async function publicStats(){
   const sample=m.holdings.find(h=>h.originatorAddress.toLowerCase()===o.address.toLowerCase());
   const holding=sample?await read(m.registry,registryAbi,'holding',[sample.id]) as {routeMask:number}:undefined;
   const mask=holding?.routeMask??0;
-  platforms.push({id:`platform-${index+1}`,name:o.name,instrument:sample?.instrument??'TEST fund claim',routes:[...(mask&1?['purchase']:[]),...(mask&2?['finance']:[])],terms:'Local TEST originator; claim rights and route restrictions recorded on chain.',status:active?'Active TEST':'Inactive'});
+  platforms.push({id:`platform-${index+1}`,name:o.name,instrument:sample?.instrument??'TEST fund claim',routes:[...(mask&1?['purchase']:[]),...(mask&2?['finance']:[])],terms:'Claim rights and settlement routes are recorded on Arbitrum Sepolia.',status:active?'Active TEST':'Inactive'});
  }
  for(const v of m.vaults) {
   if(await read(m.registry,registryAbi,'isActive',[v.manager,2])&&await read(m.registry,registryAbi,'approvedVault',[v.address])) firms++;
@@ -102,17 +105,17 @@ export async function publicStats(){
   outstanding+=BigInt(await read(v.address,vaultAbi,'outstandingPrincipal') as bigint);
  }
  const block=await publicClient.getBlock();
- return {originators,firms,platforms,availableCash:money(availableCash),outstanding:money(outstanding),blockNumber:String(block.number),blockTime:new Date(Number(block.timestamp)*1000).toISOString(),environment:'Local EVM test network',terms:'Local TEST chain with mock six-decimal USDG; no public funds or licensed firms.'};
+ return {originators,firms,platforms,availableCash:money(availableCash),outstanding:money(outstanding),blockNumber:String(block.number),blockTime:new Date(Number(block.timestamp)*1000).toISOString(),environment,terms:'Testnet instruments and six-decimal test assets.'};
 }
 
 export async function receiptFromHash(account:Address,hash:Hex,_title:string,_amount?:string):Promise<ReceiptRecord> {
  const m=manifest();
- let tx;try{tx=await publicClient.getTransaction({hash});}catch{err('Transaction was not found on the local chain','TX_NOT_FOUND',404);}
+ let tx;try{tx=await publicClient.getTransaction({hash});}catch{err('Transaction was not found on this network','TX_NOT_FOUND',404);}
  const allowed=new Set([m.asset.toLowerCase(),m.registry.toLowerCase(),m.settlement.toLowerCase(),...m.vaults.map(v=>v.address.toLowerCase())]);
  if(tx.from.toLowerCase()!==account.toLowerCase()||!tx.to||!allowed.has(tx.to.toLowerCase())) err('Transaction does not belong to this account and demo','UNRELATED_TRANSACTION',403);
  let mined;try{mined=await publicClient.getTransactionReceipt({hash});}catch{
   const p=profile(account),prior=p.receipts.find(x=>x.hash===hash);
-  const pending:ReceiptRecord={id:hash,title:'Transaction submitted',status:'submitted',hash,createdAt:prior?.createdAt??new Date().toISOString(),account,detail:'Awaiting a local-chain receipt.'};
+  const pending:ReceiptRecord={id:hash,title:'Transaction submitted',status:'submitted',hash,createdAt:prior?.createdAt??new Date().toISOString(),account,detail:'Awaiting a network receipt.'};
   if(prior)Object.assign(prior,pending);else p.receipts.unshift(pending);
   return pending;
  }

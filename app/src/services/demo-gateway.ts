@@ -22,7 +22,7 @@ class Gateway implements DemoGateway {
  private async setup() { return this.config??=configuration.parse(await this.api.request('config')); }
  private async wallet(allowPending=false) { if(this.account&&!allowPending&&pending(this.account).length) throw new Error('A submitted transaction still needs reconciliation. Refresh its status before another action.'); if(!this.account) throw new Error('Connect your wallet first.'); const config=await this.setup();const wallet=await authorizedWallet(this.account);
   const [expected,actual]=await Promise.all([this.client(config).getBlock({blockNumber:0n}),getProvider().request({method:'eth_getBlockByNumber',params:['0x0',false]})]);
-  if(!actual||actual.hash?.toLowerCase()!==expected.hash?.toLowerCase())throw new Error('This build uses the local demo RPC. Your wallet is connected to a different network instance; no transaction was sent.');
+  if(!actual||actual.hash?.toLowerCase()!==expected.hash?.toLowerCase())throw new Error('Your wallet RPC does not match this Arbitrum Sepolia deployment. Select public Arbitrum Sepolia in your wallet before continuing. No transaction was sent.');
   return wallet; }
  private async readState() {
   const config=await this.setup();
@@ -32,12 +32,12 @@ class Gateway implements DemoGateway {
   this.state=stateSchema.parse(await this.api.request('state')) as DemoState;
   if(this.account)this.state.receipts=[...pending(this.account),...this.state.receipts];return this.state;
  }
- private client(config:Configuration) {return createPublicClient({chain:arbitrumSepolia,transport:http(config.rpcUrl)});}
+ private client(config:Configuration) {return createPublicClient({chain:arbitrumSepolia,pollingInterval:1000,transport:http(config.rpcUrl,{batch:{wait:10},timeout:15_000})});}
  private async record(hash:Hex,title:string,amount?:string):Promise<Receipt> {
   const config=await this.setup();
   const unknown=rememberPending(this.account!,hash,title,amount);
   let receipt;
-  try {receipt=await this.client(config).waitForTransactionReceipt({hash,timeout:60_000});}catch{return unknown;}
+  try {receipt=await this.client(config).waitForTransactionReceipt({hash,timeout:60_000,confirmations:config.network==='Arbitrum Sepolia'?3:1});}catch{return unknown;}
   if(receipt.status!=='success') {await this.api.request('receipts',{hash,title,amount});clearPending(hash);throw new Error(`Transaction reverted: ${hash}`);}
   const result=receiptSchema.parse(await this.api.request('receipts',{hash,title,amount}));
   if(result.status!=='confirmed') throw new Error('The transaction is mined; the service has not reconciled it yet. Refresh before retrying.');

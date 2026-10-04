@@ -9,7 +9,7 @@ export type OfferRecord={id:string;account:Address;vehicleId:string;holdingId:He
 export type SubscriptionAgreement={digest:Hex;amount:string;message?:string;signature:Hex;signedAt?:string;subscriptionId?:string;minUnits?:string;txHash?:Hex};
 export type ProfileRecord={role?:'investor'|'originator'|'manager'|'provider';identityId?:string;firstHoldingProfileId?:string;agreements:Record<string,SubscriptionAgreement>;agreementHistory?:{vehicleId:string;agreement:SubscriptionAgreement}[];pendingSubscriptions?:Record<string,{amount:string;message:string;expiresAt:number}>;receipts:ReceiptRecord[];offers:OfferRecord[];minted:{id:Hex;identityId:string;name:string;originator:string;originatorAddress:Address;units:string}[];faucetHash?:Hex;gasHash?:Hex};
 type Stored={profiles:Record<string,ProfileRecord>;sessions:Record<string,{account:Address;createdAt:string}>;enquiries:{reference:string;requestId:string;receivedAt:string;emailStatus:string;account:Address;fields:Record<string,string>}[]};
-const path=fileURLToPath(new URL('../../../scripts/demo/local/state.json',import.meta.url));
+const path=fileURLToPath(new URL(process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?'../../../scripts/demo/local/public-sepolia-state.json':'../../../scripts/demo/local/state.json',import.meta.url));
 const empty=():Stored=>({profiles:{},sessions:{},enquiries:[]});
 let data:Stored;
 try { data=JSON.parse(readFileSync(path,'utf8')) as Stored; } catch(e) { if((e as NodeJS.ErrnoException).code!=='ENOENT')throw e; data=empty(); }

@@ -2,6 +2,7 @@ import { isAddress, parseEventLogs, parseUnits, formatUnits, keccak256, toHex, t
 import { artifact, err, identityHash, identities, manifest, publicClient } from './shared.js';
 import { allHoldings } from './holdings.js';
 import { profile } from './store.js';
+import { chainLogs } from './chain-logs.js';
 
 const registryAbi=artifact('DemoRegistry').abi as Abi;
 const settlementAbi=artifact('DemoSettlement').abi as Abi;
@@ -13,7 +14,7 @@ type Action={id:string;label:string;description:string;kind:'register'|'repay'|'
 const routeText=(mask:number)=>mask===3?'Purchase + finance':mask===1?'Purchase':mask===2?'Finance':'No routes';
 
 async function activeObligations(account:Address) {
- const m=manifest(),logs=await publicClient.getLogs({address:m.settlement,fromBlock:0n,toBlock:'latest'});
+ const m=manifest(),logs=await chainLogs(m.settlement);
  const settled=parseEventLogs({abi:settlementAbi,logs,eventName:'Settled',strict:false});
  const claims=await allHoldings();
  const deals=await Promise.all(settled.map(async event=>{
