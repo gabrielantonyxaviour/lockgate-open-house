@@ -5,7 +5,7 @@ import { mnemonicToAccount } from 'viem/accounts';
 const rpcUrl='http://127.0.0.1:8545';
 const chain={id:421614,name:'Lockgate local TEST',nativeCurrency:{name:'Ether',symbol:'ETH',decimals:18},rpcUrls:{default:{http:[rpcUrl]}}} as const;
 const mnemonic='test test test test test test test test test test test junk';
-const accountAt=(index:number)=>mnemonicToAccount(mnemonic,{addressIndex:index});
+export const accountAt=(index:number)=>mnemonicToAccount(mnemonic,{addressIndex:index});
 const client=createPublicClient({chain,transport:http(rpcUrl)});
 export type WalletProof={persona:string;index:number;account:Address;method:string;signature?:Hex;messageHash?:Hex;typedDataHash?:Hex;transactionHash?:Hex;rawHash?:Hex;receiptStatus?:string;blockNumber?:string;from?:Address;to?:Address|null;chainId?:number};
 type WalletState={chainId:number;selected:Address;rejectNext:boolean};
