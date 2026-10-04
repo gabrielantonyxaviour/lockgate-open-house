@@ -1,5 +1,19 @@
 # Blueprint review verification
 
+## Wallet-first correction · revision 3
+
+The latest [entry/build-order contract](journey-specs/entry-and-build-order.md)
+supersedes the earlier preview's task-first arrival. The written blueprint now
+requires connection/profile lookup before role choices, immediate exit-position
+discovery, a transaction-backed Demo sheet and five funded TEST firm vaults.
+The investor steps put discovery before eligibility review; stable review IDs remain.
+Three new proposed acceptance IDs extend the financial demo plan to 24 checks.
+This correction does not implement profile services, Demo minting or firm onboarding.
+The 117 checks below verify the earlier screen artifact, not the revised wallet routing.
+Revision 3 ES-module imports, stable IDs, discovery-before-eligibility order, 24
+unique demo-check IDs, local links and file lengths passed. Its updated blueprint
+sketch rendered without script errors or overflow at 375/768/1440 and was inspected.
+
 ## Four-persona review extension
 
 Checked **4 October 2026**, final browser run completed before **07:48:05 UTC**.

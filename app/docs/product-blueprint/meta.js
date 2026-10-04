@@ -1,12 +1,15 @@
 export const meta = {
-  id: 'lockgate-four-persona-blueprint', version: '0.1', revision: 2, date: '4 October 2026',
+  id: 'lockgate-four-persona-blueprint', version: '0.1', revision: 3, date: '4 October 2026',
   source: 'f16c4d4a60914860b5b2386374710b1b998ff7c7', branch: 'feat/reui-onboarding-local',
   title: 'Lockgate product blueprint',
   purpose: 'Define and validate the whole product before changing the app.',
   confirmed: [
     'Four public roles: exit investor, originating fund/platform, investment firm, and capital provider. Lockgate operations is internal.',
     'There are currently no live supported originating funds/platforms or registered commercial fund integrations. Prospects must not appear as supported funds; test contracts are a separate environment.',
-    'Visitors first see a useful public overview. Onboarding begins when their chosen task requires it.',
+    'Connect wallet before the four task choices. An authenticated completed wallet profile opens its dashboard; incomplete onboarding resumes; a new profile sees four concise choices.',
+    'Exit-investor onboarding immediately finds supported tokenized positions/debentures through approved adapters. Empty copy: No supported positions found for this wallet. Private off-chain holdings require an authenticated originator link.',
+    'Keep onboarding compact. Move test setup to a top-bar Demo sheet on Sepolia; mint/setup success requires actual authorized transactions, confirmed receipts and refreshed holdings.',
+    'Define and build the investment-firm journey first, then seed five fictional TEST firm-managed USDG vaults with real funding, active mandates and approved instrument/route scope before investor/originator demo runs.',
     'The complete product must be written and visualized before implementation. The demo scope is a separate decision.',
     'Define two conditional exit routes: purchase of existing units or an assignable loan claim; or borrower-financed early settlement. Enable each only for approved instruments, parties and settlement arrangements; neither is legally cleared.',
     'An exit investor comes for an earlier payout. Ordinary redemption remains the originating platform’s service; new real-fund subscriptions are not part of this journey.',
@@ -39,6 +42,7 @@ export const meta = {
     ['Current inspected source', 'Own-book financing, owner-funded partner vaults and a separate institutional facility exist. The institutional facility does not invest through a manager’s partner vault.'],
     ['This discussion', 'Four public journeys plus an approved-provider investment relationship are now the intended scope. Their legal wrapper, accounting and withdrawal terms remain to be validated.'],
     ['Current review extension', 'Show the end-to-end screens for all four personas, including both conditional exit routes. Review approval does not establish legal permission or authorize production implementation.'],
+    ['Latest user correction', 'Wallet first; route by saved profile; compact onboarding; immediate position detection; top-bar Demo setup; investment-firm-first build order. Earlier task-first preview arrival is superseded.'],
   ],
   sources: [
     {title:'Application scope and boundaries',path:'app/README.md',note:'Current app behavior; local planning versus activation, institutional facility versus partner vault, and connected-wallet transaction boundaries.'},

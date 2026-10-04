@@ -6,11 +6,16 @@ not an approved specification, investment offering or authorization to implement
 Open the [interactive blueprint](http://127.0.0.1:5197/docs/product-blueprint/index.html).
 It uses the existing local app server and adds no production app routes.
 
-Explore the [four-persona screen walkthrough](http://127.0.0.1:5197/docs/product-blueprint/preview/index.html)
+Current entry and build order: [wallet first, investment firms first](journey-specs/entry-and-build-order.md).
+Completed wallet profiles open their dashboard; new profiles choose a role after connection.
+The top-bar Demo sheet and five funded TEST firm vaults are specified, not implemented.
+
+Explore the [earlier four-persona screen walkthrough](http://127.0.0.1:5197/docs/product-blueprint/preview/index.html)
 and the [complete journey contracts](journey-specs/README.md). The walkthrough is a local
 design review using example records. Its controls do not connect a wallet, execute legal
 documents, reserve a firm’s cash or submit transactions. The future executable demo must
 prove those actions independently.
+Its task-choice-before-wallet arrival is superseded by the linked wallet-first contract.
 
 The draft has four public journeys, a money/ownership lifecycle, KYC and agreement gates,
 a searchable screen/action inventory, open decisions, acceptance scenarios and separate demo candidates.

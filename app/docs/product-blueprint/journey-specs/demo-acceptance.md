@@ -2,6 +2,10 @@
 
 Proposed executable test scope after product decisions and implementation authorization. This specification and the visual preview are review artifacts, not passing tests. A completed demo requires genuine test-document signing, authorized financial transactions and reconciled records on its explicitly stated environment.
 
+Current sequencing: [wallet-first entry and investment-firm-first setup](entry-and-build-order.md).
+Provision five fictional TEST firms and five independently funded, active USDG vaults
+before exit demos. These are separate from the five originating-platform fixtures below.
+
 ## Fixtures and actors
 
 Use **five fictional/test originating platforms**, never real prospect branding as an integrated partner. Proposed fixture coverage:
@@ -24,11 +28,13 @@ Provider A/B amounts must be unequal; cross a valuation change, partial withdraw
 
 | ID | Execute | Pass condition / evidence |
 |---|---|---|
-| J-U1 | Browse disconnected and choose each of four tasks | Useful dated public information and standalone terms; no unsolicited wallet prompt; no commercial supported-fund claim; deep links/back retain object |
+| J-U1 | Browse disconnected; deliberately connect before choosing each of four tasks | Compact wallet-first entry; optional public terms; no unsolicited wallet prompt; no commercial supported-fund claim; four choices only after connection/profile lookup |
+| J-U3 | Return with completed, incomplete and new authenticated wallet profiles; change accounts; fail profile lookup | Dashboard, saved step and four-choice routing respectively; no repeated completed onboarding; lookup failure offers Retry rather than new-profile fallback; private profile and permissions remain scoped |
 | J-U2 | Traverse all role screens at 375/768/1440 widths and by keyboard | Compact headings; visible primary action/focus; labels/status readable; long identifiers and partial/error data fit; save/Back never accidentally submit |
 | J-I1 | Bind TEST fixture, then change account, chain, role and expiry | Dependent unsigned reviews invalidate; unauthorized new action blocked; fixture cannot grant contract permission; submitted receipts/history survive in correct identity scope |
 | J-I2 | Replay challenge, alter document/amount/recipient, skip counterpart acceptance and visit forged signing-return URL | No false signing/acceptance/funding state; exact document version and actual signatures required; rejected/pending/expired cases recover without lost draft |
 | J-X1 | Unfunded test investor deliberately obtains compatible assets and test holding | Supported funding mechanism and actual deposit/holding creation receipts; refreshed owned quantity; funding/approval/test subscription states distinguishable |
+| J-X3 | Select exit role; automatically discover positions; use Demo sheet to mint a supported test debenture/nontransferable holding | Matched/empty/error/account-link states differ; actual authorized mint and refreshed holding precede exit; no fake balance, production-chain mint or elevated judge permission; unknown receipt cannot mint twice |
 | J-X2 | Request partial exit from fresh matched holding | Quote quantity, residual rights, fee/net payout, route, expiry and reservation align; unsupported/mismatched/stale holding cannot be offered as owned |
 | J-H1 | Two concurrent exits plus ordinary redemption compete for same slice | Only one lock/settlement succeeds; remainder stays usable; duplicate registrar message/retry is idempotent; no timeout unlock while payment status unknown |
 | J-A1 | Buy transferable test units and assignable test loan claim via A | Correct buyer vehicle owns exact transferred slice; investor receives agreed payment; no fabricated new borrower debt; subsequent collections reconcile to acquired asset |
@@ -38,6 +44,7 @@ Provider A/B amounts must be unequal; cross a valuation change, partial withdraw
 | J-O1 | Originate application through organization review, legal/credit review, signatures, records tests and conditional activation | Local export never equals sent application; registered/funded/operational/ready separate; wrong signer, stale records, missing reserve/capacity block readiness |
 | J-M1 | Try unapproved instrument/route, invalid licence/vehicle scope and signer-only withdrawal | All denied at authoritative boundary; no wallet-selected licence; permitted role can perform only its scoped task; audit names actual vehicle |
 | J-M2 | Evaluate percentage limits after related-group exposure, reservation and NAV impairment | Approved denominator and source time used; related exposure aggregates; new risk stops on breach; existing repayment/servicing remains possible |
+| J-M3 | Onboard and fund five distinct TEST firm-managed USDG vaults through the agreed firm flow | Each has approved TEST profile, separate vehicle/address, correct owner/signers, real funded balance, active mandate, approved origin/instrument/route and risk headroom; profile creation alone cannot make a firm exit-ready |
 | J-C1 | Two bids and provider withdrawal contend for the same idle cash | Capacity reserves exactly once; commitments and fixed claim cash cannot be lent again; safe expiry releases only unused capacity; current non-reserving quote is insufficient |
 | J-P1 | A/B providers complete TEST eligibility, real test agreements, distinct acceptance and unequal funding | Every pre-funding prerequisite enforced; actual transfers and individually attributable units reconcile; manager and other provider cannot spend those interests |
 | J-P2 | Change NAV, assess fees/loss, add subscription and test rounding/donation | Per-provider share price/equity reconciles; originator reserves and pending subscriptions excluded; no hidden historical-loss transfer; donation/rounding policy exercised |
