@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
-import {demoState} from '../src/demo/state.js';
+import {demoState,publicStats} from '../src/demo/state.js';
 import {publicClient} from '../src/demo/shared.js';
 import {profile} from '../src/demo/store.js';
 
@@ -37,4 +37,18 @@ test('Unverified retail onboarding reads real wallet balances without loading va
   p.role=priorRole;p.identityId=priorIdentity;
   publicClient.readContract=originalRead;publicClient.getBalance=originalBalance;publicClient.getLogs=originalLogs;
  }
+});
+
+test('Public metrics aggregate the existing contract reads accurately',async()=>{
+ const originalRead=publicClient.readContract,originalBlock=publicClient.getBlock;
+ publicClient.readContract=(async({functionName}:{functionName:string})=>{
+  if(functionName==='isActive'||functionName==='approvedVault')return true;
+  if(functionName==='holding')return {routeMask:3};
+  if(functionName==='availableCash')return 1000000n;
+  if(functionName==='outstandingPrincipal')return 2000000n;
+  throw new Error(`Unexpected public read: ${functionName}`);
+ }) as typeof originalRead;
+ publicClient.getBlock=(async()=>({number:123n,timestamp:100n})) as typeof originalBlock;
+ try{const stats=await publicStats();assert.equal(stats.originators,5);assert.equal(stats.firms,5);assert.equal(stats.availableCash,'5');assert.equal(stats.outstanding,'10');assert.equal(stats.blockNumber,'123');assert.equal(stats.platforms.length,5);}
+ finally{publicClient.readContract=originalRead;publicClient.getBlock=originalBlock;}
 });

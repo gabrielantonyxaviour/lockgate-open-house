@@ -95,22 +95,27 @@ export async function demoState(account:Address) {
 }
 
 export async function publicStats(){
- const m=manifest();let availableCash=0n,outstanding=0n,originators=0,firms=0;
- const platforms=[] as {id:string;name:string;instrument:string;routes:string[];terms:string;status:string}[];
- for(const [index,o] of m.originators.entries()) {
-  const active=Boolean(await read(m.registry,registryAbi,'isActive',[o.address,1]));if(active)originators++;
-  const sample=m.holdings.find(h=>h.originatorAddress.toLowerCase()===o.address.toLowerCase());
-  const holding=sample?await read(m.registry,registryAbi,'holding',[sample.id]) as {routeMask:number}:undefined;
-  const mask=holding?.routeMask??0;
-  platforms.push({id:`platform-${index+1}`,name:o.name,instrument:sample?.instrument??'TEST fund claim',routes:[...(mask&1?['purchase']:[]),...(mask&2?['finance']:[])],terms:'Claim rights and settlement routes are recorded on Arbitrum Sepolia.',status:active?'Active TEST':'Inactive'});
- }
- for(const v of m.vaults) {
-  if(await read(m.registry,registryAbi,'isActive',[v.manager,2])&&await read(m.registry,registryAbi,'approvedVault',[v.address])) firms++;
-  availableCash+=BigInt(await read(v.address,vaultAbi,'availableCash') as bigint);
-  outstanding+=BigInt(await read(v.address,vaultAbi,'outstandingPrincipal') as bigint);
- }
- const block=await publicClient.getBlock();
- return {originators,firms,platforms,availableCash:money(availableCash),outstanding:money(outstanding),blockNumber:String(block.number),blockTime:new Date(Number(block.timestamp)*1000).toISOString(),environment,terms:'Testnet instruments and six-decimal test assets.'};
+ const m=manifest();
+ const [platforms,vaults,block]=await Promise.all([
+  Promise.all(m.originators.map(async(o,index)=>{
+   const sample=m.holdings.find(h=>h.originatorAddress.toLowerCase()===o.address.toLowerCase());
+   const [active,holding]=await Promise.all([
+    read(m.registry,registryAbi,'isActive',[o.address,1]),
+    sample?read(m.registry,registryAbi,'holding',[sample.id]) as Promise<{routeMask:number}>:undefined
+   ]);
+   const mask=holding?.routeMask??0;
+   return {id:`platform-${index+1}`,name:o.name,instrument:sample?.instrument??'TEST fund claim',routes:[...(mask&1?['purchase']:[]),...(mask&2?['finance']:[])],terms:'Claim rights and settlement routes are recorded on Arbitrum Sepolia.',status:active?'Active TEST':'Inactive'};
+  })),
+  Promise.all(m.vaults.map(async v=>{
+   const [active,approved,cash,principal]=await Promise.all([
+    read(m.registry,registryAbi,'isActive',[v.manager,2]),read(m.registry,registryAbi,'approvedVault',[v.address]),
+    read(v.address,vaultAbi,'availableCash'),read(v.address,vaultAbi,'outstandingPrincipal')
+   ]);
+   return {approved:Boolean(active&&approved),cash:BigInt(cash as bigint),principal:BigInt(principal as bigint)};
+  })),
+  publicClient.getBlock()
+ ]);
+ return {originators:platforms.filter(p=>p.status==='Active TEST').length,firms:vaults.filter(v=>v.approved).length,platforms,availableCash:money(vaults.reduce((sum,v)=>sum+v.cash,0n)),outstanding:money(vaults.reduce((sum,v)=>sum+v.principal,0n)),blockNumber:String(block.number),blockTime:new Date(Number(block.timestamp)*1000).toISOString(),environment,terms:'Testnet instruments and six-decimal test assets.'};
 }
 
 export async function receiptFromHash(account:Address,hash:Hex,_title:string,_amount?:string):Promise<ReceiptRecord> {

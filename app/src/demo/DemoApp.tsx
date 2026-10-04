@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Address } from 'viem';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Wallet } from 'lucide-react';
 import { checkedAddress, errorMessage } from '../chain/client';
 import { connectWallet, getProvider, subscribeWallet, switchNetwork, walletChainId } from '../chain/wallet';
 import { ArbitrumMark, PaxosBrand } from '../ui/Brand';
@@ -31,7 +31,6 @@ export function DemoApp({gateway}:{gateway:DemoGateway}) {
  useEffect(()=>{let active=true;void gateway.publicOverview().then(data=>{if(active)setOverview(data);}).catch(e=>{if(active)setPublicError(errorMessage(e));});return()=>{active=false;};},[gateway]);
  const [account,setAccount]=useState<Address>();
  const [chainId,setChainId]=useState<number>();
- const [network,setNetwork]=useState<421614|42161>(421614);
  const [state,setState]=useState<DemoState>();
  const [busy,setBusy]=useState(false);
  const [error,setError]=useState('');
@@ -55,10 +54,10 @@ export function DemoApp({gateway}:{gateway:DemoGateway}) {
  },[]);
  const authenticate=async(address=account)=>{if(!address)return;const revision=epoch.current;const current=await walletChainId();setChainId(current);const next=await gateway.authenticate(address,current);if(revision===epoch.current&&liveAccount.current?.toLowerCase()===address.toLowerCase())apply(next);};
  const refresh=useCallback(async()=>{if(!account)return;const revision=epoch.current;const next=await gateway.refresh(account,chainId||0);if(revision===epoch.current)apply(next);},[account,chainId,gateway,apply]);
- const connect=()=>{invalidate();void run(async()=>{const address=await connectWallet();liveAccount.current=address;setAccount(address);remember(true);if(await walletChainId()!==network)await switchNetwork(network);await authenticate(address);}).catch(()=>{});};
- useEffect(()=>{let active=true;void(async()=>{try{if(localStorage.getItem(connectionKey)!=='1')return;const accounts=await getProvider().request({method:'eth_accounts'});if(!Array.isArray(accounts)||!accounts[0])return;const address=checkedAddress(accounts[0]);const id=await walletChainId();if(active){setAccount(address);setChainId(id);if(id===421614||id===42161)setNetwork(id);}}catch{/* Explicit connect remains available. */}})();return()=>{active=false;};},[]);
- useEffect(()=>{try{return subscribeWallet(items=>{invalidate();remember(Boolean(items[0]));liveAccount.current=items[0];setAccount(items[0]);},id=>{invalidate();setChainId(id);if(id===421614||id===42161)setNetwork(id);});}catch{return;}},[invalidate]);
- const switchTo=(id:421614|42161)=>{invalidate();void run(async()=>{setNetwork(id);if(account){await switchNetwork(id);setChainId(await walletChainId());}}).catch(()=>{});};
+ const connect=()=>{invalidate();void run(async()=>{const address=await connectWallet();liveAccount.current=address;setAccount(address);if(await walletChainId()!==421614)await switchNetwork(421614);await authenticate(address);remember(true);}).catch(()=>{remember(false);setAccount(undefined);liveAccount.current=undefined;});};
+ useEffect(()=>{let active=true;void(async()=>{try{if(localStorage.getItem(connectionKey)!=='1')return;const accounts=await getProvider().request({method:'eth_accounts'});if(!Array.isArray(accounts)||!accounts[0])return;const address=checkedAddress(accounts[0]);const id=await walletChainId();if(active){setAccount(address);setChainId(id);}}catch{/* Explicit connect remains available. */}})();return()=>{active=false;};},[]);
+ useEffect(()=>{try{return subscribeWallet(items=>{invalidate();remember(Boolean(items[0]));liveAccount.current=items[0];setAccount(items[0]);},id=>{invalidate();setChainId(id);});}catch{return;}},[invalidate]);
+ const switchTo=(id:number)=>{if(id!==421614)return;invalidate();void run(async()=>{if(account){await switchNetwork(id);setChainId(await walletChainId());}}).catch(()=>{});};
  const selectRole=(next:DemoRole)=>{if(operation.current)return;go("/");setRole(next);setChoose(false);setIdentity(false);setRolePending(true);setRoleFailed(false);setOnboarding(next==='investor'||next==='provider'?'identity':undefined);void run(async()=>{const revision=epoch.current;try{const result=await gateway.selectRole(next);if(revision!==epoch.current)return;apply(result);setRole(next);if(result.profile.identity)setOnboarding(undefined);}catch(e){if(revision===epoch.current)setRoleFailed(true);throw e;}finally{if(revision===epoch.current)setRolePending(false);}}).catch(()=>{});};
  const bindIdentity=(id:string)=>{if(operation.current)return;setOnboarding('binding');void run(async()=>{const revision=epoch.current;let bound=false;try{const next=await gateway.selectIdentity(id,()=>{bound=true;if(revision===epoch.current)setOnboarding('checking');});if(revision===epoch.current){apply(next);setIdentity(false);setOnboarding(next.profile.identity?'ready':'identity');}}catch(e){if(revision===epoch.current)setOnboarding(bound?'retry':'identity');throw e;}}).catch(()=>{});};
  const backToPaths=()=>{if(operation.current)return;setIdentity(false);setOnboarding(undefined);setChoose(true);};
@@ -66,12 +65,12 @@ export function DemoApp({gateway}:{gateway:DemoGateway}) {
  const roleInfo=roles.find(r=>r.id===role);
  const retailRole=role==='investor'||role==='provider'?role:undefined;
  const onboardingVisible=Boolean(retailRole&&!choose&&(onboarding||identity||!state?.profile.identity));
- const unsupported=network===42161||Boolean(chainId&&chainId!==421614);
+ const unsupported=Boolean(account&&chainId&&chainId!==421614);
  const content=()=>{
   if(terms)return <PublicTerms overview={overview} error={publicError} retry={readPublic}/>;
   if(unsupported)return <section className="dg-narrow"><Heading title="This deployment is unavailable." copy="Arbitrum One has no configured deployment. Switch to Arbitrum Sepolia to continue."/><Button onClick={()=>switchTo(421614)} busy={busy}>Use Arbitrum Sepolia</Button></section>;
   if(!account)return <PublicHome overview={overview} error={publicError} retry={readPublic} connect={connect} busy={busy}/>;
-  if(!state)return <section className="dg-narrow dg-welcome"><Heading title={busy?'Checking your profile…':'Verify your wallet.'} copy="Sign a message to securely retrieve your account."/><Button busy={busy} onClick={()=>void run(()=>authenticate()).catch(()=>{})}>Sign in to Lockgate</Button></section>;
+  if(!state)return <section className="dg-narrow dg-welcome"><Heading title={busy?'Checking your profile…':'Verify your wallet.'} copy="Sign a message to securely retrieve your account."/></section>;
   if(!onboardingVisible&&route.split("?")[0]==="/records")return <section><Heading title="Agreements & history." copy="Your saved activity and transaction references."/><Records receipts={state.receipts} agreements={state.agreements}/></section>;
   if(choose||!role)return <RoleEntry choose={selectRole} busy={busy}/>;
   if((role==='originator'||role==='manager')&&!state.workspace)return <EnquiryForm key={role} role={role} busy={busy} submit={value=>run(()=>gateway.enquire(value))} back={()=>setChoose(true)}/>;
@@ -84,7 +83,7 @@ export function DemoApp({gateway}:{gateway:DemoGateway}) {
   if(role==='provider')return <Provider {...shared}/>;
   return <Institution {...shared}/>;
  };
- return <div className="dg-app"><header className="dg-topbar"><button className="dg-brand" onClick={()=>{go("/");if(state)setChoose(true);}} aria-label="Lockgate home"><img src="/mark.svg" width="25" height="28" alt=""/>Lockgate<span>.</span></button><div className="dg-top-actions"><Select value={String(network)} onValueChange={v=>switchTo(Number(v) as 421614|42161)} options={[{value:'421614',label:'Arbitrum Sepolia',icon:<ArbitrumMark size={24} decorative/>},{value:'42161',label:'Arbitrum One',icon:<ArbitrumMark size={24} decorative/>}]} label="Network" disabled={busy}/>{state&&!unsupported&&<Button secondary disabled={busy} onClick={()=>setDemo(true)}>Demo</Button>}{account&&<WalletMenu key={account} account={account} gas={state?.setup.gas} usdg={state?.setup.usdg} busy={busy} onDisconnect={disconnect}/>}</div></header>
+ return <div className="dg-app"><header className="dg-topbar"><button className="dg-brand" onClick={()=>{go("/");if(state)setChoose(true);}} aria-label="Lockgate home"><img src="/mark.svg" width="25" height="28" alt=""/>Lockgate<span>.</span></button><div className="dg-top-actions">{account&&state?<Select className="dg-network-select" value={chainId===42161?'42161':'421614'} onValueChange={v=>switchTo(Number(v))} options={[{value:'421614',label:'Arbitrum Sepolia',icon:<ArbitrumMark size={20} decorative/>},{value:'42161',label:'Arbitrum One · Soon',disabled:true,icon:<ArbitrumMark size={20} decorative/>}]} label="Network" disabled={busy}/>:<Button onClick={account?()=>void run(()=>authenticate()).catch(()=>{}):connect} busy={busy}><Wallet size={17}/>{busy?'Connecting wallet…':account?'Sign in to Lockgate':'Connect wallet'}</Button>}{state&&!unsupported&&<Button secondary disabled={busy} onClick={()=>setDemo(true)}>Demo</Button>}{account&&state&&<WalletMenu key={account} account={account} gas={state?.setup.gas} usdg={state?.setup.usdg} busy={busy} onDisconnect={disconnect}/>}</div></header>
  <div className="dg-body">{onboardingVisible&&retailRole&&!unsupported&&!terms&&<OnboardingProgress role={retailRole} phase={onboarding||'identity'} preparing={rolePending} unavailable={retailRole==='investor'&&state?.positionStatus==='unavailable'}/>}{state&&!choose&&role&&!onboardingVisible&&!unsupported&&!terms&&<nav className="dg-workspace-nav" aria-label="Workspace"><div><span className="dg-eyebrow">Account</span><strong>{roleInfo?.title}</strong>{state.profile.identity&&<small>{state.profile.identity.name} · TEST identity</small>}</div><div className="dg-nav-actions"><button className="dg-icon-button" disabled={busy} aria-label="Refresh workspace" onClick={()=>void run(refresh).catch(()=>{})}><RefreshCw size={17}/></button></div></nav>}{error&&<Notice error>{error}</Notice>}<main key={`${account||'guest'}:${chainId}:${role||'entry'}`} aria-busy={busy}>{content()}</main></div>
- <footer className="dg-footer"><span>Lockgate · Earlier exits, considered.</span><span className="dg-footer-brands"><ArbitrumMark size={24}/><span>Built on Arbitrum</span><PaxosBrand width={60}/><span>USDG integration</span></span><a href="mailto:gabriel@lockgate.finance">Contact</a></footer>{demo&&state&&!unsupported&&<DemoSheet state={state} gateway={gateway} busy={busy} run={run} refresh={refresh} close={()=>setDemo(false)}/>}</div>;
+ <footer className="dg-footer"><span>Lockgate · Earlier exits, considered.</span><span className="dg-footer-brands"><span>Built on</span><ArbitrumMark size={24}/><span>Arbitrum</span><PaxosBrand width={60}/></span><a href="mailto:gabriel@lockgate.finance">Contact</a></footer>{demo&&state&&!unsupported&&<DemoSheet state={state} gateway={gateway} busy={busy} run={run} refresh={refresh} close={()=>setDemo(false)}/>}</div>;
 }
