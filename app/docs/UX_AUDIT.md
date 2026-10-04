@@ -54,3 +54,9 @@ Control radius stays 8px; panels and financial summary groups use 12px; badges r
 ## Boundaries
 
 Screenshots use explicit illustrative preview except files named `*-live-*`. The production application does not default to preview. Local rendering and tests do not prove a deployment. Only the light theme exists. Public Aave visual inspection was disconnected; Stripe was reviewed through official documentation. The proposed partner feed still requires importing the engine payload; this review did not create an automatic feed.
+
+## Local ReUI onboarding follow-up
+
+The selected [ReUI onboarding-8](https://reui.io/blocks/application/onboarding/onboarding-8) replaces the earlier wrapped step/checklist layout in the local review branch with a centered form, slim progress navigation, smaller step headings, and persistent actions. Its structure is adapted to the existing light tokens and five facility steps. Draft validation/save/export and the standalone wallet gate remain; completion says the plan was exported and allows editing again.
+
+The final local suite passed 157 unit tests and 42 browser tests, with three opt-in fork cases skipped. All five steps, completion, and wallet gate were inspected at 375/768/1440px. [Local review report](../../docs/REUI_ONBOARDING_LOCAL_REVIEW.md) and [21-capture gallery](proof/reui-onboarding/index.html) record the source and evidence. This follow-up is not deployed; the earlier entry/deployment evidence above describes the previous checkpoint.

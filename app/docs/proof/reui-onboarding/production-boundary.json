@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-10-04T03:05:25.170Z",
+  "observations": [
+    {
+      "host": "openhouse.lockgate.finance",
+      "status": 200,
+      "bundle": "/assets/index-E-gtT276.js",
+      "localReviewNotPublished": true
+    },
+    {
+      "host": "open-house.lockgate.finance",
+      "status": 200,
+      "bundle": "/assets/index-E-gtT276.js",
+      "localReviewNotPublished": true
+    }
+  ]
+}

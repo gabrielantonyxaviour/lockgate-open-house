@@ -1,0 +1,174 @@
+{
+  "provenance": "Explicit illustrative preview with local sample plan; gate uses disconnected normal mode. No wallet signatures, transactions, submission or activation.",
+  "proof": [
+    {
+      "name": "platform",
+      "width": 375,
+      "overflow": 0,
+      "heading": 26,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "terms",
+      "width": 375,
+      "overflow": 0,
+      "heading": 26,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "reserve",
+      "width": 375,
+      "overflow": 0,
+      "heading": 26,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "integration",
+      "width": 375,
+      "overflow": 0,
+      "heading": 26,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "review",
+      "width": 375,
+      "overflow": 0,
+      "heading": 26,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "complete",
+      "width": 375,
+      "overflow": 0,
+      "heading": 26,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "gate",
+      "width": 375,
+      "overflow": 0,
+      "heading": 26,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "platform",
+      "width": 768,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "terms",
+      "width": 768,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "reserve",
+      "width": 768,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "integration",
+      "width": 768,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "review",
+      "width": 768,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "complete",
+      "width": 768,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "gate",
+      "width": 768,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "platform",
+      "width": 1440,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "terms",
+      "width": 1440,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "reserve",
+      "width": 1440,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "integration",
+      "width": 1440,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "review",
+      "width": 1440,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "complete",
+      "width": 1440,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    },
+    {
+      "name": "gate",
+      "width": 1440,
+      "overflow": 0,
+      "heading": 28,
+      "focus": "H1",
+      "sidebar": false
+    }
+  ],
+  "errors": []
+}

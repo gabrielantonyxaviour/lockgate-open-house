@@ -1,0 +1,14 @@
+{
+  "block": "@reui/onboarding-8",
+  "registry": "https://reui.io/r/radix-nova/onboarding-8.json",
+  "preview": "https://reui.io/blocks/application/onboarding/onboarding-8",
+  "registrySha256": "a1ba8ceca4ad681a1f4099daa6c321a6586f8c532ce96af0d6eec1f88fc1f03a",
+  "access": "Existing license credential; removed from session scratch after fetch and CLI preview",
+  "cliCheck": "pnpm dlx shadcn@latest add @reui/onboarding-8 --yes --dry-run",
+  "cliResolved": {
+    "files": 38,
+    "dependencies": 8,
+    "cssVariables": 18
+  },
+  "integration": "Layout/composition adapted to existing Lockgate CSS/Radix components; no app dependency or configuration changes; raw licensed bundle excluded"
+}
