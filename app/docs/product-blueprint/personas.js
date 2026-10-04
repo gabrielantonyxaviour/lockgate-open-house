@@ -2,8 +2,8 @@
 export const personas = [
   {
     id: "investor",
-    name: "Fund investor",
-    job: "Receive an earlier payout from an eligible existing fund position, or follow its normal redemption process.",
+    name: "Exit investor",
+    job: "Get an earlier payout from an investment they already hold in a supported fund.",
     entry: "Exit a fund position → proposed four-persona entry; existing /start/investor.",
     firstView: "My eligible fund positions and pending requests. With no positions, distinguish unsupported holdings from an empty test wallet; offer a clearly labelled test-share setup.",
     home: "Positions, redemption requests, current exit quotes, payouts and receipts.",

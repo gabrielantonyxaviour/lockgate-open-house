@@ -33,7 +33,7 @@ Each has a stable decision ID in the interactive artifact. Proposed mechanics re
 
 | Person | Why they arrive | Their workspace |
 |---|---|---|
-| Fund investor | Wants an earlier payout from an existing supported fund position | Their shares, redemption requests, exit quote, payout and receipts |
+| Exit investor | Already holds an investment elsewhere and comes here for an earlier payout | Their shares, redemption requests, exit quote, payout and receipts |
 | Originating fund/platform | Wants its fund supported for earlier exits | Application, integration, reserve, liability, settlement and reporting |
 | Investment firm | Underwrites and manages liquidity through its approved structure | Verification, mandate, proposals, receivables, provider administration and withdrawals |
 | Capital provider | Invests through the firm and accepts the disclosed liquidity/credit risks | Eligibility, agreements, subscription, personal interests, income/losses and withdrawal status |
