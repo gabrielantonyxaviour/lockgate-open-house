@@ -4,6 +4,7 @@ import { Select } from "./Select";
 import { NETWORKS, type NetworkId } from "../chain/networks";
 import { ArbitrumMark, UsdgMark, PaxosBrand } from "./Brand";
 import { WalletButton } from "./WalletButton";
+import { ReadStatus } from "./ReadStatus";
 import { ArrowLeft } from "lucide-react";
 import "./entry-focus.css";
 export function EntryFrame({
@@ -71,9 +72,12 @@ export function EntryFrame({
       )}
       <main id="main" tabIndex={-1} className="entry-main">
         {route !== "/" && !route.startsWith("/terms") && (
-          <a className="inline-link entry-back" href={onboarding ? "#/start/issuer" : account ? "#/choose" : "#/"}>
-            <ArrowLeft size={14} /> {onboarding ? "Back to issuer journey" : account ? "Change journey" : "Back to overview"}
-          </a>
+          <div className="entry-toolbar">
+            <a className="inline-link entry-back" href={onboarding ? "#/start/issuer" : account ? "#/choose" : "#/"}>
+              <ArrowLeft size={14} /> {onboarding ? "Back to issuer journey" : account ? "Change journey" : "Back to overview"}
+            </a>
+            {!onboarding && <ReadStatus />}
+          </div>
         )}
         {children}
       </main>

@@ -65,20 +65,6 @@
   font-size: 12px;
   font-weight: 500;
 }
-.entry-secondary {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-top: 28px;
-}
-.entry-secondary a {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--muted);
-}
 .entry-footnote {
   color: var(--muted);
   font-size: 11px;
@@ -257,10 +243,6 @@
   }
   .entry-choice > p {
     margin-bottom: 25px;
-  }
-  .entry-secondary {
-    flex-direction: column;
-    gap: 20px;
   }
   .journey-benefits {
     grid-template-columns: 1fr;

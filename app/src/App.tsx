@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Address } from "viem";
-import { RefreshCw } from "lucide-react";
 import { loadSnapshot, errorMessage, checkedAddress } from "./chain/client";
 import { connectWallet, getProvider, subscribeWallet, switchNetwork, walletChainId } from "./chain/wallet";
 import type { Action, Snapshot } from "./chain/model";
@@ -12,6 +11,7 @@ import { Transaction, type Review } from "./ui/Transaction";
 import { loadPreferences } from "./pages/Settings";
 import { AppRoutes } from "./ui/AppRoutes";
 import { EntryFrame } from "./ui/EntryFrame";
+import { ReadStatus } from "./ui/ReadStatus";
 import { go } from "./ui/router";
 import { type NetworkId } from "./chain/networks";
 import { useInputModality } from "./ui/input-modality";
@@ -218,18 +218,7 @@ export default function App() {
             </button>
           </div>
         )}
-        {snapshot && !preview && path !== "/" && (
-          <div className="data-status">
-            <span>
-              {loading ? "Refreshing…" : `Read at block ${snapshot.blockNumber}`} ·{" "}
-              {new Date(snapshot.observedAt).toLocaleTimeString()}
-            </span>
-            <button onClick={() => void refresh()} aria-label="Refresh chain data" disabled={loading}>
-              <RefreshCw size={12} />
-            </button>
-            {Date.now() - snapshot.observedAt > 120_000 && <strong>Data may be stale</strong>}
-          </div>
-        )}
+        {Frame === Shell && <ReadStatus />}
         <AppRoutes
           route={route}
           account={account}

@@ -19,7 +19,6 @@ export default function Welcome() {
     <div className="entry-welcome">
       <div className="entry-welcome-content">
         <div className="entry-intro">
-          <span className="eyebrow">THE EARLY EXIT RAIL</span>
           <h1>Capital shouldn’t have to wait.</h1>
           <p>
             Choose an investor or platform workspace for this wallet.
@@ -43,14 +42,6 @@ export default function Welcome() {
             <span className="entry-choice-action">
               Open my platform <ArrowRight size={16} />
             </span>
-          </a>
-        </div>
-        <div className="entry-secondary">
-          <a href="#/capital">
-            Providing capital? <ArrowRight size={12} />
-          </a>
-          <a href="#/judge">
-            Reviewing Lockgate? <ArrowRight size={12} />
           </a>
         </div>
         <p className="entry-footnote">Your wallet is connected. Review the terms before authorizing any transaction.</p>

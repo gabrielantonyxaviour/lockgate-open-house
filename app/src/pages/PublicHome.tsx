@@ -27,7 +27,6 @@ export default function PublicHome() {
     <div className="public-home">
       <section className="public-intro" aria-labelledby="public-title">
         <div className="public-intro-copy">
-          <span className="eyebrow">THE EARLY EXIT RAIL</span>
           <h1 id="public-title">Your capital.<br />On your timeline.</h1>
           <p>
             Exit an eligible position early for USDG. Your platform draws the credit and repays from settlement cash.

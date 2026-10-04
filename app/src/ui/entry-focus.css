@@ -1,5 +1,11 @@
 .entry-focused .entry-main { max-width: 1000px; padding-top: 28px; padding-bottom: 40px; }
 .entry-focused .entry-back { margin-bottom: 24px; display: inline-flex; align-items: center; gap: 7px; }
+.entry-toolbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 24px; }
+.entry-frame .entry-toolbar .entry-back { min-height: 32px; margin-bottom: 0; flex-shrink: 0; display: inline-flex; align-items: center; gap: 7px; }
+.entry-toolbar .data-status { display: grid; grid-template-columns: minmax(0, 1fr) 32px; min-width: 0; margin-bottom: 0; }
+.entry-toolbar .data-status > span { text-align: right; line-height: 1.5; }
+.entry-toolbar .data-status button { width: 32px; height: 32px; }
+.entry-toolbar .data-status strong { grid-column: 1 / -1; justify-self: end; }
 .entry-focused .entry-intro h1,
 .entry-focused .terms-content .page-head h1 { font: 500 32px/1.12 var(--font-head); letter-spacing: -0.04em; margin: 12px 0; }
 .entry-focused .journey-intro > p { font-size: 14px; line-height: 1.65; }
