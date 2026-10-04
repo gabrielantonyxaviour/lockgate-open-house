@@ -161,6 +161,14 @@ if (checks.at(-1).status === 'fail') {
     assert(result.state.positions?.length === 0 && result.state.vehicles?.length === 0, 'fresh signer has private position or vehicle state');
     const state = await json('/api/demo/state', { authorization: result.token });
     assert(!state.profile?.identity && state.positions?.length === 0, 'fresh state changed unexpectedly');
+    const roleRequest = data => ({ ...post('/api/demo/role', data), authorization: result.token });
+    errorShape(await json('/api/demo/role', roleRequest({ role: 'provider', intent: 'switch' }), 404), 'PROFILE_NOT_FOUND');
+    for (const role of ['originator', 'manager']) {
+      errorShape(await json('/api/demo/role', roleRequest({ role, intent: 'create' }), 403), 'INSTITUTION_ACCOUNT_REQUIRED');
+    }
+    errorShape(await json('/api/demo/role', roleRequest({ role: 'investor', intent: 'invalid' }), 400), 'INVALID_INPUT');
+    const retained = await json('/api/demo/state', { authorization: result.token });
+    assert(JSON.stringify(retained.profile) === JSON.stringify(state.profile), 'rejected role request changed profile');
     const replay = await json('/api/demo/authenticate', post('/api/demo/authenticate', { ...input, signature }), 401);
     errorShape(replay, 'CHALLENGE_INVALID');
     return { authenticated: true, identity: null, positions: 0, replay: 401 };

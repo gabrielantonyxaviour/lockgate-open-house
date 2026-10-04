@@ -14,7 +14,7 @@ export function completedRoles(profile: ProfileRecord, bound: boolean): ProfileR
 /** Changes only profile membership and active role; all wallet-owned records remain intact. */
 export function changeProfileRole(profile: ProfileRecord, role: ProfileRole, intent: ProfileIntent, bound: boolean, institutionApproved = false) {
  const roles = completedRoles(profile, bound);
- if (!retail(role) && !institutionApproved) fail('Institution profiles require an approved invitation', 'INVITATION_REQUIRED', 403);
+ if (!retail(role) && !institutionApproved) fail('Send an enquiry to discuss institutional access. Our team will contact you.', 'INSTITUTION_ACCOUNT_REQUIRED', 403);
  const exists = roles.includes(role);
  if (intent === 'create' && exists) fail('Profile already exists for this wallet', 'PROFILE_EXISTS', 409);
  if (intent === 'switch' && !exists) fail('Complete this profile before switching to it', 'PROFILE_NOT_FOUND', 404);

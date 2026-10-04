@@ -45,7 +45,7 @@ test('Missing profile switches and unapproved institutions never grant roles', (
  const p = investor(), before = JSON.stringify(p);
  assert.throws(() => changeProfileRole(p, 'provider', 'switch', true), { code: 'PROFILE_NOT_FOUND', status: 404 });
  for (const role of ['originator', 'manager'] as const) {
-  for (const intent of ['create', 'switch'] as const) assert.throws(() => changeProfileRole(p, role, intent, true), { code: 'INVITATION_REQUIRED', status: 403 });
+  for (const intent of ['create', 'switch'] as const) assert.throws(() => changeProfileRole(p, role, intent, true), { code: 'INSTITUTION_ACCOUNT_REQUIRED', status: 403 });
  }
  assert.equal(JSON.stringify(p), before);
 });

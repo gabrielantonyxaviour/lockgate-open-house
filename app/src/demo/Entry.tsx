@@ -12,7 +12,7 @@ export function RoleEntry({choose,busy,existingRoles=[],back}:{choose:(role:Demo
  return <section className="dg-welcome">{back&&<div className="dg-add-profile-back"><Button secondary disabled={busy} onClick={back}>Back to dashboard</Button></div>}<Heading title={back?'Add a new profile.':'Choose your path.'} copy={back?'Choose how you’d like to use this wallet.':'Get started, or talk with our team.'}/><div className="dg-role-grid">{roles.map((role,index)=>{
   const exists=existingRoles.includes(role.id);
   return <article className="dg-role-card" key={role.id}><div className="dg-card-top"><span className="dg-entry-icon"><role.icon size={22}/></span><span className="dg-number">0{index+1}</span></div><h2>{role.title}</h2><p>{role.description}</p><button className="dg-button dg-role-cta" data-profile-exists={exists||undefined} disabled={busy||exists} onClick={()=>choose(role.id)} aria-label={`${exists?'Profile already exists':role.cta} — ${role.title}`}>{exists?'Profile already exists':role.cta}{exists?<Check size={16}/>:<ArrowUpRight size={16}/>}</button></article>;
- })}</div><p className="dg-caption">Institutions begin with a conversation. Onboarding follows a reviewed invitation.</p></section>;
+ })}</div></section>;
 }
 export function IdentityEntry({onSelect,busy,preparing=false,error}:{onSelect:(id:string)=>void;busy:boolean;preparing?:boolean;error?:string}) {
  const [started,setStarted]=useState(false);
