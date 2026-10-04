@@ -21,7 +21,9 @@ for(const role of ['Exit investor','Capital provider'])test(`${role} reflects co
  await expect(page.getByRole('link',{name:'Records',exact:true})).toHaveCount(0);
  await expect(page.getByRole('button',{name:/Switch workspace/})).toHaveCount(0);
  await page.evaluate(()=>Reflect.get(window,'resolveRole')());
+ await expect(page.getByRole('button',{name:'Back',exact:true})).toHaveCount(0);
  await page.getByRole('button',{name:'Start KYC'}).click();
+ await expect(page.getByRole('button',{name:'Back',exact:true})).toHaveCount(0);
  await page.getByRole('radio',{name:/Alex Morgan/}).check();await page.getByRole('button',{name:'Use selected profile'}).click();
  await expect(progress).toContainText('Linking identity…');
  await expect(progress).not.toContainText('Verified');
@@ -43,4 +45,6 @@ for(const width of [375,768,1440])test(`compact onboarding fits ${width}px`,asyn
  const progress=page.getByRole('region',{name:'Account setup'});await expect(progress).toBeVisible();
  expect(await progress.locator('h2').evaluate(el=>parseFloat(getComputedStyle(el).fontSize))).toBeLessThanOrEqual(16);
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ const box=await progress.boundingBox();expect(box).not.toBeNull();
+ expect(Math.abs(box!.x+box!.width/2-width/2)).toBeLessThanOrEqual(1);
 });
