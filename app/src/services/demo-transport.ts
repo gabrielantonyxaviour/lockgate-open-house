@@ -13,7 +13,7 @@ export class DemoTransport {
  async request<T=unknown>(path:string,body?:unknown):Promise<T> {
   const response=await fetch(`/api/demo/${path}`,{method:body===undefined?'GET':'POST',headers:{'Content-Type':'application/json',...(this.token?{Authorization:`Bearer ${this.token}`}:{})},body:body===undefined?undefined:JSON.stringify(body),cache:'no-store'});
   let result:unknown;
-  try { result=await response.json(); } catch { throw new Error('The demo service is unavailable. No action was confirmed.'); }
+  try { result=await response.json(); } catch { throw new Error('We couldn’t reach the service. Please try again. No action was confirmed.'); }
   if(!response.ok) { const error=z.object({error:z.string()}).safeParse(result); throw new Error(error.success?error.data.error:'The service rejected this action.'); }
   return result as T;
  }
