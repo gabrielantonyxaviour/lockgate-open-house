@@ -22,13 +22,21 @@ export function AgreementDocument({ title, text, version, documentId, digest, id
   const expired = expiry !== undefined && (!Number.isFinite(expiry) || now >= expiry);
   const normalize = (value: string) => value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US');
   const validName = Boolean(identityName && normalize(name) === normalize(identityName));
+  const lines = text.split(/\r?\n/);
+  const hasLetterhead = lines[0] === 'LOCKGATE — TEST EXECUTION DOCUMENT' && Boolean(lines[1]?.trim());
   return <section className="dg-legal-document">
     <div className="dg-legal-toolbar"><span><FileText size={16}/>Version {version}</span><Button secondary onClick={() => downloadText(documentId, text)}><Download size={15}/>Download agreement</Button></div>
     <article className="dg-legal-paper" tabIndex={0} aria-label={title}>
-      {text.split(/\r?\n/).map((line, index) => {
+      <header className="dg-legal-letterhead"><span className="dg-legal-wordmark">Lockgate<span>.</span></span><span>{signed ? 'Signed copy' : 'Draft for review'}<br/>Version {version}</span></header>
+      {!hasLetterhead && <h2 className="dg-legal-title">{title}</h2>}
+      {lines.map((line, index) => {
         if (!line.trim()) return <div className="dg-legal-space" key={index} aria-hidden="true"/>;
-        if (index === 0) return <h2 key={index}>{line}</h2>;
+        if (hasLetterhead && index === 0) return <p className="dg-legal-kicker" key={index}>{line}</p>;
+        if (hasLetterhead && index === 1) return <h2 className="dg-legal-title" key={index}>{line}</h2>;
+        if (hasLetterhead && index === 2) return <p className="dg-legal-status" key={index}>{line}</p>;
         if (/^(?:\d+[.)]\s|[A-Z][A-Z\s/&—–-]{5,}$)/.test(line)) return <h3 key={index}>{line}</h3>;
+        const field = /^([^:.]{1,52}): (.+)$/.exec(line);
+        if (field) return <p className="dg-legal-field" key={index}><span className="dg-legal-field-label">{field[1]}: </span><span className={/wallet|contract|hash|commitment|identifier|nonce|reference|TEST profile/i.test(field[1]) ? 'dg-legal-technical' : undefined}>{field[2]}</span></p>;
         return <p key={index}>{line}</p>;
       })}
     </article>

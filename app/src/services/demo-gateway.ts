@@ -1,4 +1,4 @@
-import { createPublicClient, http, keccak256, stringToHex, parseAbi, parseUnits, type Address, type Hex, type Abi } from 'viem';
+import { createPublicClient, http, isAddressEqual, keccak256, stringToHex, parseAbi, parseUnits, type Address, type Hex, type Abi } from 'viem';
 import { arbitrumSepolia } from 'viem/chains';
 import { z } from 'zod';
 import { authorizedWallet, getProvider, walletChainId } from '../chain/wallet';
@@ -11,6 +11,14 @@ const vaultAbi=parseAbi(['function deposit(uint256 id,bytes32 acceptedTerms,uint
 const settlementAbi=parseAbi(['function cancel(bytes32 digest)','function settle((bytes32 holdingId,address vault,address investor,bytes32 identity,uint256 units,uint256 payout,uint256 repayment,uint8 route,uint64 deadline,uint64 maturity,uint256 nonce,bytes32 agreementHash) q,bytes investorSignature)']);
 const quoteFields=[{name:'holdingId',type:'bytes32'},{name:'vault',type:'address'},{name:'investor',type:'address'},{name:'identity',type:'bytes32'},{name:'units',type:'uint256'},{name:'payout',type:'uint256'},{name:'repayment',type:'uint256'},{name:'route',type:'uint8'},{name:'deadline',type:'uint64'},{name:'maturity',type:'uint64'},{name:'nonce',type:'uint256'},{name:'agreementHash',type:'bytes32'}] as const;
 type SignedOffer=Offer & {quote:Quote;signature?:Hex};
+function letterWalletMatches(message:string,account:Address|undefined):boolean {
+ if(!account)return false;
+ for(const label of ['Capital provider wallet','Signing wallet']) {
+  const matches=[...message.matchAll(new RegExp(`^${label}: (0x[0-9a-fA-F]{40})$`,'gm'))];
+  if(matches.length!==1||!isAddressEqual(matches[0][1] as Address,account))return false;
+ }
+ return true;
+}
 class Gateway implements DemoGateway {
  private api=new DemoTransport();
  async publicOverview() {return z.object({originators:z.number().int().nonnegative(),firms:z.number().int().nonnegative(),availableCash:z.string(),outstanding:z.string(),environment:z.string(),platforms:z.array(z.object({id:z.string(),name:z.string(),instrument:z.string(),routes:z.array(z.string()),terms:z.string(),status:z.string()})).optional()}).parse(await this.api.request('public'));}
@@ -113,7 +121,7 @@ class Gateway implements DemoGateway {
   parseUnits(amount,6);
   const prepared=preparedSubscriptionResponse.parse(await this.api.request('subscription',{vehicleId,amount})) as PreparedSubscription;
   const vehicle=this.state?.vehicles.find(v=>v.id===vehicleId);
-  if(keccak256(stringToHex(prepared.message))!==prepared.digest||parseUnits(prepared.amount,6)!==parseUnits(amount,6)||vehicle?.address?.toLowerCase()!==prepared.vault.toLowerCase()||vehicle.policyHash!==prepared.termsHash||!prepared.message.includes(this.account!)||!prepared.message.includes(vehicle.policyText??'')||prepared.signerName!==this.state?.profile.identity?.name||Date.parse(prepared.expiresAt)<=Date.now())throw new Error('Subscription letter does not match the reviewed wallet, amount and vehicle.');
+  if(keccak256(stringToHex(prepared.message))!==prepared.digest||parseUnits(prepared.amount,6)!==parseUnits(amount,6)||vehicle?.address?.toLowerCase()!==prepared.vault.toLowerCase()||vehicle.policyHash!==prepared.termsHash||!letterWalletMatches(prepared.message,this.account)||!vehicle.policyText||!prepared.message.includes(vehicle.policyText)||prepared.signerName!==this.state?.profile.identity?.name||Date.parse(prepared.expiresAt)<=Date.now())throw new Error('Subscription letter does not match the reviewed wallet, amount and vehicle.');
   this.preparedSubscriptions.set(vehicleId,prepared);return prepared;
  }
  async signSubscription(vehicleId:string,amount:string,prepared:PreparedSubscription,typedName:string,consent:true,onProgress?:(progress:WalletProgress)=>void) {
