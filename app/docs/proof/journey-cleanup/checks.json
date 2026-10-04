@@ -1,0 +1,73 @@
+{
+  "provenance": "Explicit connected-wallet/read layout fixture. No real wallet signing or chain writes.",
+  "checks": [
+    {
+      "state": "loaded",
+      "width": 375,
+      "overflow": 0,
+      "centerDifference": 0,
+      "gap": 31.46875,
+      "refreshRight": 359,
+      "errors": []
+    },
+    {
+      "state": "refreshing",
+      "width": 375,
+      "overflow": 0,
+      "centerDifference": 0,
+      "gap": 84.328125,
+      "refreshRight": 359,
+      "errors": []
+    },
+    {
+      "state": "stale",
+      "width": 375,
+      "overflow": 0,
+      "centerDifference": 0,
+      "gap": 26.734375,
+      "refreshRight": 359,
+      "errors": []
+    },
+    {
+      "state": "failed-refresh",
+      "width": 375,
+      "overflow": 0,
+      "centerDifference": 0,
+      "gap": 26.734375,
+      "refreshRight": 359,
+      "errors": []
+    },
+    {
+      "state": "investor",
+      "width": 375,
+      "overflow": 0,
+      "centerDifference": 0,
+      "gap": 26.734375,
+      "refreshRight": 359,
+      "errors": []
+    },
+    {
+      "state": "loaded",
+      "width": 768,
+      "overflow": 0,
+      "centerDifference": 0,
+      "gap": 394.859375,
+      "refreshRight": 748,
+      "errors": []
+    },
+    {
+      "state": "loaded",
+      "width": 1440,
+      "overflow": 0,
+      "centerDifference": 0,
+      "gap": 594.859375,
+      "refreshRight": 1184,
+      "errors": []
+    }
+  ],
+  "publicWidths": [
+    375,
+    768,
+    1440
+  ]
+}

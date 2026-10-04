@@ -1,0 +1,64 @@
+{
+  "sourceCommit": "fae2db1613a3db79c7c587cc3408d207703b74e2",
+  "source": [
+    {
+      "path": "app/src/App.tsx",
+      "sha256": "0fd4aa820547c2849d7d21d67b00ddf9ef6cdfb9e75534f0fb3f785e313a2052"
+    },
+    {
+      "path": "app/src/pages/Welcome.tsx",
+      "sha256": "392c72620ecccfe52fb9dc618150f0ec09069f6b7f8f2b20768f8276cd4166b4"
+    },
+    {
+      "path": "app/src/pages/PublicHome.tsx",
+      "sha256": "42a1b6430717f2df64a81a96f2847f257271e8bb080e1879a01acac3253cf832"
+    },
+    {
+      "path": "app/src/ui/ReadStatus.tsx",
+      "sha256": "de1ac7e143ee13aea7f42c4f5dde60c0c9b5c1320a8064e171251430b702e7bc"
+    },
+    {
+      "path": "app/src/ui/EntryFrame.tsx",
+      "sha256": "c4344d903db3fc181c87ac501778ce7b50045bb7a3ac1842ec8962c7201575c4"
+    },
+    {
+      "path": "app/src/ui/entry-focus.css",
+      "sha256": "6cdb78734c3527935be9f2cba228d24b8830ecec343d0359bd565c32ae69abc9"
+    },
+    {
+      "path": "app/src/ui/entry.css",
+      "sha256": "5b3c099c81cd991b1c8938da7c7d6b9cbb427d4bab07c0184c32bd66c43644d7"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "app/docs/proof/journey-cleanup/checks.json",
+      "sha256": "bf9ac7aa549e9b1619d51fe45f79e1f901ded1cce8a9f33544a65d70a61ecf7e"
+    },
+    {
+      "path": "app/docs/proof/journey-cleanup/live-1440.png",
+      "sha256": "9fba7bd1b36766bec6a6d9c21b33fa9f0245dcb504ee3e02216ddb49e0d5efac"
+    },
+    {
+      "path": "app/docs/proof/journey-cleanup/live.json",
+      "sha256": "19391ffa7a724b399ac222a54b2d0e64dca433e3bb38ce2c71669db499b419b6"
+    },
+    {
+      "path": "app/docs/proof/journey-cleanup/loaded-1440.png",
+      "sha256": "b0302eeeba892bd59c1f5bbbcc2af76db520393e34fde017bf9ae1891ce6270d"
+    },
+    {
+      "path": "app/docs/proof/journey-cleanup/loaded-375.png",
+      "sha256": "cb24db7e2f5a6e785c20f27edaacaeb8e0693d93571e0d23bbaeefd3b3c5529d"
+    },
+    {
+      "path": "app/docs/proof/journey-cleanup/loaded-768.png",
+      "sha256": "42a2a611f6facad7492850315ae0a59a2dc2f5cf8e95f921655ebfdccf2d6515"
+    },
+    {
+      "path": "docs/JOURNEY_UI_LOCAL_REVIEW.md",
+      "sha256": "fa6e51ab7de3be849d92620c619ddc82b9adecb0babbe3dd46a205a08126c554"
+    }
+  ],
+  "deployment": "Local only; not deployed"
+}
