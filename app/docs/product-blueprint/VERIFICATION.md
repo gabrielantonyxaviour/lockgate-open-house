@@ -1,5 +1,41 @@
 # Blueprint review verification
 
+## KYC-first and enquiry review · revision 5
+
+Checked 4 October 2026. This verifies the local review artifact, not production
+identity, email delivery or financial execution.
+
+- 01/04 start with Start KYC; the selector has exactly ten fictional preverified
+  TEST identities. Verification and holding ownership remain separate.
+- 01 discovers the selected fixture's matched holding automatically. A verified
+  wrong owner and a verified empty account cannot reveal protected positions,
+  offers, agreements, receipts or history through reviewer navigation.
+- 04 requires no old holding. Identity precedes vehicle selection; later approval
+  is bound to the chosen vehicle and identity before agreements/subscription.
+- Both institutional forms validate and focus errors, preserve in-page drafts,
+  and provide role-specific branded acknowledgement previews. Escaped submitted
+  text cannot execute markup. The preview reports that nothing was sent.
+- The blueprint includes a proposed $1m payout co-funded $400k/$350k/$250k from
+  separate vehicles. Shared-token ownership and deal rights remain open decisions.
+
+Root regression passed: all 43 screen compositions at 375/768/1440 (129 renders),
+seven blocked/recovery scenarios, matched onchain and authenticated-record fixture
+paths, amount boundaries, residual payout arithmetic, identity/privacy gates,
+provider vehicle gating, enquiry validation/draft/email and review-note persistence.
+No runtime errors, failed local resources, API calls or write requests occurred.
+Final chooser, mismatch, mobile form/email and co-funding renders were inspected.
+New secondary profile/form/email text was enlarged and darkened; rendered contrast
+checks meet 4.5:1 for the inspected text selectors on their actual backgrounds.
+The delegated design pass separately reported 174 transition/layout assertions.
+
+Revision 5 imports, ten identities, preserved 46 journey IDs, KYC-first order,
+27 unique future financial acceptance IDs, local links and <300-line files passed.
+Those 27 financial/integration checks remain unexecuted. Real KYC, authenticated
+wallet binding, persisted enquiries, verified-domain mail delivery, signatures,
+reservations, separate provider interests and syndicated settlement require future
+implementation and evidence. In-page enquiry drafts clear on reload.
+Application source/contracts remain unchanged from `f16c4d4`; nothing was deployed.
+
 ## Entry card correction · revision 4
 
 The local four-card review and wallet-first sketch now use **Get Started** for

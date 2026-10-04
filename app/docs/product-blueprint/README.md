@@ -13,7 +13,12 @@ Entry cards use **Get Started** for exit investors/capital providers and **Talk 
 for originating platforms/investment firms. Institutional onboarding is team-led;
 invited users complete assigned tasks online before governed activation.
 
-Explore the [earlier four-persona screen walkthrough](http://127.0.0.1:5197/docs/product-blueprint/preview/index.html)
+Review [KYC-first identity, enquiries and the co-funding proposal](journey-specs/identity-enquiries-and-syndication.md).
+01/04 begin with Start KYC and ten preverified TEST profiles; 01 enforces holding-owner
+matching, while 04 needs no existing holding. 02/03 now have an enquiry and branded
+acknowledgement review; no enquiry or email is actually submitted by the prototype.
+
+Explore the [four-persona screen walkthrough](http://127.0.0.1:5197/docs/product-blueprint/preview/index.html)
 and the [complete journey contracts](journey-specs/README.md). The walkthrough is a local
 design review using example records. Its controls do not connect a wallet, execute legal
 documents, reserve a firm’s cash or submit transactions. The future executable demo must
@@ -58,7 +63,7 @@ contract authority, eligibility and ownership need independent proof.
 ## First arrival and ongoing use
 
 The proposed public entry is useful without a wallet: understandable product purpose,
-source-backed analytics, supported-fund terms and obvious task choices. It should explain
+source-backed analytics, standalone terms and an obvious Connect wallet action. Four task choices follow authenticated profile lookup. It should explain
 what connecting a wallet unlocks and keep the selected fund/task through connection.
 Do not force a visitor into onboarding or a preselected workspace on arrival.
 

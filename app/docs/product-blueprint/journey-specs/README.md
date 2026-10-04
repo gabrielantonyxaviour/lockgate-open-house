@@ -29,6 +29,8 @@ Discussion specification · 4 October 2026 · no application implementation or l
 | Wallet and identity | Actual wallet, chain, connected permissions, identity binding and eligibility scope separately | Connect deliberately; sign nonce-bound control challenge; select wallet-bound TEST profile in demo | Wallet ownership proves control only; reviewer decides eligibility | Binding includes wallet, role, environment, policy, expiry; TEST provenance visible beside evidence | Account/chain/role change invalidates dependent unsigned reviews; old submitted hashes/history retained; no automatic identity migration |
 | Consequential review | Object, legal party, exact amount/asset/network, recipient, fee, minimum, allowance, risk and legal effect | Change inputs; sign named document or authorize named transfer | Fresh scoped authority and prerequisites | Separate records for signature, counterpart acceptance, transaction submission, receipt and reconciliation | Reject returns to preserved review; changed terms require review again; unknown receipt blocks duplicate submission |
 
+Current KYC-first, ten-identity fixture, managed enquiry/email and proposed co-funding details: [revision 5 contract](identity-enquiries-and-syndication.md).
+
 ## Rules applying to every screen row
 
 All rows in this directory inherit **R1–R6**; additional per-document rules supplement them. These IDs come from the loaded product-design spec references, not from invented implementation standards.

@@ -41,10 +41,10 @@ flowchart TD
 
 | Role | Primary CTA | Destination |
 |---|---|---|
-| 01 · Exit investor | **Get Started** | Supported position discovery and in-app eligibility/exit journey |
+| 01 · Exit investor | **Get Started** | Start KYC, then identity-matched discovery and exit journey |
 | 02 · Originating fund/platform | **Talk to us** | Team-led partnership review, agreements and integration |
 | 03 · Licensed investment firm | **Talk to us** | Team-led firm/vehicle review, agreements, vault setup and activation |
-| 04 · Capital provider | **Get Started** | In-app eligibility, agreements, firm subscription acceptance and funding |
+| 04 · Capital provider | **Get Started** | Start KYC, choose vehicle, vehicle eligibility, agreements, acceptance and funding |
 
 Use equal-height cards with one short description and matching CTA placement,
 control height and radius. Wide layouts use two columns; phones stack the cards.
@@ -57,22 +57,26 @@ Capital-provider approval remains separate from the firm's own approval.
 The public website can offer Talk to us without a wallet. The app's four-card choice
 still follows connection/profile lookup. Institutional entry also offers Accept an
 invitation when supported. Current review card links are not application submission:
-Get Started opens the design walkthrough; Talk to us uses the established public
-mailbox, gabriel@lockgate.finance, and opens an unsent email draft.
+Get Started opens KYC-first review; Talk to us opens an enquiry form, review and
+unsent branded acknowledgement. Future actual receipt/delivery requires a backend
+and verified sending domain; gabriel@lockgate.finance is the established reply contact.
 
 ## Exit investor
 
-After the connected new user chooses Exit an investment, immediately check approved
-originator adapters for supported tokenized positions, debentures and registered claims.
-Show found positions, available amount and the next action; do not first ask them to
-pick a fund or read a long explanation. Verify identity/eligibility and ownership
-matching before accepting an offer or signing an exit.
+After the connected new user chooses Exit an investment, **Start KYC first**.
+The demo presents exactly ten preverified TEST profiles, including a valid identity
+that fails holding-owner matching. Then check approved originator adapters and match
+trusted identity/account/wallet/holding references before exposing private positions.
+Render all supported matched holdings, available amounts and the next action. No
+manual fund choice or long introduction is required in the intended app. Identity
+verification alone never grants ownership or an exit. See the [identity/enquiry/co-funding contract](identity-enquiries-and-syndication.md).
 
 | Result | Minimal visible state |
 |---|---|
 | Reading | Finding your positions… |
 | Matched | Your positions, one concise row per position |
 | Empty | **No supported positions found for this wallet.** |
+| Owner mismatch | **We couldn’t verify this position belongs to your approved identity.** · Change identity / request review |
 | Read failed | Couldn't check your positions. · Retry |
 | Offchain account required | Link your platform account |
 | Position found but unavailable | Position remains visible with its actual restriction |
@@ -126,7 +130,7 @@ profile reviewers, supported instrument interfaces and integration activation au
 Definitions are written now; deployments, minting and funding remain later work.
 
 Checks to add to [demo acceptance](demo-acceptance.md): connection before task choice;
-completed/incomplete/new profile routing; immediate matched/empty/error discovery;
+completed/incomplete/new profile routing; KYC-first matched/empty/mismatch/error discovery;
 five independently ready vaults; transaction-backed mint and receipt recovery;
 unsupported chain and unauthorized mint rejection. Existing `J-*` tests remain unexecuted.
 

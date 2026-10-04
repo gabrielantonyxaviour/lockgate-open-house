@@ -25,6 +25,11 @@ try {
   const main = page.getByRole('main');
   const role = name => page.getByRole('button', { name, exact: true }).click();
   const nav = name => page.getByRole('navigation').getByRole('button', { name: new RegExp(name) }).click();
+  const profile = async name => {
+    await nav('TEST profiles');
+    await main.getByRole('button', { name: new RegExp(name) }).click();
+    await main.locator('.profile-actions button').click();
+  };
   await expect(page.locator('.task-card')).toHaveCount(4);
   await expect(page.locator('.role-switch [aria-pressed="true"]')).toHaveText('Public entry');
   await expect(page.locator('select')).toHaveCount(0);
@@ -48,9 +53,8 @@ try {
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
   await role('Exit investor');
-  await nav('Originator match');
-  await main.getByRole('button', { name: /Alder Test Credit/ }).click();
-  await main.getByRole('button', { name: 'Read example wallet position' }).click();
+  await profile('Alex Morgan');
+  await main.getByRole('button', { name: 'View my position' }).click();
   await expect(main.getByRole('heading', { level: 1 })).toHaveText('Your positions');
   await main.getByRole('button', { name: 'Explore an early exit' }).click();
   for (const amount of ['0', '-1', '100001']) {
@@ -88,9 +92,8 @@ try {
   const exported = await readFile(path.join(artifacts, 'investor.txt'), 'utf8');
   for (const text of ['38,400.00', 'Northstar', 'Not a signed legal agreement']) expect(exported).toContain(text);
   result.checks.push('Onchain match skips record link; amount limits; competing bid, agreement, payout, residual and export reconcile');
-  await nav('Originator match');
-  await main.getByRole('button', { name: /Birch Test Receivables/ }).click();
-  await main.getByRole('button', { name: 'Continue to record linking' }).click();
+  await profile('Priya Menon');
+  await main.getByRole('button', { name: 'Link my verified record' }).click();
   await expect(main.getByRole('button', { name: 'Link example record' })).toBeDisabled();
   await main.getByRole('checkbox').check();
   await main.getByRole('button', { name: 'Link example record' }).click();
@@ -103,14 +106,10 @@ try {
   await expect(main.locator('.offer')).toHaveCount(1);
   await expect(main.locator('.offer')).toContainText('Northstar');
   await expect(main).toContainText('Conditional registrar close');
-  await nav('Originator match');
-  await main.getByRole('button', { name: /Elm Test Private Credit/ }).click();
-  await expect(main.getByRole('button', { name: 'Continue to record linking' })).toBeDisabled();
-  await main.getByRole('button', { name: 'Choose another example fund' }).click();
-  await expect(main.getByRole('button', { name: 'Read example wallet position' })).toBeEnabled();
-  result.checks.push('Offchain consent; instrument route restrictions; whole-claim-only assignment; conditional integration blocking');
+  result.checks.push('Identity-scoped automatic discovery; offchain consent; whole-claim-only assignment and route restrictions');
   for (const [id, name] of Object.entries(scenarios).filter(([id]) =>
-    ['error', 'nooffers', 'expired', 'rejected', 'wallet', 'chain', 'pending', 'unready'].includes(id))) {
+    ['error', 'nooffers', 'expired', 'rejected', 'wallet', 'chain', 'pending'].includes(id))) {
+    await profile('Alex Morgan');
     await page.locator('.scenario-picker summary').click();
     await page.getByRole('button', { name, exact: true }).click();
     for (const b of await main.locator('.screen-content .actions .primary').all()) await expect(b).toBeDisabled();
@@ -118,6 +117,7 @@ try {
     result.blockedScenarios++;
   }
   await role('Capital provider');
+  await profile('Elias Haddad');
   for (let i = 0; i < 7; i++) {
     if (await main.getByRole('checkbox').count()) await main.getByRole('checkbox').check();
     await main.locator('.actions .primary').click();
@@ -125,6 +125,63 @@ try {
   await expect(main).toContainText('21,000 shares');
   await expect(main).toContainText('6,000 queued + 15,000 free');
   await page.screenshot({ path: path.join(artifacts, 'provider-records.png'), fullPage: true });
+  await role('Exit investor');
+  await nav('Start KYC');
+  await main.getByRole('button', { name: 'Start KYC', exact: true }).click();
+  await expect(main.locator('.profile-card')).toHaveCount(10);
+  await expect(main.locator('.profile-actions button')).toBeDisabled();
+  for (const name of ['Nisha Rao', 'Elias Haddad']) {
+    await profile(name);
+    await expect(main).toContainText(name === 'Nisha Rao' ? 'We couldn’t verify this position belongs to your approved identity.' : 'No supported positions found');
+    for (const screen of ['Offers', 'Agreement', 'Receipt', 'History']) {
+      await nav(screen);
+      await expect(main.locator('.access-gate')).toBeVisible();
+      await expect(main.locator('.offer, .document, .metric, .receipt')).toHaveCount(0);
+      await expect(main).not.toContainText('100,000.00 USDG');
+    }
+  }
+  for (const width of result.widths) {
+    await page.setViewportSize({ width, height: 1000 });
+    await nav('TEST profiles');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)).toBe(false);
+    await page.screenshot({ path: path.join(artifacts, `kyc-${width}.png`), fullPage: true });
+  }
+  await role('Capital provider');
+  await profile('Nisha Rao');
+  await expect(main).toContainText('Meridian TEST Vehicle');
+  await nav('Funding');
+  await expect(main.locator('.access-gate')).toBeVisible();
+  result.checks.push('Ten TEST identities; verified wrong-owner and empty block private exit screens; provider needs no existing holding but vehicle approval remains required');
+  for (const contact of ['originator', 'manager']) {
+    await page.goto(`${base}preview/?contact=${contact}`);
+    await main.getByRole('button', { name: 'Review enquiry', exact: true }).click();
+    await expect(main.getByRole('alert')).toContainText('Check the highlighted fields');
+    await expect(main.getByRole('textbox', { name: 'Representative name' })).toBeFocused();
+    await main.getByRole('textbox', { name: 'Representative name' }).fill('Amara <script>window.enquiryLeak=true</script> Wilson');
+    await main.getByRole('textbox', { name: 'Work email' }).fill('amara@example.org');
+    await main.getByRole('textbox', { name: 'Organization', exact: true }).fill('Cedar Credit Partners');
+    await main.getByRole('textbox', { name: 'Jurisdiction' }).fill('Singapore');
+    await main.getByRole('textbox', { name: contact === 'originator' ? 'Asset type and investor exit needs' : 'Mandate and investment scope' }).fill('Approved credit holdings and an authenticated register for eligible investors.');
+    await main.getByRole('button', { name: 'Review enquiry', exact: true }).click();
+    await expect(main).toContainText('Nothing has been submitted');
+    await main.getByRole('button', { name: 'Preview acknowledgement' }).click();
+    await expect(main.locator('.email-envelope')).toContainText('amara@example.org');
+    await expect(main.locator('.email-preview')).toContainText('Cedar Credit Partners');
+    await expect(main.locator('.email-preview')).toContainText('not onboarding acceptance');
+    expect(await page.evaluate(() => window.enquiryLeak)).toBeUndefined();
+    await expect(main.locator('.email-preview script')).toHaveCount(0);
+    for (const width of result.widths) {
+      await page.setViewportSize({ width, height: 1000 });
+      expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)).toBe(false);
+      await page.screenshot({ path: path.join(artifacts, `${contact}-email-${width}.png`), fullPage: true });
+    }
+    await main.getByRole('button', { name: 'Edit enquiry', exact: true }).click();
+    await expect(main.getByRole('textbox', { name: 'Work email' })).toHaveValue('amara@example.org');
+    await main.getByRole('button', { name: 'All roles' }).click();
+    await main.locator(`[data-action="contact"][data-value="${contact}"]`).click();
+    await expect(main.getByRole('textbox', { name: 'Work email' })).toHaveValue('amara@example.org');
+  }
+  result.checks.push('Both institutional forms: validation focus, preserved draft, role-specific escaped branded email, unsent/receipt-only boundary; three responsive widths');
   await role('Investment firm');
   await nav('Underwriting');
   await expect(main).toContainText('40,000 face / 500,000 NAV = 8.0% exposure');

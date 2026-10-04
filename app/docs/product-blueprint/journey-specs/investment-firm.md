@@ -8,6 +8,11 @@
 agreements and governed readiness/activation. Invited representatives complete
 assigned tasks online; approved authenticated wallets open the assigned dashboard.
 
+Enquiry entry collects representative name, work email, organization, jurisdiction and
+a short role-specific summary. An actual received enquiry returns a durable reference
+and branded acknowledgement email; receipt grants no approval. The local preview
+shows the form and an unsent email only. [Detailed contract](identity-enquiries-and-syndication.md).
+
 | ID / screen | Sees | Actions | Authority | Confirmation | Recovery |
 |---|---|---|---|---|---|
 | M01 · Firm entry | Public operating model, role distinctions and assigned-vault lookup | Talk to us or accept an invitation; reuse authenticated wallet for assigned tasks; approved profiles open dashboard | Public contact; invitation binding and authorized representative verified separately | Contact, invitation, review and vehicle activation stay distinct | Unknown wallet gets contact/invitation entry; pending/expired approval stays scoped, not an owner-deposit shortcut |

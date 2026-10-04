@@ -1,5 +1,5 @@
 export const meta = {
-  id: 'lockgate-four-persona-blueprint', version: '0.1', revision: 4, date: '4 October 2026',
+  id: 'lockgate-four-persona-blueprint', version: '0.1', revision: 5, date: '4 October 2026',
   source: 'f16c4d4a60914860b5b2386374710b1b998ff7c7', branch: 'feat/reui-onboarding-local',
   title: 'Lockgate product blueprint',
   purpose: 'Define and validate the whole product before changing the app.',
@@ -8,7 +8,7 @@ export const meta = {
     'There are currently no live supported originating funds/platforms or registered commercial fund integrations. Prospects must not appear as supported funds; test contracts are a separate environment.',
     'Connect wallet before the four task choices. An authenticated completed wallet profile opens its dashboard; incomplete onboarding resumes; a new profile sees four concise choices.',
     'Entry card CTAs: 01 exit investor and 04 capital provider use Get Started for in-app journeys; 02 originating fund/platform and 03 investment firm use Talk to us for team-led onboarding. Invited institutional users complete assigned tasks online; approved users open their scoped dashboard.',
-    'Exit-investor onboarding immediately finds supported tokenized positions/debentures through approved adapters. Empty copy: No supported positions found for this wallet. Private off-chain holdings require an authenticated originator link.',
+    '01 and 04 begin with KYC after Get Started. For 01, verified identity precedes supported-position discovery and trusted owner matching. Empty copy: No supported positions found for this wallet. Private off-chain holdings require an authenticated originator link. 04 does not require an existing originator holding.',
     'Keep onboarding compact. Move test setup to a top-bar Demo sheet on Sepolia; mint/setup success requires actual authorized transactions, confirmed receipts and refreshed holdings.',
     'Define and build the investment-firm journey first, then seed five fictional TEST firm-managed USDG vaults with real funding, active mandates and approved instrument/route scope before investor/originator demo runs.',
     'The complete product must be written and visualized before implementation. The demo scope is a separate decision.',
@@ -17,7 +17,8 @@ export const meta = {
     'The requested review includes all four personas, their cross-party handoffs, full and partial exits, returning users and failure recovery before app implementation.',
     'Capital providers provisionally enter through a firm-approved investment relationship, receive individual interests, and withdraw from available cash or a queue.',
     'Provider onboarding includes identity and eligibility review, legal agreements, electronic signatures, firm acceptance, and then funding.',
-    'The demo should offer selectable preverified test identity profiles to exercise onboarding. This is a test fixture, not production identity verification.',
+    'Start KYC offers exactly ten preverified TEST identities: eight matched holding profiles, one independently verified identity that fails ownership matching, and one verified identity with no holdings. Selection cannot establish production KYC or ownership.',
+    '02 and 03 Talk to us opens a concise enquiry form. An actual received enquiry needs a durable reference and branded HTML email acknowledgement; receipt is separate from approval or activation.',
     'Current work stays local. No application or contract implementation or deployment is authorized by this draft.',
   ],
   gaps: [
@@ -29,6 +30,7 @@ export const meta = {
     ['Mainnet readiness', 'Audits are one gate. Contract permissions, legal/regulatory scope, commercial partner agreements, operational services, asset integrations, funded capacity and reconciled settlement also require evidence.'],
   ],
   decisions: [
+    {id:'D-SYNDICATION',title:'How do multiple firms fund one large exit?',proposal:'Keep separate firm-managed vehicles and provider interests. Permit approved deal-level syndication: each vehicle funds and owns a documented deal slice. Default to all-or-nothing accepted payout, with no silent partial execution.',why:'A combined public token needs its own issuer, governance, valuation, loss and withdrawal structure. A firm licence does not automatically authorize it. Separate vehicles still require approved distribution and settlement arrangements.',options:['Separate vehicles with approved deal-level co-funding','A separately structured and reviewed pooled product later'],state:'open'},
     {id:'D-ONBOARDING',title:'Who approves and owns onboarding?',proposal:'The licensed firm owns client eligibility and subscription acceptance; originator and firm business approval have separately authorized reviewers.',why:'A wallet or selected role is not evidence of identity, licence scope or permission to invest.',options:['Firm-led review with contracted service providers','Another documented administrator/approval model'],state:'open'},
     {id:'D-SIGNING',title:'What constitutes an accepted agreement?',proposal:'Versioned documents, authenticated signatory, electronic-signature audit evidence, required counterpart acceptance, and a downloadable signed copy.',why:'KYC approval, clicking consent, signing a wallet challenge and fund acceptance are different events. Document types and jurisdictions must be reviewed.',options:['Dedicated e-sign service plus wallet binding','Another documented signing method reviewed for the chosen structure'],state:'open'},
     {id:'D-TEST-FUNDING',title:'How does an unfunded visitor test an exit?',proposal:'A focused testnet setup provides compatible test USDG and gas guidance, deposits into an exit-ready test fund, and confirms actual shares before an exit.',why:'A button must lead to real supported funding. The current token has no public mock faucet and the default window is overdue.',options:['Verified external faucets plus explicit deposit','A bounded funded test-share distribution service with abuse controls'],state:'open'},
@@ -43,7 +45,7 @@ export const meta = {
     ['Current inspected source', 'Own-book financing, owner-funded partner vaults and a separate institutional facility exist. The institutional facility does not invest through a manager’s partner vault.'],
     ['This discussion', 'Four public journeys plus an approved-provider investment relationship are now the intended scope. Their legal wrapper, accounting and withdrawal terms remain to be validated.'],
     ['Current review extension', 'Show the end-to-end screens for all four personas, including both conditional exit routes. Review approval does not establish legal permission or authorize production implementation.'],
-    ['Latest user correction', 'Wallet first; route by saved profile; compact onboarding; immediate position detection; top-bar Demo setup; investment-firm-first build order. Earlier task-first preview arrival is superseded.'],
+    ['Latest user correction', 'Wallet first; route by saved profile; compact onboarding; KYC first for 01/04 then identity-matched position detection for 01; enquiry forms and email receipts for 02/03; top-bar Demo setup; investment-firm-first build order. Earlier discovery-before-KYC is superseded.'],
   ],
   sources: [
     {title:'Application scope and boundaries',path:'app/README.md',note:'Current app behavior; local planning versus activation, institutional facility versus partner vault, and connected-wallet transaction boundaries.'},

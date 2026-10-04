@@ -8,6 +8,11 @@
 representatives complete assigned evidence, agreements and integration tasks online;
 approved authenticated profiles open their assigned platform dashboard.
 
+Enquiry entry collects representative name, work email, organization, jurisdiction and
+a short role-specific summary. An actual received enquiry returns a durable reference
+and branded acknowledgement email; receipt grants no approval. The local preview
+shows the form and an unsent email only. [Detailed contract](identity-enquiries-and-syndication.md).
+
 | ID / screen | Sees | Actions | Authority | Confirmation | Recovery |
 |---|---|---|---|---|---|
 | O01 · Integration overview | A purchase/assignment and B financed settlement routes; asset eligibility; separate partner underwriting and technical activation | Talk to us; accept an invitation for assigned setup; approved profiles open authorized platform | Public contact; invitation and existing platform access verified separately | Contact request is distinct from review approval and activation | Unsupported instrument or unclear borrower remains under review, not ready |

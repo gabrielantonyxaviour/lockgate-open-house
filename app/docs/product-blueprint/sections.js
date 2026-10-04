@@ -5,6 +5,7 @@ import { personas } from './personas.js';
 import { features } from './features.js';
 import { acceptance } from './acceptance.js';
 import { experience } from './experience.js';
+import { capitalStructure } from './capital-structure.js';
 
 export const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const e = escape;
@@ -31,10 +32,10 @@ export function renderSections() {
   document.querySelector('#experience').innerHTML = heading('02','What a visitor sees and how the app behaves','A review sketch of public arrival, followed by the shared experience contract. This defines proposed layouts and states; it is not an app implementation.') +
     `<div class="entry-sketch"><div class="sketch-header"><strong>lockgate.</strong><span>Connect wallet · Check profile</span></div><div class="sketch-body"><span class="eyebrow">Current entry · review sketch only</span><h3>Connect your wallet.</h3><p>Completed profile → dashboard. Incomplete → resume. New profile → choose a task.</p><p><a href="./journey-specs/entry-and-build-order.md">Review wallet-first routing ↗</a></p><details><summary>Four choices · connected new profiles only</summary><div class="grid">${[
       ['investor','Exit an investment','Find your supported positions and review an earlier payout.','Get Started','./preview/?role=investor'],
-      ['originator','Enable investor exits','Discuss support for your fund or platform with our team.','Talk to us','mailto:gabriel@lockgate.finance?subject=Lockgate%20originating%20platform%20partnership'],
-      ['manager','Manage exit capital','Discuss your firm’s vehicle, mandate and integration.','Talk to us','mailto:gabriel@lockgate.finance?subject=Lockgate%20investment%20firm%20partnership'],
+      ['originator','Enable investor exits','Discuss support for your fund or platform with our team.','Talk to us','./preview/?contact=originator'],
+      ['manager','Manage exit capital','Discuss your firm’s vehicle, mandate and integration.','Talk to us','./preview/?contact=manager'],
       ['provider','Invest through a firm','Explore eligible vehicles and begin investor onboarding.','Get Started','./preview/?role=provider'],
-    ].map(([id,title,body,cta,href],i) => `<article class="card entry-role-card"><span class="eyebrow">0${i+1} / ${e(roleName(id))}</span><strong>${e(title)}</strong><p>${e(body)}</p><a class="entry-card-cta" href="${e(href)}" aria-label="${e(cta)}: ${e(roleName(id))}">${e(cta)} <span aria-hidden="true">↗</span></a></article>`).join('')}</div></details><p class="fine">Get Started opens the design walkthrough. Talk to us opens an email draft. This sketch does not connect a wallet or retrieve a profile.</p></div></div>` +
+    ].map(([id,title,body,cta,href],i) => `<article class="card entry-role-card"><span class="eyebrow">0${i+1} / ${e(roleName(id))}</span><strong>${e(title)}</strong><p>${e(body)}</p><a class="entry-card-cta" href="${e(href)}" aria-label="${e(cta)}: ${e(roleName(id))}">${e(cta)} <span aria-hidden="true">↗</span></a></article>`).join('')}</div></details><p class="fine">Get Started opens the design walkthrough. Talk to us opens the enquiry and acknowledgement review; no enquiry is sent. This sketch does not connect a wallet or retrieve a profile.</p></div></div>` +
     detail('arrival-behavior','Arrival, connection and return behavior',experience.arrival.map(a => `<article class="step"><h3>${e(a.title)}</h3><p>${e(a.body)}</p></article>`).join(''),'proposed') +
     detail('ux-patterns',`${experience.patterns.length} screen and component patterns`,experience.patterns.map(p => detail(`pattern-${p.id}`,p.title,fields([['Screen',p.screen],['Layout',p.layout],['Components',p.components],['Reachable states',p.states],['Reference and adaptation',p.reference]])+review(`pattern-${p.id}`,p.title),'proposed')).join('')) +
     detail('ux-principles','Shared product and design rules',list(experience.principles),'proposed');
@@ -47,6 +48,7 @@ export function renderSections() {
       ['Exiting investor','Receives the agreed payout. Route A sells a specified asset or claim; route B settles and discharges the exited entitlement.'],
     ].map(([title,body]) => `<article class="card"><strong>${e(title)}</strong><p>${e(body)}</p></article>`).join('')}</div>` +
     `<div class="notice note">Payout: approved provider capital → firm’s vehicle → exiting investor. Route A: the vehicle acquires permitted units or a repayment claim and receives their proceeds. Route B: the old investor claim is discharged; the named borrower owes the vehicle under a separate financing agreement. Discount, new debt and realized income are separately agreed. Collateral, subscription cash and claimable withdrawals stay separately accounted.</div>` +
+    detail('capital-syndication','How several firms could fund one large exit',capitalStructure(),'proposed') +
     `<p>${e(economics.summary)}</p>` + economics.steps.map(step => detail(step.id,`${step.id} · ${step.title}`,fields([['Parties',step.party],['Money movement',step.money],['Rights and obligations',step.rights],['Controls and unresolved detail',step.guards]]) + review(step.id,step.title),step.status)).join('') +
     detail('invariants','Rules that must hold across every flow',list(economics.invariants),'proposed') +
     detail('economic-scope','Current scope versus future product',economics.scope.map(s => `<article class="step"><div class="step-head"><h3>${e(s.title)}</h3>${pill(s.status)}</div><p>${e(s.body)}</p></article>`).join(''));
