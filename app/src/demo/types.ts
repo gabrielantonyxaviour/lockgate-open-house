@@ -21,7 +21,7 @@ export interface DemoGateway {
  authenticate(account:Address, chainId:number):Promise<DemoState>;
  refresh(account:Address, chainId:number):Promise<DemoState>;
  selectRole(role:DemoRole):Promise<DemoState>;
- selectIdentity(profileId:string):Promise<DemoState>;
+ selectIdentity(profileId:string,onBound?:()=>void):Promise<DemoState>;
  enquire(enquiry:Enquiry):Promise<EnquiryReceipt>;
  offers(positionId:string, amount:string):Promise<Offer[]>;
  signExit(offer:Offer):Promise<Offer>;

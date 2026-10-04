@@ -27,6 +27,12 @@ export async function requireBound(account:Address) {
 export async function demoState(account:Address) {
  const m=manifest(),p=profile(account),identity=identities.find(i=>i.id===p.identityId);
  const binding=identity?await read(m.registry,registryAbi,'matches',[account,identityHash(identity.identityRef)]):false;
+ // Before identity verification, onboarding needs wallet balances, not every vault's history.
+ const institution=m.originators.some(o=>o.address.toLowerCase()===account.toLowerCase())||m.vaults.some(v=>v.manager.toLowerCase()===account.toLowerCase());
+ if(!binding&&!institution){
+  const [gas,usdg]=await Promise.all([publicClient.getBalance({address:account}),read(m.asset,tokenAbi,'balanceOf',[account])]);
+  return {profile:{identity:undefined,roles:p.role?[p.role]:[],activeRole:p.role,onboarding:p.role?'Select and bind a TEST identity':undefined},positions:[],positionStatus:'unavailable',vehicles:[],withdrawals:[],reservations:[],agreements:[],receipts:p.receipts,workspace:undefined,setup:{gas:formatEther(gas),usdg:money(usdg),canGetGas:!p.gasHash,gasAmount,canMint:false,canFund:false,mintDescription:'100,000 TEST units in Alder Private Credit, recorded to your bound identity',fundingAmount:'10000',message:publicNetwork?'Transactions settle on Arbitrum Sepolia.':'Local EVM test network.'},deploymentReady:true,environment};
+ }
  const heldIdentity=identity?.fixtureCase!=='mismatch'&&identity&&binding?identityHash(identity.identityRef):undefined;
  const holdings=heldIdentity?(await allHoldings()).filter(h=>h.identity===heldIdentity):[];
  const positions=[] as Record<string,unknown>[];
@@ -55,8 +61,7 @@ export async function demoState(account:Address) {
   const remaining=chainHolding.remaining,locked=chainHolding.locked;
   positions.push({id:h.id,name:h.name,originator:h.originator,instrument:h.instrument,available:money(remaining-locked),faceValue:money(remaining),partial:chainHolding.divisible});
  }
- const vehicles=[] as Record<string,unknown>[];
- for(const v of m.vaults) {
+ const vehicles=await Promise.all(m.vaults.map(async v=>{
   const [cash,totalAssets,totalUnits,bookUnits,queuedUnits,claimable,queueHead,queueTail]=await Promise.all([
    read(v.address,vaultAbi,'availableCash'),read(v.address,vaultAbi,'totalAssets'),read(v.address,vaultAbi,'totalUnits'),
    read(v.address,vaultAbi,'bookUnits',[account]),read(v.address,vaultAbi,'queuedUnits',[account]),read(v.address,vaultAbi,'claimable',[account]),
@@ -80,8 +85,8 @@ export async function demoState(account:Address) {
   const subscription=accepted?.subscriptionId?await read(v.address,vaultAbi,'subscriptions',[BigInt(accepted.subscriptionId)]) as readonly [Address,Hex,bigint,bigint,boolean]:undefined;
   const funded=Boolean(subscription?.[4]);
   if(accepted?.message)agreements.push({id:`agreement-${v.id}-${accepted.subscriptionId??'pending'}`,version:'1',title:`${v.firm} TEST subscription terms`,text:accepted.message,digest:accepted.digest,signedAt:accepted.signedAt,status:funded?'Funded TEST subscription':'Firm accepted TEST subscription',receiptId:accepted.txHash});
-  vehicles.push({id:v.id,name:v.name,firm:v.firm,cash:money(cash),nav:money(totalAssets),policy:'TEST firm mandate · both exit routes',policyText:v.termsText,policyHash:v.termsHash,policyVersion:'1',minimum:'100',eligible,eligibilityStatus:eligible?'TEST identity bound; firm acceptance is amount-specific.':'Connect and bind an eligible TEST identity.',agreement:{id:`agreement-${v.id}`,version:'1',title:`${v.firm} TEST subscription terms`,text:accepted?.message??v.termsText,digest:accepted?.digest??v.termsHash,signed:Boolean(accepted),accepted:Boolean(accepted?.subscriptionId),funded,amount:accepted?.amount},providerPrincipal:money(ledger.principal),providerNav:money(ledger.nav),income:money(ledger.income),loss:money(ledger.loss),withdrawable:money(withdrawable<cashAvailable?withdrawable:cashAvailable),queued:money(all?BigInt(queuedUnits as bigint)*nav/all:0n),address:v.address,claimable:money(claimable),queuedRequests,withdrawals:queuedRequests.map(q=>({id:q.id,amount:withdrawals.find(x=>x.vehicleId===v.id&&x.requestId===q.id)?.amount??'0',cancelable:true})),queueOpen});
- }
+  return {id:v.id,name:v.name,firm:v.firm,cash:money(cash),nav:money(totalAssets),policy:'TEST firm mandate · both exit routes',policyText:v.termsText,policyHash:v.termsHash,policyVersion:'1',minimum:'100',eligible,eligibilityStatus:eligible?'TEST identity bound; firm acceptance is amount-specific.':'Connect and bind an eligible TEST identity.',agreement:{id:`agreement-${v.id}`,version:'1',title:`${v.firm} TEST subscription terms`,text:accepted?.message??v.termsText,digest:accepted?.digest??v.termsHash,signed:Boolean(accepted),accepted:Boolean(accepted?.subscriptionId),funded,amount:accepted?.amount},providerPrincipal:money(ledger.principal),providerNav:money(ledger.nav),income:money(ledger.income),loss:money(ledger.loss),withdrawable:money(withdrawable<cashAvailable?withdrawable:cashAvailable),queued:money(all?BigInt(queuedUnits as bigint)*nav/all:0n),address:v.address,claimable:money(claimable),queuedRequests,withdrawals:queuedRequests.map(q=>({id:q.id,amount:withdrawals.find(x=>x.vehicleId===v.id&&x.requestId===q.id)?.amount??'0',cancelable:true})),queueOpen};
+ }));
  const [gas,usdg]=await Promise.all([publicClient.getBalance({address:account}),read(m.asset,tokenAbi,'balanceOf',[account])]);
  const profileView={identity:binding?identity:undefined,roles:p.role?[p.role]:[],activeRole:p.role,onboarding:binding?'TEST identity bound':p.role?'Select and bind a TEST identity':undefined};
  const status=!binding?'unavailable':identity?.fixtureCase==='mismatch'?'mismatch':positions.length?'matched':'empty';

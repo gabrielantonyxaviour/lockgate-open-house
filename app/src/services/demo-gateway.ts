@@ -33,7 +33,7 @@ class Gateway implements DemoGateway {
   if(this.account)this.state.receipts=[...pending(this.account),...this.state.receipts];return this.state;
  }
  private client(config:Configuration) {return createPublicClient({chain:arbitrumSepolia,pollingInterval:1000,transport:http(config.rpcUrl,{batch:{wait:10},timeout:15_000})});}
- private async record(hash:Hex,title:string,amount?:string):Promise<Receipt> {
+ private async record(hash:Hex,title:string,amount?:string,refreshState=true):Promise<Receipt> {
   const config=await this.setup();
   const unknown=rememberPending(this.account!,hash,title,amount);
   let receipt;
@@ -41,7 +41,7 @@ class Gateway implements DemoGateway {
   if(receipt.status!=='success') {await this.api.request('receipts',{hash,title,amount});clearPending(hash);throw new Error(`Transaction reverted: ${hash}`);}
   const result=receiptSchema.parse(await this.api.request('receipts',{hash,title,amount}));
   if(result.status!=='confirmed') throw new Error('The transaction is mined; the service has not reconciled it yet. Refresh before retrying.');
-  clearPending(hash);await this.readState(); return result as Receipt;
+  clearPending(hash);if(refreshState)await this.readState(); return result as Receipt;
  }
  async authenticate(account:Address,chainId:number) {
   this.account=account; this.api.token=undefined; this.signed.clear(); this.subscriptions.clear();
@@ -57,12 +57,12 @@ class Gateway implements DemoGateway {
   if(await walletChainId()!==421614) throw new Error('Your wallet network changed. Select Arbitrum Sepolia.');
   return this.readState();
  }
- async selectRole(role:DemoRole) {await this.api.request('role',{role}); return this.readState();}
- async selectIdentity(profileId:string) {
+ async selectRole(role:DemoRole) {this.state=stateSchema.parse(await this.api.request('role',{role})) as DemoState;if(this.account)this.state.receipts=[...pending(this.account),...this.state.receipts];return this.state;}
+ async selectIdentity(profileId:string,onBound?:()=>void) {
   const data=identityResponse.parse(await this.api.request('identity',{profileId}));
   const wallet=await this.wallet();
   const hash=await wallet.writeContract({address:data.registry as Address,abi:registryAbi,functionName:'bindIdentity',args:[data.identity as Hex,data.validUntil,data.nonce,data.signature as Hex]});
-  await this.record(hash,'Identity linked'); return this.readState();
+  const receipt=await this.record(hash,'Identity linked',undefined,false); if(receipt.status==='confirmed')onBound?.(); return this.readState();
  }
  async enquire(enquiry:Enquiry) {
   return z.object({reference:z.string(),receivedAt:z.string(),emailStatus:z.string()}).parse(await this.api.request('enquiries',{...enquiry,requestId:keccak256(stringToHex(JSON.stringify({...enquiry,account:this.account})))})) as EnquiryReceipt;
