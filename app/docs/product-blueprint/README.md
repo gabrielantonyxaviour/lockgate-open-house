@@ -6,6 +6,12 @@ not an approved specification, investment offering or authorization to implement
 Open the [interactive blueprint](http://127.0.0.1:5197/docs/product-blueprint/index.html).
 It uses the existing local app server and adds no production app routes.
 
+Explore the [four-persona screen walkthrough](http://127.0.0.1:5197/docs/product-blueprint/preview/index.html)
+and the [complete journey contracts](journey-specs/README.md). The walkthrough is a local
+design review using example records. Its controls do not connect a wallet, execute legal
+documents, reserve a firm’s cash or submit transactions. The future executable demo must
+prove those actions independently.
+
 The draft has four public journeys, a money/ownership lifecycle, KYC and agreement gates,
 a searchable screen/action inventory, open decisions, acceptance scenarios and separate demo candidates.
 You can expand a step, mark it reviewed and write a question. Notes stay in this browser;
@@ -33,7 +39,7 @@ Each has a stable decision ID in the interactive artifact. Proposed mechanics re
 
 | Person | Why they arrive | Their workspace |
 |---|---|---|
-| Exit investor | Already holds an investment elsewhere and comes here for an earlier payout | Their shares, redemption requests, exit quote, payout and receipts |
+| Exit investor | Already holds an investment elsewhere and comes here for an earlier payout | Matched positions, competing payout offers, agreements, payout and receipts |
 | Originating fund/platform | Wants its fund supported for earlier exits | Application, integration, reserve, liability, settlement and reporting |
 | Investment firm | Underwrites and manages liquidity through its approved structure | Verification, mandate, proposals, receivables, provider administration and withdrawals |
 | Capital provider | Invests through the firm and accepts the disclosed liquidity/credit risks | Eligibility, agreements, subscription, personal interests, income/losses and withdrawal status |
@@ -63,17 +69,28 @@ expired verification, complaints and wind-down.
 flowchart LR
   P[Approved capital provider] -->|Accepted subscription| V[Firm liquidity vehicle]
   V -->|Net early payout| I[Exiting fund investor]
-  O[Originating fund] -.->|Financed redemption obligation| V
-  O -->|Collections and repayment| V
+  I -.->|A: permitted asset or claim purchase| V
+  O[Named borrower / originator] -.->|B: new financing obligation after old claim discharge| V
+  O -->|A: purchased claim proceeds or B: agreed financing repayment| V
   V -->|NAV or distributions; available or queued withdrawal| P
 ```
 
 This is the proposed provider model, not a deployed provider-capital architecture.
-In the current on-chain financing path, the funding vault pays the investor directly;
-the originating fund owes repayment. Commercial settlement details depend on the adapter.
+Two conditional exit routes are defined. **A purchases** permitted existing fund units or
+an assignable loan claim. **B finances** an agreed early settlement: the old investor claim
+is discharged and a named borrower owes a separately documented new financing obligation.
+Token versus loan does not determine the route. Neither route has legal clearance.
+The current on-chain financing path pays the investor directly and records platform debt;
+it does not implement the proposed purchase route or confirm external legal claim discharge.
+Commercial settlement details depend on the authoritative adapter and counterparties.
 The originator's reserve is collateral, separate from provider equity. The provider owns
 the interest defined in the chosen vehicle; the manager has operational authority.
 A quote moves no funds and does not automatically reserve capacity.
+
+For example, purchasing a $10,000 claim for $9,800 creates a possible $200 gross spread
+if the whole claim is collected. Financing a $9,800 discounted settlement produces whatever
+repayment and fees the new agreement specifies; the investor’s $200 concession is not
+automatically income for the financing vehicle. Neither example promises a return.
 
 The underwriting and financing design needs a named borrower, repayment source,
 collection rights, exposure limits, reserve terms and servicing obligations.
@@ -150,9 +167,25 @@ The draft covers wallet/network changes, missing funds, stale reads/quotes, unau
 actions, rejected signing, unknown receipt reconciliation, expired eligibility, incomplete
 agreements/acceptance, duplicate subscriptions, partial withdrawals and loss/recovery.
 
+[Verification](VERIFICATION.md) separates working review controls from the future
+financial demo. Run `node docs/product-blueprint/verify-preview.mjs` from `app/`
+with the local server running to repeat the artifact checks.
+
 Implementation is a later task, after product decisions. Final proof will identify the
 source, environment, actor, signature, transaction, receipt, reconciled accounting and
 rendered result for all four journeys. Local/fork, public read and public write claims stay distinct.
+
+Five distinct actor wallets are the minimum isolation fixture: exit investor, originator,
+manager and two capital providers. An internal operator uses separate authority where needed.
+The demo catalogue uses five fictional TEST originators, each with explicit ownership and
+route restrictions; it must not present Kasu or other prospects as integrated partners.
+
+Founder conversations are demand evidence whose exact scope and provenance should be
+recorded; they do not substitute for signed integrations or commitments of capital.
+Mainnet readiness includes legal/regulatory permission, approved partner/instrument
+agreements, working adapters, production identity/signing/servicing, independent security
+review, funded capacity and operational reconciliation. Audits are one gate, not the sole
+reason mainnet is unavailable. Demo and launch claims remain separate.
 
 This task changed documentation only. No app/contract changes, public transactions,
 merges or deployments are part of this draft. The existing dev server remains in use.
@@ -163,6 +196,9 @@ merges or deployments are part of this draft. The existing dev server remains in
 |---|---|
 | [meta.js](meta.js) | Confirmed directions, gaps, historical changes and shared decisions |
 | [personas.js](personas.js) | Four complete journeys and ongoing use |
+| [exit-investor.js](exit-investor.js) | Early-exit journey with purchase and borrower-financed settlement |
+| [journey-specs/README.md](journey-specs/README.md) | Per-persona contracts, cross-party handoffs and decision gates |
+| [preview/index.html](preview/index.html) | Local screen walkthrough and reviewer-only scenario controls |
 | [features.js](features.js) | Screens/actions, permissions, status and acceptance checks |
 | [experience.js](experience.js) | Public arrival, role layouts, shared UI behavior and official UX references |
 | [economics.js](economics.js) | Money, rights, valuation, fees, loss and withdrawal decisions |

@@ -33,7 +33,7 @@ function loadReview() {
   }
 }
 function payload() {
-  return {blueprint:meta.id,version:meta.version,applicationSource:meta.source,updatedAt:new Date().toISOString(),
+  return {blueprint:meta.id,version:meta.version,revision:meta.revision ?? 1,applicationSource:meta.source,updatedAt:new Date().toISOString(),
     meaning:'Review notes only; reviewed does not grant implementation approval, legal eligibility or funding authority.',
     entries:[...records].map(([key,value]) => ({key,...value}))};
 }

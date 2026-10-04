@@ -30,7 +30,7 @@ export function renderSections() {
 
   document.querySelector('#experience').innerHTML = heading('02','What a visitor sees and how the app behaves','A review sketch of public arrival, followed by the shared experience contract. This defines proposed layouts and states; it is not an app implementation.') +
     `<div class="entry-sketch"><div class="sketch-header"><strong>lockgate.</strong><span>Network context · Connect when ready</span></div><div class="sketch-body"><span class="eyebrow">Proposed public entry · review sketch</span><h3>Earlier exits. Dedicated liquidity.</h3><p>Explore supported funds and live activity, then choose the task you came to do.</p><div class="sketch-metrics">${['Available liquidity','Financing outstanding','Upcoming settlement'].map(t => `<div><span>${e(t)}</span><strong>Verified value + unit</strong><small>Source, network and freshness</small></div>`).join('')}</div><div class="grid">${[
-      ['investor','Exit a fund position','View my position and compare payout timing.'],
+      ['investor','Get an earlier exit','Find my position and compare earlier payouts.'],
       ['originator','Enable exits for my fund','Review support requirements and integration.'],
       ['manager','Manage my firm’s vault','Review mandates, proposals and obligations.'],
       ['provider','Provide capital through a firm','Explore eligible vaults and their terms.'],
@@ -43,10 +43,10 @@ export function renderSections() {
     `<div class="flow">${[
       ['Capital provider','Subscribes to the firm’s approved vehicle and receives their own defined interest.'],
       ['Firm’s liquidity vehicle','Holds capital, values shares and manages credit exposure. The current on-chain path pays the exiting investor directly.'],
-      ['Originating fund / platform','Incurs financing for an eligible redemption obligation; owes repayment and provides agreed collateral.'],
-      ['Exiting investor','Receives the disclosed payout and settles the identified underlying-fund exit entitlement.'],
+      ['Originating fund / platform','Supplies authoritative ownership and settlement records. Route B names a borrower and new financing obligation; route A needs permitted transfer or assignment.'],
+      ['Exiting investor','Receives the agreed payout. Route A sells a specified asset or claim; route B settles and discharges the exited entitlement.'],
     ].map(([title,body]) => `<article class="card"><strong>${e(title)}</strong><p>${e(body)}</p></article>`).join('')}</div>` +
-    `<div class="notice note">Payout: provider capital → firm’s vehicle → exiting investor. Repayment: originator collections → the vault that funded the advance → principal recovery, income and loss accounting → provider NAV or distributions → available or queued withdrawals. The originator owes the debt; collateral, subscription cash and claimable withdrawals stay separately accounted.</div>` +
+    `<div class="notice note">Payout: approved provider capital → firm’s vehicle → exiting investor. Route A: the vehicle acquires permitted units or a repayment claim and receives their proceeds. Route B: the old investor claim is discharged; the named borrower owes the vehicle under a separate financing agreement. Discount, new debt and realized income are separately agreed. Collateral, subscription cash and claimable withdrawals stay separately accounted.</div>` +
     `<p>${e(economics.summary)}</p>` + economics.steps.map(step => detail(step.id,`${step.id} · ${step.title}`,fields([['Parties',step.party],['Money movement',step.money],['Rights and obligations',step.rights],['Controls and unresolved detail',step.guards]]) + review(step.id,step.title),step.status)).join('') +
     detail('invariants','Rules that must hold across every flow',list(economics.invariants),'proposed') +
     detail('economic-scope','Current scope versus future product',economics.scope.map(s => `<article class="step"><div class="step-head"><h3>${e(s.title)}</h3>${pill(s.status)}</div><p>${e(s.body)}</p></article>`).join(''));

@@ -1,0 +1,12 @@
+export const escape = (v) => String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export const money = n => Number(n).toLocaleString('en-US',{maximumFractionDigits:2,minimumFractionDigits:2});
+export const badge = (text,tone='') => `<span class="badge ${tone}">${text}</span>`;
+export const button = (label,action='next',kind='primary',extra='') => `<button class="button ${kind}" data-action="${action}" ${extra}>${label}</button>`;
+export const rows = items => `<dl class="rows">${items.map(([k,v])=>`<div><dt>${k}</dt><dd>${v}</dd></div>`).join('')}</dl>`;
+export const panel = (title,body,cls='') => `<section class="panel ${cls}"><h2>${title}</h2>${body}</section>`;
+export const notice = (title,body,tone='') => `<div class="notice ${tone}"><span class="notice-mark">${tone==='good'?'✓':'i'}</span><div><strong>${title}</strong><p>${body}</p></div></div>`;
+export const field = (label,value) => `<div class="readonly"><span>${label}</span><strong>${value}</strong></div>`;
+export const checks = values => `<ul class="checks">${values.map(v=>`<li><span>✓</span>${v}</li>`).join('')}</ul>`;
+export const metrics = values => `<div class="metrics">${values.map(([label,value,note])=>`<div><span>${label}</span><strong>${value}</strong><small>${note||''}</small></div>`).join('')}</div>`;
+export const stages = items => `<ol class="stages">${items.map(([title,copy,state])=>`<li><span class="stage-dot ${state||''}">${state==='done'?'✓':'·'}</span><div><strong>${title}</strong><p>${copy}</p></div>${badge(state==='done'?'Ready':'Required')}</li>`).join('')}</ol>`;
+export const document = (name,version,body) => `<div class="document"><div class="document-head"><span>LOCKGATE / TEST DOCUMENT</span>${badge(version)}</div><h3>${name}</h3>${body}<p class="document-note">Illustrative terms for journey review. Legal structure and final documents require approval.</p></div>`;

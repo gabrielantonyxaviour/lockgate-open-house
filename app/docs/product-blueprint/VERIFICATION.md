@@ -1,5 +1,72 @@
 # Blueprint review verification
 
+## Four-persona review extension
+
+Checked **4 October 2026**, final browser run completed before **07:48:05 UTC**.
+This verifies the local planning artifact, not an implemented financial demo.
+
+- [Visual walkthrough](http://127.0.0.1:5197/docs/product-blueprint/preview/):
+  39 screen compositions across four personas, with reviewer-only scenario controls.
+- [Written contracts](journey-specs/README.md): 44 persona screen rows, agreement
+  responsibilities, 18 settlement/handoff states, ten policy decisions and 21 proposed
+  executable demo checks. The screen compositions consolidate some written steps.
+- Interactive blueprint: 46 journey steps, 75 screen/action groups, 171 feature
+  checks, 13 money/ownership steps, nine identity/agreement steps, 18 decisions and
+  11 release gates. These are specification counts, not passing financial tests.
+
+### Reproduce the artifact checks
+
+Use the already-running app server at port 5197. From `app/`, run:
+
+```sh
+node docs/product-blueprint/verify-preview.mjs
+```
+
+The script launches isolated headless Chromium, closes its browser on completion,
+and writes an explicit result plus captures and an example export to its own
+temporary directory. It does not attach to a user's wallet browser or restart Vite.
+
+Final run: **PASS**, 117 screen/viewport combinations at **375, 768 and 1440**,
+eight blocking scenarios with recovery, no page-script errors, no failed local
+asset responses and no API/RPC or non-GET requests. Final rendered public arrival,
+offers and provider records were inspected at phone, tablet and desktop widths.
+
+Verified behavior:
+
+- Four public tasks with no preselected workspace; no native select controls.
+- Onchain matching skips the offchain record-link step; offchain linking needs
+  deliberate consent. Birch permits only a whole-claim assignment. Elm remains
+  conditional and prevents continuation.
+- Invalid amounts stop quoting. Offers respect the example firm's face limit.
+  Mutually exclusive routes for one firm/request share one capacity reservation.
+- Two fictional firms quote different discounts. Northstar's selected 40,000-face
+  offer keeps its counterparty, 3.5% discount, 200 fee, 38,400 net and 60,000 residual
+  through review, agreement, receipt and downloaded example record.
+- Signing consent precedes the local example transition; signed and paid screens
+  are separate. The preview performs neither legal signing nor financial settlement.
+- Provider A's 25,000 original shares reconcile to 4,000 redeemed, 6,000 queued
+  and 15,000 free. Fixed claim cash is reserved before payment; provider B is a
+  separate illustrative record, not an executed ownership-isolation test.
+- Firm risk uses 40,000 face / 500,000 NAV = 8%; borrower repayment distinguishes
+  39,000 principal, 390 separately agreed charge and 39,390 total.
+- Blueprint deep links and updated counts work. Literal HTML-like review notes
+  persist after reload as text without script execution in an isolated context.
+- A separate export check passed after the last review-script edit: JSON includes
+  revision 2 while retaining the v0.1 storage namespace and existing note IDs.
+
+ES-module imports, unique journey IDs, required screen fields, Markdown local
+links and file-length checks passed. No dependencies were installed. The actual
+app/contract paths remain unchanged against application baseline `f16c4d4`.
+Official ReUI onboarding-8, Maple queue and Docusign status references were checked;
+their patterns do not establish licensed block-code acquisition or legal clearance.
+
+All proposed `J-*` financial acceptance checks remain **unexecuted**. Five distinct
+actor wallets, real TEST document execution, durable server-side authorization,
+public-chain receipts, offchain registrar integration and individual provider
+accounting must be proved after implementation. Nothing was deployed.
+
+## Initial draft verification
+
 Checked **4 October 2026**, completed by **04:06:50 UTC**.
 Scope: the local discussion document, not a new app/contract release.
 

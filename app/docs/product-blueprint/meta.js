@@ -1,5 +1,5 @@
 export const meta = {
-  id: 'lockgate-four-persona-blueprint', version: '0.1', date: '4 October 2026',
+  id: 'lockgate-four-persona-blueprint', version: '0.1', revision: 2, date: '4 October 2026',
   source: 'f16c4d4a60914860b5b2386374710b1b998ff7c7', branch: 'feat/reui-onboarding-local',
   title: 'Lockgate product blueprint',
   purpose: 'Define and validate the whole product before changing the app.',
@@ -8,6 +8,9 @@ export const meta = {
     'There are currently no live supported originating funds/platforms or registered commercial fund integrations. Prospects must not appear as supported funds; test contracts are a separate environment.',
     'Visitors first see a useful public overview. Onboarding begins when their chosen task requires it.',
     'The complete product must be written and visualized before implementation. The demo scope is a separate decision.',
+    'Define two conditional exit routes: purchase of existing units or an assignable loan claim; or borrower-financed early settlement. Enable each only for approved instruments, parties and settlement arrangements; neither is legally cleared.',
+    'An exit investor comes for an earlier payout. Ordinary redemption remains the originating platform’s service; new real-fund subscriptions are not part of this journey.',
+    'The requested review includes all four personas, their cross-party handoffs, full and partial exits, returning users and failure recovery before app implementation.',
     'Capital providers provisionally enter through a firm-approved investment relationship, receive individual interests, and withdraw from available cash or a queue.',
     'Provider onboarding includes identity and eligibility review, legal agreements, electronic signatures, firm acceptance, and then funding.',
     'The demo should offer selectable preverified test identity profiles to exercise onboarding. This is a test fixture, not production identity verification.',
@@ -18,6 +21,8 @@ export const meta = {
     ['Commercial onboarding', 'The existing form saves and exports a local platform plan. It does not submit an application, verify a firm, sign agreements or activate a facility.'],
     ['Testnet readiness', 'The configured token is Paxos testnet USDG, without MockUSDG.faucet. At block 315543348 the default platform rejected quotes with “window due”; partner vaults were unfunded and their mandates inactive.'],
     ['External partners', 'There are no live originating-fund integrations. Kasu is a prospect only and must not appear in a supported-fund catalogue. Every future integration needs agreed ownership data, identity matching, settlement rights and operational acceptance.'],
+    ['Dual-route execution', 'Existing financing does not implement investor asset/claim purchases, authenticated competing bids, reserved executable offers or registrar-confirmed off-chain settlement.'],
+    ['Mainnet readiness', 'Audits are one gate. Contract permissions, legal/regulatory scope, commercial partner agreements, operational services, asset integrations, funded capacity and reconciled settlement also require evidence.'],
   ],
   decisions: [
     {id:'D-ONBOARDING',title:'Who approves and owns onboarding?',proposal:'The licensed firm owns client eligibility and subscription acceptance; originator and firm business approval have separately authorized reviewers.',why:'A wallet or selected role is not evidence of identity, licence scope or permission to invest.',options:['Firm-led review with contracted service providers','Another documented administrator/approval model'],state:'open'},
@@ -25,6 +30,7 @@ export const meta = {
     {id:'D-TEST-FUNDING',title:'How does an unfunded visitor test an exit?',proposal:'A focused testnet setup provides compatible test USDG and gas guidance, deposits into an exit-ready test fund, and confirms actual shares before an exit.',why:'A button must lead to real supported funding. The current token has no public mock faucet and the default window is overdue.',options:['Verified external faucets plus explicit deposit','A bounded funded test-share distribution service with abuse controls'],state:'open'},
     {id:'D-DEMO',title:'Which complete story will the demo prove?',proposal:'Scope the complete four-persona product first. Then choose an executable slice without presenting unbuilt provider accounting as working.',why:'Current evidence proves the financial rail and owner-funded vaults, not the proposed commercial investment structure.',options:['Current investor/originator/owner-funded-manager flow','Four-persona slice after provider-capital and onboarding work'],state:'open'},
     {id:'D-INTEGRATION',title:'Which originator is actually integrated first?',proposal:'Choose one named fund and repayment/eligibility adapter, obtain authority and settle the financing and servicing contract before activation.',why:'Contract registration does not integrate an external fund or create enforceable repayment priority.',options:['One approved on-chain originator','One off-chain originator with an explicit settlement/reconciliation process'],state:'open'},
+    {id:'D-EXIT-ROUTES',title:'Which instruments permit which exit routes?',proposal:'Define purchase and borrower-financed settlement as separate supported routes. Instrument registration names permitted route, purchaser/borrower, rights, consents and authoritative settlement evidence.',why:'Token versus loan does not determine transferability. Payment alone establishes neither a purchased claim nor an agreed new borrower debt. Kasu’s published loan-record Token is non-transferable.',options:['Purchase of issuer-approved units or an assignable loan claim','Borrower-financed full settlement with a separate new financing obligation','Both routes where independently approved'],state:'open'},
     {id:'D-GOVERNANCE',title:'Which controls belong in product interfaces?',proposal:'Separate firm controls from internal Lockgate operations. Include or explicitly exclude signer changes, write-off, reserve withdrawal, upgrades and emergency wind-down.',why:'“All features” must include operational consequences and rights during suspension, not just normal deposits and exits.',options:['Firm UI plus controlled internal procedures','A broader role-based administration interface'],state:'open'},
   ],
   history: [
@@ -32,6 +38,7 @@ export const meta = {
     ['29 September', 'The written decision switched restricted funds toward redemption financing and capital through licensed partners; unrestricted public USDG deposits were dropped.'],
     ['Current inspected source', 'Own-book financing, owner-funded partner vaults and a separate institutional facility exist. The institutional facility does not invest through a manager’s partner vault.'],
     ['This discussion', 'Four public journeys plus an approved-provider investment relationship are now the intended scope. Their legal wrapper, accounting and withdrawal terms remain to be validated.'],
+    ['Current review extension', 'Show the end-to-end screens for all four personas, including both conditional exit routes. Review approval does not establish legal permission or authorize production implementation.'],
   ],
   sources: [
     {title:'Application scope and boundaries',path:'app/README.md',note:'Current app behavior; local planning versus activation, institutional facility versus partner vault, and connected-wallet transaction boundaries.'},
@@ -39,5 +46,7 @@ export const meta = {
     {title:'Deployed Sepolia contracts',path:'docs/DEPLOYMENTS.md',note:'Paxos token address, owner-only creation and undeployed/superseded open-credit path.'},
     {title:'Historical decisions',path:'../ideation/DECISIONS.md',note:'Read 29 September section as historical strategy. The new provider product is not legally cleared by this decision.'},
     {title:'Existing verification report',path:'docs/APP_VERIFICATION.md',note:'Signed local-fork proof is pinned to its original source. It does not prove new onboarding or commercial partner integrations.'},
+    {title:'MAS tokenisation guide',path:'https://www.mas.gov.sg/-/media/mas/sectors/guidance/guide-on-the-tokenisation-of-capital-markets-products.pdf',note:'14 November 2025 guide, checked in this discussion: economic substance and platform activities govern; a partner’s licence does not clear Lockgate’s activities.'},
+    {title:'Kasu current loan-record restrictions',path:'https://kasu.finance/docs/user/important-information-when-lending/important-information',note:'24 September 2026 disclosures, checked in this discussion: Loan Agreement governs and the record called Token cannot be sold or transferred. Prospect only; not an integration.'},
   ],
 };

@@ -1,5 +1,8 @@
 export const acceptance = {
   gates: [
+    { id: 'dual-route-settlement', title: 'Approve and reconcile each exit route', scope: 'Purchase or borrower-financed early settlement', status: 'open',
+      criteria: ['Approve the instrument, route, exact contractual parties, eligible purchaser/borrower and required consents before executable offers.', 'Route A proves the specific asset or claim transferred and payout received; route B separately proves old-claim discharge, payout and new borrower debt.', 'Define quote authentication/reserved capacity, deal-specific documents, full/partial exits, duplicate prevention and off-chain exception recovery.', 'A selected TEST profile or prototype success screen is not executed agreement, wallet signature, ownership transfer or payout proof.'],
+      evidence: 'Both routes are now product-review candidates. Current financing does not implement the proposed purchase marketplace or external registrar settlement.' },
     { id: 'four-persona-scope', title: 'Four public personas; operations internal', scope: 'Entire proposed product', status: 'open',
       criteria: ['Separate exit investor, platform originator, licensed liquidity firm and eligible capital provider journeys.', 'Workspace selection never grants contract authority, eligibility or licensed status.', 'Kasu is a prospective example until independently integrated; internal registration and risk controls are not public onboarding.'],
       evidence: 'Current welcome has investor/platform choices. Existing partner dashboard is owner-controlled. No complete four-persona journey is proved.' },
