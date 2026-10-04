@@ -11,13 +11,16 @@ import { enqueueAcknowledgement } from './email.js';
 import { proxyRpc } from './rpc-proxy.js';
 import { changeProfileRole } from './profile-roles.js';
 import { renewDocumentDraft, resumeDocumentDraft, saveDocumentDraft } from './document-drafts.js';
+import { institutionScope } from './institution-representatives.js';
+import { executeInstitutionStep, institutionActionStatus, prepareInstitutionAction } from './workspace-authorizations.js';
 
 const address=z.string().refine(isAddress,'Invalid wallet address').transform(x=>getAddress(x));
 const hex=z.string().regex(/^0x[0-9a-fA-F]+$/).transform(x=>x as Hex);
 const amount=z.string().regex(/^(0|[1-9]\d{0,8})(\.\d{1,6})?$/,'Invalid 6-decimal amount');
 export const challenges=new Map<string,{account:Address;chainId:number;message:string;expiresAt:number}>();
 const allowedOrigins=new Set(['https://openhouse.lockgate.finance','http://localhost:5197','http://127.0.0.1:5197']);
-const knownRoutes=new Set(['rpc/421614','config','public','challenge','authenticate','state','role','identity','enquiries','offers','reserve-offer','exit-signature','eligibility','subscription','subscription-resume','document-draft/save','document-draft/resume','document-draft/renew','mint-position','faucet','gas','receipts','workspace-action']);
+const knownRoutes=new Set(['rpc/421614','config','public','challenge','authenticate','state','role','identity','enquiries','offers','reserve-offer','exit-signature','eligibility','subscription','subscription-resume','document-draft/save','document-draft/resume','document-draft/renew','mint-position','faucet','gas','receipts','workspace-action','workspace-action/prepare','workspace-action/execute','workspace-action/status']);
+const actionPlanId=z.string().regex(/^0x[0-9a-fA-F]{64}$/).transform(x=>x as Hex);
 const enquiry=z.object({role:z.enum(['originator','manager']),representative:z.string().trim().min(2).max(100),email:z.string().trim().email().max(254),organization:z.string().trim().min(2).max(150),jurisdiction:z.string().trim().min(2).max(100),summary:z.string().trim().min(20).max(1500),requestId:z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional()});
 
 function json(res:ServerResponse,status:number,value:unknown) {res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(value));}
@@ -68,7 +71,7 @@ async function handle(req:IncomingMessage,res:ServerResponse) {
   const {role,intent}=z.object({role:z.enum(['investor','originator','manager','provider']),intent:z.enum(['create','switch']).default('create')}).parse(await body(req));
   const p=profile(account),m=manifest(),identity=identities.find(i=>i.id===p.identityId);
   const bound=identity?Boolean(await publicClient.readContract({address:m.registry,abi:artifact('DemoRegistry').abi as Abi,functionName:'matches',args:[account,identityHash(identity.identityRef)]})):false;
-  const approved=role==='originator'?m.originators.some(o=>o.address.toLowerCase()===account.toLowerCase()):role==='manager'&&m.vaults.some(v=>v.manager.toLowerCase()===account.toLowerCase());
+  const approved=role==='originator'||role==='manager'?institutionScope(account,m)?.role===role:false;
   changeProfileRole(p,role,intent,bound,approved);save();return json(res,200,await demoState(account));
  }
  if(path==='/api/demo/identity'&&req.method==='POST') {
@@ -140,7 +143,20 @@ async function handle(req:IncomingMessage,res:ServerResponse) {
  }
  if(path==='/api/demo/workspace-action'&&req.method==='POST') {
   const v=z.object({actionId:z.string().min(1).max(80),inputs:z.record(z.string()).default({})}).parse(await body(req));
+  if(institutionScope(account)?.delegated)err('Use the signed representative action flow','SIGNED_ACTION_REQUIRED',403);
   return json(res,200,await workspaceAction(account,v.actionId,v.inputs));
+ }
+ if(path==='/api/demo/workspace-action/prepare'&&req.method==='POST'){
+  const v=z.object({actionId:z.string().min(1).max(80),inputs:z.record(z.string().max(100)).default({})}).strict().parse(await body(req));
+  return json(res,200,await prepareInstitutionAction(account,v.actionId,v.inputs));
+ }
+ if(path==='/api/demo/workspace-action/execute'&&req.method==='POST'){
+  const v=z.object({id:actionPlanId,step:z.number().int().min(0).max(2),signature:hex.optional()}).strict().parse(await body(req));
+  return json(res,200,await executeInstitutionStep(account,v.id,v.step,v.signature));
+ }
+ if(path==='/api/demo/workspace-action/status'&&req.method==='GET'){
+  const id=actionPlanId.parse(new URL(req.url??'/',`http://127.0.0.1:8788`).searchParams.get('id'));
+  return json(res,200,institutionActionStatus(account,id));
  }
  err('Route not found','NOT_FOUND',404);
 }

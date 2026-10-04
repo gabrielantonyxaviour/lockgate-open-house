@@ -58,8 +58,9 @@ function TransactionDetails({ receipt, agreements, onClose }: {
     };
   }, []);
   const items: [string, ReactNode][] = [
-    ['Status', receipt.status], ['Recorded', receipt.createdAt], ['Account', <ChainReference value={receipt.account}/>],
+    ['Status', receipt.status], ['Recorded', receipt.createdAt], [receipt.executionAccount?'Authorized representative':'Account', <ChainReference value={receipt.account}/>],
   ];
+  if(receipt.executionAccount)items.push(['Institution execution wallet',<ChainReference value={receipt.executionAccount}/>]);
   if (receipt.amount) items.push(['Amount', receiptAmount(receipt.amount)]);
   if (receipt.residual) items.push(['Residual units', receipt.residual]);
   if (receipt.hash) items.push(['Transaction hash', <ChainReference value={receipt.hash} transaction/>]);

@@ -1,12 +1,14 @@
 import { formatEther, formatUnits, parseUnits, type Abi, type Address, type Hex } from 'viem';
 import { artifact, identities, identityHash, manifest, publicClient, err, paxosMode } from './shared.js';
-import { profile, type ReceiptRecord } from './store.js';
+import { profile, save, type ReceiptRecord } from './store.js';
 import { completedRoles } from './profile-roles.js';
 import { workspaceState } from './workspace.js';
 import { allHoldings } from './holdings.js';
 import { providerLedger } from './provider-ledger.js';
 import { classifyReceipt } from './receipt-classifier.js';
 import { visibleDocumentDrafts } from './document-drafts.js';
+import { institutionScope } from './institution-representatives.js';
+import { pendingInstitutionActions } from './workspace-authorizations.js';
 
 const publicNetwork=process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia';
 const environment=publicNetwork?'Arbitrum Sepolia':'Local EVM test network';
@@ -28,9 +30,27 @@ export async function requireBound(account:Address) {
 
 export async function demoState(account:Address) {
  const m=manifest(),p=profile(account),identity=identities.find(i=>i.id===p.identityId);
+ const institution=institutionScope(account,m);
+ if(institution?.delegated){
+  let changed=false;
+  if(!p.roles?.includes(institution.role)){p.roles=[...new Set([...(p.roles??[]),institution.role])];changed=true;}
+  if(!p.role){p.role=institution.role;changed=true;}
+  if(changed)save();
+ }
  const binding=identity?await read(m.registry,registryAbi,'matches',[account,identityHash(identity.identityRef)]):false;
+ if(institution&&(p.role==='originator'||p.role==='manager')){
+  const [workspace,gas,usdg]=await Promise.all([
+   workspaceState(account),publicClient.getBalance({address:account}),read(m.asset,tokenAbi,'balanceOf',[account])
+  ]);
+  if(workspace&&institution.delegated)Object.assign(workspace,{pendingActions:pendingInstitutionActions(account)});
+  return {profile:{identity:binding?identity:undefined,roles:completedRoles(p,Boolean(binding)),activeRole:p.role,
+    organization:institution.organization},positions:[],positionStatus:'unavailable',vehicles:[],withdrawals:[],reservations:[],
+   agreements:[],documentDrafts:[],receipts:p.receipts,workspace,
+   setup:{gas:formatEther(gas),usdg:money(usdg),canGetGas:!p.gasHash,canGetUsdg:false,
+    canMint:false,canFund:false,message:publicNetwork?'Transactions settle on Arbitrum Sepolia.':'Local EVM test network.'},
+   deploymentReady:true,environment};
+ }
  // Before identity verification, onboarding needs wallet balances, not every vault's history.
- const institution=m.originators.some(o=>o.address.toLowerCase()===account.toLowerCase())||m.vaults.some(v=>v.manager.toLowerCase()===account.toLowerCase());
  if(!binding&&!institution){
   const [gas,usdg]=await Promise.all([publicClient.getBalance({address:account}),read(m.asset,tokenAbi,'balanceOf',[account])]);
   return {profile:{identity:undefined,roles:completedRoles(p,Boolean(binding)),activeRole:p.role,onboarding:p.role?'Select and bind a TEST identity':undefined},positions:[],positionStatus:'unavailable',vehicles:[],withdrawals:[],reservations:[],agreements:[],documentDrafts:[],receipts:p.receipts,workspace:undefined,setup:{gas:formatEther(gas),usdg:money(usdg),canGetGas:!p.gasHash,canGetUsdg:!paxosMode&&!p.faucetHash,gasAmount,canMint:false,canFund:false,mintDescription:`${paxosMode?'3':'100,000'} TEST units in Alder Private Credit, recorded to your bound identity`,fundingAmount:paxosMode?undefined:'10000',message:publicNetwork?'Transactions settle on Arbitrum Sepolia.':'Local EVM test network.'},deploymentReady:true,environment};
@@ -94,6 +114,7 @@ export async function demoState(account:Address) {
  const profileView={identity:binding?identity:undefined,roles:completedRoles(p,Boolean(binding)),activeRole:p.role,onboarding:binding?'TEST identity bound':p.role?'Select and bind a TEST identity':undefined};
  const status=!binding?'unavailable':identity?.fixtureCase==='mismatch'?'mismatch':positions.length?'matched':'empty';
  const workspace=await workspaceState(account);
+ if(workspace&&institution?.delegated)Object.assign(workspace,{pendingActions:pendingInstitutionActions(account)});
  return {profile:profileView,positions,positionStatus:status,vehicles,withdrawals,reservations,agreements,documentDrafts:visibleDocumentDrafts(account,binding&&identity?identityHash(identity.identityRef):undefined),receipts:p.receipts,workspace,setup:{gas:formatEther(gas),usdg:money(usdg),canGetGas:!p.gasHash,canGetUsdg:!paxosMode&&!p.faucetHash,gasAmount,canMint:Boolean(binding&&p.role==='investor'&&identity?.fixtureCase!=='mismatch'),canFund:Boolean(binding&&p.role==='provider'),mintDescription:`${paxosMode?'3':'100,000'} TEST units in Alder Private Credit, recorded to your bound identity`,fundingAmount:paxosMode?undefined:'10000',message:publicNetwork?'Transactions settle on Arbitrum Sepolia.':'Local EVM test network.'},deploymentReady:true,environment};
 }
 

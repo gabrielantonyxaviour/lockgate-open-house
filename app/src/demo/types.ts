@@ -10,8 +10,9 @@ export type DraftDocument = {id:string;kind:'exit'|'subscription';title:string;t
 export type ResumedDocument = {kind:'exit';offer:Offer}|{kind:'subscription';prepared:PreparedSubscription;vehicleId:string;amount:string};
 export type Reservation = {digest:Hex;positionId:string;units:string;payout:string;expiresAt:string;firm:string};
 export type Vehicle = { id:string; name:string; firm:string; cash:string; nav:string; policy:string; policyText?:string; policyHash?:Hex; policyVersion?:string; minimum:string; eligible:boolean; eligibilityStatus:string; agreement?:Agreement; providerPrincipal?:string; providerNav?:string; income?:string; loss?:string; withdrawable?:string; queued?:string; claimable?:string; withdrawals?:{id:string;amount:string;cancelable:boolean}[]; address?:Address };
-export type Receipt = { id:string; title:string; status:'submitted'|'confirmed'|'reverted'|'unknown'; hash?:Hex; explorerUrl?:string; amount?:string; residual?:string; createdAt:string; account:Address; detail?:string };
-export type Workspace = { title:string; organization:string; status:string; checks:{label:string; status:string}[]; records:{id:string; label:string; value:string}[]; actions?:WorkspaceAction[] };
+export type Receipt = { id:string; title:string; status:'submitted'|'confirmed'|'reverted'|'unknown'; hash?:Hex; explorerUrl?:string; amount?:string; residual?:string; createdAt:string; account:Address; detail?:string; executionAccount?:Address;representativeAccount?:Address };
+export type InstitutionProgress = {phase:'preparing'|'authorization-requested'|'authorized'|'submitted'|'confirmed'|'error';stepIndex?:number;totalSteps?:number;label?:string;hash?:Hex;executionAccount?:Address;message?:string};
+export type Workspace = { title:string; organization:string; status:string; checks:{label:string; status:string}[]; records:{id:string; label:string; value:string}[]; actions?:WorkspaceAction[]; authorization?:{representativeWallet:Address;executionWallet:Address;role:'originator'|'manager'}; pendingActions?:{id:string;actionId:string;inputs:Record<string,string>;authorized:boolean}[] };
 export type WorkspaceAction = { id:string; label:string; description:string; kind:'register'|'repay'|'mandate'|'approve'; fields:{key:string; label:string; value?:string; type:'text'|'amount'; required:boolean; options?:{value:string;label:string}[]}[]; disabledReason?:string };
 export type PublicOverview = { originators:number; firms:number; availableCash:string; outstanding:string; environment:string; platforms?:{id:string;name:string;instrument:string;routes:string[];terms:string;status:string}[] };
 export type DemoState = { environment?:string; profile:Profile; positions:Position[]; positionStatus:'matched'|'empty'|'mismatch'|'unavailable'; vehicles:Vehicle[]; receipts:Receipt[]; agreements?:AgreementRecord[]; documentDrafts?:DraftDocument[]; reservations?:Reservation[]; workspace?:Workspace; setup:{gas:string; usdg:string; canMint:boolean; canFund:boolean; canGetGas?:boolean; canGetUsdg?:boolean; gasAmount?:string; gasFaucetUrl?:string; mintDescription?:string; fundingAmount?:string; message?:string}; deploymentReady:boolean };
@@ -40,7 +41,7 @@ export interface DemoGateway {
  fund(vehicleId:string,amount:string,onProgress?:(progress:WalletProgress)=>void):Promise<Receipt>;
  providerAction(vehicleId:string,action:'claim'|'processQueue'|'cancel',requestId?:string):Promise<Receipt>;
  withdraw(vehicleId:string, amount:string):Promise<Receipt>;
- workspaceAction(actionId:string, inputs:Record<string,string>):Promise<Receipt>;
+ workspaceAction(actionId:string, inputs:Record<string,string>,onProgress?:(progress:InstitutionProgress)=>void):Promise<Receipt>;
  mintPosition():Promise<Receipt>;
  getTestGas():Promise<Receipt>;
  getTestUsdg():Promise<Receipt>;

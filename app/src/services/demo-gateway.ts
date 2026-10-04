@@ -2,7 +2,8 @@ import { createPublicClient, http, isAddressEqual, keccak256, stringToHex, parse
 import { arbitrumSepolia } from 'viem/chains';
 import { z } from 'zod';
 import { authorizedWallet, getProvider, walletChainId } from '../chain/wallet';
-import type { DemoGateway, DemoRole, DemoState, Enquiry, EnquiryReceipt, Offer, PreparedSubscription, Receipt, ResumedDocument, WalletProgress } from '../demo/types';
+import type { DemoGateway, DemoRole, DemoState, Enquiry, EnquiryReceipt, InstitutionProgress, Offer, PreparedSubscription, Receipt, ResumedDocument, WalletProgress } from '../demo/types';
+import { institutionAction } from './institution-actions';
 import { clearPending, pending, rememberPending } from './demo-pending';
 import { DemoTransport, configuration, draftDocumentSchema, identityResponse, preparedSubscriptionResponse, quoteSchema, receiptSchema, resumedDocumentResponse, stateSchema, subscriptionResponse, type Configuration, type Quote } from './demo-transport';
 const registryAbi=parseAbi(['function bindIdentity(bytes32 identity,uint64 validUntil,uint256 nonce,bytes signature)']);
@@ -188,13 +189,19 @@ class Gateway implements DemoGateway {
  async mintPosition() {return receiptSchema.parse(await this.api.request('mint-position',{})) as Receipt;}
  async getTestGas() {const result=receiptSchema.parse(await this.api.request('gas',{}));await this.readState();return result as Receipt;}
  async getTestUsdg() {return receiptSchema.parse(await this.api.request('faucet',{})) as Receipt;}
- async workspaceAction(actionId:string,inputs:Record<string,string>) {
+ async workspaceAction(actionId:string,inputs:Record<string,string>,onProgress?:(progress:InstitutionProgress)=>void) {
+  if(this.state?.workspace?.authorization&&this.account){const config=await this.setup();return institutionAction({api:this.api,account:this.account,workspace:this.state.workspace,registry:config.registry as Address,actionId,inputs,wallet:()=>this.wallet(),onProgress});}
   const intent=z.object({title:z.string(),amount:z.string().optional(),transactions:z.array(z.object({address:z.string().regex(/^0x[\da-f]{40}$/i),abi:z.array(z.record(z.string(),z.unknown())),functionName:z.string(),args:z.array(z.unknown())})).min(1).max(3)}).parse(await this.api.request('workspace-action',{actionId,inputs}));
   const wallet=await this.wallet(); let result:Receipt|undefined;
-  for(const tx of intent.transactions) {
+  for(const [index,tx] of intent.transactions.entries()) {
+   const stepLabels:Record<string,string>={approve:'Approve USDG',repay:'Repay obligation',setMandate:'Set risk mandate',setExposureCap:'Set exposure cap',registerHolding:'Register holding',processQueue:'Process withdrawal queue'};
+   const label=stepLabels[tx.functionName]||intent.title;
+   onProgress?.({phase:'authorization-requested',stepIndex:index,totalSteps:intent.transactions.length,label:`Confirm ${label.toLowerCase()} in your wallet`,executionAccount:this.account});
    const args=tx.args.map(value=>typeof value==='string' && /^\d+$/.test(value)?BigInt(value):value);
    const hash=await wallet.writeContract({address:tx.address as Address,abi:tx.abi as unknown as Abi,functionName:tx.functionName,args});
+   onProgress?.({phase:'submitted',stepIndex:index,totalSteps:intent.transactions.length,label,hash,executionAccount:this.account});
    result=await this.record(hash,intent.title,intent.amount);if(result.status!=='confirmed')return result;
+   onProgress?.({phase:'confirmed',stepIndex:index,totalSteps:intent.transactions.length,label,hash,executionAccount:this.account});
   }
   return result!;
  }

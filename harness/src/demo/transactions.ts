@@ -7,18 +7,22 @@ type Transaction={signer:Address;hash:Hex;raw:Hex;status:'pending'|'confirmed'|'
 type Journal=Record<string,Transaction>;
 const directory=fileURLToPath(new URL('../../../scripts/demo/local/',import.meta.url));
 const path=`${directory}${publicNetwork?'public-sepolia':'local'}-runtime-transactions.json`;
-const keyFor=(index:number,to:Address,data:Hex,value:bigint)=>keccak256(toHex(`${accountAt(index).address}:${to.toLowerCase()}:${data}:${value}`));
+const keyFor=(index:number,to:Address,data:Hex,value:bigint,namespace='')=>keccak256(toHex(`${accountAt(index).address}:${to.toLowerCase()}:${data}:${value}${namespace?`:${namespace}`:''}`));
 function journal():Journal{try{return JSON.parse(readFileSync(path,'utf8'));}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;return {};}}
 async function persist(records:Journal){mkdirSync(directory,{recursive:true});writeFileSync(`${path}.tmp`,JSON.stringify(records),{mode:0o600});renameSync(`${path}.tmp`,path);await flushDurability();}
 let queue:Promise<unknown>=Promise.resolve();
-export function contractTransaction(index:number,address:Address,abi:Abi,functionName:string,args:readonly unknown[]){return send(index,address,encodeFunctionData({abi,functionName,args}),0n);}
-export function knownContractTransaction(index:number,address:Address,abi:Abi,functionName:string,args:readonly unknown[]){return Boolean(journal()[keyFor(index,address,encodeFunctionData({abi,functionName,args}),0n)]);}
-export function gasTransaction(index:number,address:Address,value:bigint){return send(index,address,'0x',value);}
-function send(index:number,to:Address,data:Hex,value:bigint):Promise<Hex>{
- const job=queue.then(()=>execute(index,to,data,value));queue=job.catch(()=>undefined);return job;
+export function contractTransaction(index:number,address:Address,abi:Abi,functionName:string,args:readonly unknown[],namespace=''){return send(index,address,encodeFunctionData({abi,functionName,args}),0n,namespace);}
+export function knownContractTransaction(index:number,address:Address,abi:Abi,functionName:string,args:readonly unknown[],namespace=''){return Boolean(journal()[keyFor(index,address,encodeFunctionData({abi,functionName,args}),0n,namespace)]);}
+export function contractTransactionRecord(index:number,address:Address,abi:Abi,functionName:string,args:readonly unknown[],namespace=''){
+ const record=journal()[keyFor(index,address,encodeFunctionData({abi,functionName,args}),0n,namespace)];
+ return record?{hash:record.hash,status:record.status}:undefined;
 }
-async function execute(index:number,to:Address,data:Hex,value:bigint):Promise<Hex>{
- const records=journal(),key=keyFor(index,to,data,value),wallet=walletAt(index);
+export function gasTransaction(index:number,address:Address,value:bigint){return send(index,address,'0x',value);}
+function send(index:number,to:Address,data:Hex,value:bigint,namespace=''):Promise<Hex>{
+ const job=queue.then(()=>execute(index,to,data,value,namespace));queue=job.catch(()=>undefined);return job;
+}
+async function execute(index:number,to:Address,data:Hex,value:bigint,namespace=''):Promise<Hex>{
+ const records=journal(),key=keyFor(index,to,data,value,namespace),wallet=walletAt(index);
  let record=records[key];
  if(!record){
   if(Object.values(records).some(item=>item.signer===wallet.account.address&&item.status==='pending'))err('A previous transaction is pending; resume that action before starting another','TRANSACTION_PENDING',409);

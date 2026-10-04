@@ -3,6 +3,7 @@ import { artifact, err, identityHash, identities, manifest, publicClient } from 
 import { allHoldings } from './holdings.js';
 import { profile } from './store.js';
 import { chainLogs } from './chain-logs.js';
+import { institutionScope } from './institution-representatives.js';
 
 const registryAbi=artifact('DemoRegistry').abi as Abi;
 const settlementAbi=artifact('DemoSettlement').abi as Abi;
@@ -45,12 +46,14 @@ async function mandateRecords(vault:Address) {
 
 export async function workspaceState(account:Address) {
  const m=manifest();
- const org=m.originators.find(o=>o.address.toLowerCase()===account.toLowerCase());
- const vault=m.vaults.find(v=>v.manager.toLowerCase()===account.toLowerCase());
+ const scope=institutionScope(account,m),actor=scope?.actor??account;
+ const org=m.originators.find(o=>o.address.toLowerCase()===actor.toLowerCase());
+ const vault=m.vaults.find(v=>v.manager.toLowerCase()===actor.toLowerCase());
+ const authorization=scope?.delegated?{representativeWallet:account,executionWallet:actor,role:scope.role}:undefined;
  if(org) {
-  const active=await publicClient.readContract({address:m.registry,abi:registryAbi,functionName:'isActive',args:[account,1]}) as boolean;
-  const holdings=(await allHoldings()).filter(h=>h.originatorAddress.toLowerCase()===account.toLowerCase());
-  const obligations=await activeObligations(account);
+  const active=await publicClient.readContract({address:m.registry,abi:registryAbi,functionName:'isActive',args:[actor,1]}) as boolean;
+  const holdings=(await allHoldings()).filter(h=>h.originatorAddress.toLowerCase()===actor.toLowerCase());
+  const obligations=await activeObligations(actor);
   const records=[] as {id:string;label:string;value:string}[];
   for(const h of holdings) {
    const state=await publicClient.readContract({address:m.registry,abi:registryAbi,functionName:'holding',args:[h.id]}) as {remaining:bigint};
@@ -61,11 +64,11 @@ export async function workspaceState(account:Address) {
    {id:'originator.register-holding',label:'Register TEST holding',description:'Record an exact position against a listed TEST investor identity.',kind:'register',fields:[{key:'profileId',label:'TEST profile ID',type:'text',required:true},{key:'units',label:'Units',type:'amount',required:true},{key:'routeMask',label:'Routes (1 purchase, 2 finance, 3 both)',type:'text',required:true},{key:'divisible',label:'Divisible (true/false)',type:'text',required:true}]},
    {id:'originator.repay',label:'Repay an exit obligation',description:'Approve exact test USDG and repay the selected on-chain deal.',kind:'repay',fields:[{key:'digest',label:'Exit obligation',type:'text',required:true,options:obligations.map(o=>({value:o.digest,label:o.label}))}],disabledReason:obligations.length?'':'No active exit obligations'}
   ];
-  return {title:'Originator workspace',organization:org.name,status:active?'Active TEST organization':'Inactive',checks:[{label:'On-chain organization invitation',status:active?'Active':'Not active'},{label:'Claims recorded',status:String(holdings.length)}],records,actions};
+  return {title:'Originator workspace',organization:org.name,status:active?'Active TEST organization':'Inactive',checks:[{label:'On-chain organization invitation',status:active?'Active':'Not active'},{label:'Claims recorded',status:String(holdings.length)}],records,actions,authorization};
  }
  if(vault) {
   const [active,nav,cash,principal]=await Promise.all([
-   publicClient.readContract({address:m.registry,abi:registryAbi,functionName:'isActive',args:[account,2]}),
+   publicClient.readContract({address:m.registry,abi:registryAbi,functionName:'isActive',args:[actor,2]}),
    publicClient.readContract({address:vault.address,abi:vaultAbi,functionName:'totalAssets'}),
    publicClient.readContract({address:vault.address,abi:vaultAbi,functionName:'availableCash'}),
    publicClient.readContract({address:vault.address,abi:vaultAbi,functionName:'outstandingPrincipal'})
@@ -79,13 +82,14 @@ export async function workspaceState(account:Address) {
   return {title:'Investment firm workspace',organization:vault.firm,status:active?'Active TEST firm':'Inactive',
    checks:[{label:'On-chain firm invitation',status:active?'Active':'Not active'},{label:'Vault approved',status:String(approved)}],
    records:[{id:'vault',label:'Vehicle',value:vault.address},{id:'nav',label:'Net asset value',value:`${formatUnits(BigInt(nav as bigint),6)} test USDG`},
-    {id:'cash',label:'Available cash',value:`${formatUnits(BigInt(cash as bigint),6)} test USDG`},{id:'principal',label:'Outstanding principal',value:`${formatUnits(BigInt(principal as bigint),6)} test USDG`},...mandates],actions};
+    {id:'cash',label:'Available cash',value:`${formatUnits(BigInt(cash as bigint),6)} test USDG`},{id:'principal',label:'Outstanding principal',value:`${formatUnits(BigInt(principal as bigint),6)} test USDG`},...mandates],actions,authorization};
  }
  return undefined;
 }
 
 export async function workspaceAction(account:Address,actionId:string,inputs:Record<string,string>) {
- const m=manifest(),org=m.originators.find(o=>o.address.toLowerCase()===account.toLowerCase()),vault=m.vaults.find(v=>v.manager.toLowerCase()===account.toLowerCase());
+ const m=manifest(),actor=institutionScope(account,m)?.actor??account,
+  org=m.originators.find(o=>o.address.toLowerCase()===actor.toLowerCase()),vault=m.vaults.find(v=>v.manager.toLowerCase()===actor.toLowerCase());
  const tx=(title:string,transactions:{address:Address;abi:Abi;functionName:string;args:unknown[]}[],amount?:string)=>({title,amount,transactions});
  if(actionId.startsWith('provider.')) {
   const p=profile(account),identity=identities.find(i=>i.id===p.identityId),v=m.vaults.find(x=>x.id===inputs.vehicleId);
@@ -115,14 +119,14 @@ export async function workspaceAction(account:Address,actionId:string,inputs:Rec
   const identity=identities.find(x=>x.id===inputs.profileId);if(!identity) err('Choose a listed TEST profile','UNKNOWN_IDENTITY');
   const units=parseAmount(inputs.units),mask=Number(inputs.routeMask);
   if(units<=0n||units>parseUnits('1000000',6)||![1,2,3].includes(mask)||!['true','false'].includes(inputs.divisible)) err('Invalid holding terms','INVALID_INPUT');
-  const id=keccak256(toHex(`TEST-ORG-HOLDING-${account}-${Date.now()}-${crypto.randomUUID()}`));
+  const id=keccak256(toHex(`TEST-ORG-HOLDING-${actor}-${Date.now()}-${crypto.randomUUID()}`));
   return {...tx('Register TEST holding',[{address:m.registry,abi:registryAbi,functionName:'registerHolding',args:[id,identityHash(identity.identityRef),String(units),mask,inputs.divisible==='true']}]),holding:{id,profileId:identity.id,units:inputs.units}};
  }
  if(actionId==='originator.repay'&&org) {
   const digest=inputs.digest as Hex;if(!/^0x[0-9a-fA-F]{64}$/.test(digest??'')) err('Enter a deal digest','INVALID_INPUT');
   const deal=await publicClient.readContract({address:m.settlement,abi:settlementAbi,functionName:'deal',args:[digest]}) as {quote:{repayment:bigint;vault:Address};originator:Address;paid:bigint;status:number};
   const quote=deal.quote,originator=deal.originator,paid=deal.paid,status=Number(deal.status);
-  if(originator.toLowerCase()!==account.toLowerCase()||status!==2) err('Only this active originator can repay an unsettled deal','DEAL_NOT_REPAYABLE',403);
+  if(originator.toLowerCase()!==actor.toLowerCase()||status!==2) err('Only this active originator can repay an unsettled deal','DEAL_NOT_REPAYABLE',403);
   const remaining=quote.repayment-paid,vaultAddress=quote.vault;
   if(remaining<=0n) err('Deal already repaid','DEAL_NOT_REPAYABLE',409);
   return tx('Repay financed exit',[{address:m.asset,abi:tokenAbi,functionName:'approve',args:[vaultAddress,String(remaining)]},{address:m.settlement,abi:settlementAbi,functionName:'repay',args:[digest,String(remaining)]}],formatUnits(remaining,6));
