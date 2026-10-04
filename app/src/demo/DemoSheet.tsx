@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CheckCircle2, LoaderCircle, X } from 'lucide-react';
+import { CheckCircle2, X } from 'lucide-react';
 import { errorMessage } from '../chain/client';
 import { useDialog } from '../ui/dialog';
 import { Button, Notice, Rows, money } from './Common';
@@ -34,7 +34,7 @@ export function DemoSheet({state,gateway,busy,run,refresh,close}:Props) {
   if(locked||inFlight.current)return;
   inFlight.current=true;
   setAction(next);
-  setFeedback({title:next==='mint'?'Minting your test position…':'Checking your setup…',detail:next==='mint'?'Waiting for confirmation on Arbitrum Sepolia. Your positions will update automatically.':'Refreshing your balances and supported positions.'});
+  setFeedback(undefined);
   let receipt:Receipt|undefined;
   let refreshFailed=false;
   try {
@@ -73,8 +73,8 @@ export function DemoSheet({state,gateway,busy,run,refresh,close}:Props) {
    <div className="dg-setup-item"><h3>Get test USDG</h3><p>Open the Paxos faucet and select USDG on Arbitrum Sepolia.</p><a className="dg-button dg-secondary" href="https://faucet.paxos.com/" target="_blank" rel="noopener noreferrer">Get test USDG</a></div>
    <div className="dg-setup-item"><h3>Mint test position</h3><p>{state.setup.mintDescription||'Complete TEST identity verification to check supported issuance.'}</p>
     <Button disabled={locked||minted||Boolean(pendingReceipt)||!state.setup.canMint||!state.setup.mintDescription} busy={action==='mint'} onClick={()=>void execute('mint')}>{action==='mint'?'Minting test position…':minted?'Position minted':'Mint test position'}</Button>
-    {feedback&&<div className={`dg-setup-feedback${feedback.error?' dg-error':''}`} role={feedback.error?'alert':'status'} aria-live="polite" aria-atomic="true">
-     {action?<LoaderCircle size={18} className="dg-spin" aria-hidden="true"/>:feedback.confirmed?<CheckCircle2 size={18} aria-hidden="true"/>:null}
+    {feedback&&!action&&<div className={`dg-setup-feedback${feedback.error?' dg-error':''}`} role={feedback.error?'alert':'status'} aria-live="polite" aria-atomic="true">
+     {feedback.confirmed?<CheckCircle2 size={18} aria-hidden="true"/>:null}
      <div><strong>{feedback.title}</strong><p>{feedback.detail}</p>{feedback.hash&&<ChainReference value={feedback.hash} transaction/>}</div>
     </div>}
    </div>

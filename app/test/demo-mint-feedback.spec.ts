@@ -22,7 +22,7 @@ test('mint has one busy button, receipt confirmation and automatic dashboard ref
  const sheet=page.getByRole('dialog',{name:'Demo setup'});await sheet.getByRole('button',{name:'Mint test position',exact:true}).click();
  const mint=sheet.getByRole('button',{name:'Minting test position…'});await expect(mint).toBeDisabled();await expect(mint.locator('.dg-spin')).toHaveCount(1);
  const check=sheet.getByRole('button',{name:'Check setup',exact:true});await expect(check).toBeDisabled();await expect(check.locator('.dg-spin')).toHaveCount(0);
- await expect(sheet.getByRole('status')).toContainText('Waiting for confirmation on Arbitrum Sepolia');
+ await expect(sheet.getByRole('status')).toHaveCount(0);
  await page.evaluate(()=>Reflect.get(window,'resolveMint')());
  await expect(sheet.getByRole('status')).toContainText('Test position minted');
  await expect(sheet.getByRole('link',{name:'View transaction in explorer'})).toHaveAttribute('href',`https://sepolia.arbiscan.io/tx/${hash}`);
