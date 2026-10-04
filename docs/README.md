@@ -4,6 +4,7 @@ Use these pages to see how Lockgate is built and how to run it. They are not an 
 
 | Page | Use it to |
 |---|---|
+| [Product blueprint · discussion draft](../app/docs/product-blueprint/README.md) | Review the complete four-persona product before implementation; includes local interactive journeys, money flow, decisions and acceptance |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Follow the three stages, the CREATE2 deploy, and the `LockgateAdvance` domain |
 | [TESTING.md](TESTING.md) | Run the harness, Foundry, and engine suites, verify the partner contracts, and see what was not executed |
 | [THREAT-MODEL.md](THREAT-MODEL.md) | Read the STRIDE table and the economic cases the harness checks |

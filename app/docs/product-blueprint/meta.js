@@ -1,0 +1,42 @@
+export const meta = {
+  id: 'lockgate-four-persona-blueprint', version: '0.1', date: '4 October 2026',
+  source: 'f16c4d4a60914860b5b2386374710b1b998ff7c7', branch: 'feat/reui-onboarding-local',
+  title: 'Lockgate product blueprint',
+  purpose: 'Define and validate the whole product before changing the app.',
+  confirmed: [
+    'Four public roles: exit investor, originating fund/platform, investment firm, and capital provider. Lockgate operations is internal.',
+    'Visitors first see a useful public overview. Onboarding begins when their chosen task requires it.',
+    'The complete product must be written and visualized before implementation. The demo scope is a separate decision.',
+    'Capital providers provisionally enter through a firm-approved investment relationship, receive individual interests, and withdraw from available cash or a queue.',
+    'Provider onboarding includes identity and eligibility review, legal agreements, electronic signatures, firm acceptance, and then funding.',
+    'The demo should offer selectable preverified test identity profiles to exercise onboarding. This is a test fixture, not production identity verification.',
+    'Current work stays local. No application or contract implementation or deployment is authorized by this draft.',
+  ],
+  gaps: [
+    ['Provider ownership', 'Current partner vaults accept only their owner’s capital. Independent provider shares, subscriptions and withdrawals need a new capital layer or a firm-administered legal/recordkeeping structure.'],
+    ['Commercial onboarding', 'The existing form saves and exports a local platform plan. It does not submit an application, verify a firm, sign agreements or activate a facility.'],
+    ['Testnet readiness', 'The configured token is Paxos testnet USDG, without MockUSDG.faucet. At block 315543348 the default platform rejected quotes with “window due”; partner vaults were unfunded and their mandates inactive.'],
+    ['External partners', 'Kasu is a prospective originator example. No current Kasu holdings adapter, repayment integration or verified licensed-manager partnership is established by this repository.'],
+  ],
+  decisions: [
+    {id:'D-ONBOARDING',title:'Who approves and owns onboarding?',proposal:'The licensed firm owns client eligibility and subscription acceptance; originator and firm business approval have separately authorized reviewers.',why:'A wallet or selected role is not evidence of identity, licence scope or permission to invest.',options:['Firm-led review with contracted service providers','Another documented administrator/approval model'],state:'open'},
+    {id:'D-SIGNING',title:'What constitutes an accepted agreement?',proposal:'Versioned documents, authenticated signatory, electronic-signature audit evidence, required counterpart acceptance, and a downloadable signed copy.',why:'KYC approval, clicking consent, signing a wallet challenge and fund acceptance are different events. Document types and jurisdictions must be reviewed.',options:['Dedicated e-sign service plus wallet binding','Another documented signing method reviewed for the chosen structure'],state:'open'},
+    {id:'D-TEST-FUNDING',title:'How does an unfunded visitor test an exit?',proposal:'A focused testnet setup provides compatible test USDG and gas guidance, deposits into an exit-ready test fund, and confirms actual shares before an exit.',why:'A button must lead to real supported funding. The current token has no public mock faucet and the default window is overdue.',options:['Verified external faucets plus explicit deposit','A bounded funded test-share distribution service with abuse controls'],state:'open'},
+    {id:'D-DEMO',title:'Which complete story will the demo prove?',proposal:'Scope the complete four-persona product first. Then choose an executable slice without presenting unbuilt provider accounting as working.',why:'Current evidence proves the financial rail and owner-funded vaults, not the proposed commercial investment structure.',options:['Current investor/originator/owner-funded-manager flow','Four-persona slice after provider-capital and onboarding work'],state:'open'},
+    {id:'D-INTEGRATION',title:'Which originator is actually integrated first?',proposal:'Choose one named fund and repayment/eligibility adapter, obtain authority and settle the financing and servicing contract before activation.',why:'Contract registration does not integrate an external fund or create enforceable repayment priority.',options:['One approved on-chain originator','One off-chain originator with an explicit settlement/reconciliation process'],state:'open'},
+    {id:'D-GOVERNANCE',title:'Which controls belong in product interfaces?',proposal:'Separate firm controls from internal Lockgate operations. Include or explicitly exclude signer changes, write-off, reserve withdrawal, upgrades and emergency wind-down.',why:'“All features” must include operational consequences and rights during suspension, not just normal deposits and exits.',options:['Firm UI plus controlled internal procedures','A broader role-based administration interface'],state:'open'},
+  ],
+  history: [
+    ['27 September', 'An earlier open pool / buy-token model existed. It is historical context, not today’s implementation contract.'],
+    ['29 September', 'The written decision switched restricted funds toward redemption financing and capital through licensed partners; unrestricted public USDG deposits were dropped.'],
+    ['Current inspected source', 'Own-book financing, owner-funded partner vaults and a separate institutional facility exist. The institutional facility does not invest through a manager’s partner vault.'],
+    ['This discussion', 'Four public journeys plus an approved-provider investment relationship are now the intended scope. Their legal wrapper, accounting and withdrawal terms remain to be validated.'],
+  ],
+  sources: [
+    {title:'Application scope and boundaries',path:'app/README.md',note:'Current app behavior; local planning versus activation, institutional facility versus partner vault, and connected-wallet transaction boundaries.'},
+    {title:'Chain action and permission audit',path:'docs/CHAIN_AUDIT.md',note:'Actual implemented contract targets and action permissions.'},
+    {title:'Deployed Sepolia contracts',path:'docs/DEPLOYMENTS.md',note:'Paxos token address, owner-only creation and undeployed/superseded open-credit path.'},
+    {title:'Historical decisions',path:'../ideation/DECISIONS.md',note:'Read 29 September section as historical strategy. The new provider product is not legally cleared by this decision.'},
+    {title:'Existing verification report',path:'docs/APP_VERIFICATION.md',note:'Signed local-fork proof is pinned to its original source. It does not prove new onboarding or commercial partner integrations.'},
+  ],
+};
