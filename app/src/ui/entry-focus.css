@@ -1,7 +1,6 @@
 .entry-focused .entry-main { max-width: 1000px; padding-top: 28px; padding-bottom: 40px; }
 .entry-focused .entry-back { margin-bottom: 24px; display: inline-flex; align-items: center; gap: 7px; }
 .entry-focused .entry-intro h1,
-.entry-focused .onboarding-content .page-head h1,
 .entry-focused .terms-content .page-head h1 { font: 500 32px/1.12 var(--font-head); letter-spacing: -0.04em; margin: 12px 0; }
 .entry-focused .journey-intro > p { font-size: 14px; line-height: 1.65; }
 .entry-focused .journey-intro { margin-bottom: 26px; }
@@ -14,20 +13,9 @@
 .entry-focused .entry-choice { padding: 26px; }
 .entry-focused .entry-choice h2 { font-size: 24px; }
 .entry-focused .entry-footnote { margin-top: 24px; }
-.entry-focused .onboarding-content { gap: 20px; }
-.entry-focused .onboarding-content .page-head,
 .entry-focused .terms-content .page-head { margin-bottom: 0; gap: 16px; align-items: flex-start; }
 .entry-focused .page-head > div { min-width: 0; }
-.entry-focused .onboarding-content .page-head p,
 .entry-focused .terms-content .page-head p { font-size: 13px; line-height: 1.65; max-width: 620px; }
-.entry-focused .onboarding-content > .grid-two { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); align-items: start; }
-.entry-focused .onboarding-content .stepper { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding-bottom: 16px; overflow: visible; }
-.entry-focused .onboarding-content .stepper button { flex: 1; padding: 9px 10px; border-radius: var(--radius-control); white-space: nowrap; font-size: 11px; }
-.entry-focused .onboarding-content .stepper button[aria-current="step"] { background: var(--ink); color: white; }
-.entry-focused .onboarding-content .panel { padding: 22px; }
-.entry-focused .onboarding-content .panel-head { margin-bottom: 20px; }
-.entry-focused .onboarding-content .panel > p { margin-bottom: 16px; }
-.entry-focused .onboarding-content .panel > .inline-link { display: inline-block; margin-bottom: 16px; }
 .terms-content .entry-back { margin-bottom: 0; }
 .terms-content { gap: 22px; }
 .terms-source { gap: 14px; flex-wrap: wrap; padding-bottom: 20px; border-bottom: 1px solid var(--rule); }
@@ -41,22 +29,17 @@
 .terms-identity { flex-wrap: wrap; gap: 12px; }
 @media (max-width: 768px) {
   .entry-focused .entry-main { padding: 24px 20px 36px; }
-  .entry-focused .onboarding-content > .grid-two { grid-template-columns: 1fr; }
   .entry-focused .journey-connect > .button { margin-left: 42px; }
   .terms-platforms { grid-template-columns: 1fr; }
 }
 @media (max-width: 560px) {
   .entry-focused .entry-main { padding: 22px 16px 32px; }
   .entry-focused .entry-intro h1,
-  .entry-focused .onboarding-content .page-head h1,
   .entry-focused .terms-content .page-head h1 { font-size: 28px; }
   .entry-focused .journey-intro > p { font-size: 13px; }
   .entry-focused .journey-connect { padding: 20px; }
   .entry-focused .journey-connect > svg { display: none; }
   .entry-focused .journey-connect > .button { margin-left: 0; }
-  .entry-focused .onboarding-content .stepper { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .entry-focused .onboarding-content .stepper button { width: 100%; white-space: normal; line-height: 1.35; padding: 8px 5px; }
-  .entry-focused .onboarding-content .panel { padding: 20px; }
   .terms-platform { padding: 20px; }
 }
 .entry-focused:has(.terms-content) .data-status { display: none; }

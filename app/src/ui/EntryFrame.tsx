@@ -22,7 +22,7 @@ export function EntryFrame({
   const focused = route === "/choose" || route.startsWith("/start/") || route.startsWith("/terms") || route === "/onboarding";
   const onboarding = route === "/onboarding";
   return (
-    <div className={`entry-frame ${focused ? "entry-focused" : ""}`}>
+    <div className={`entry-frame ${focused ? "entry-focused" : ""} ${onboarding ? "entry-onboarding" : ""}`}>
       <a
         className="skip-link"
         href="#main"

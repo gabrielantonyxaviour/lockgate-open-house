@@ -1,0 +1,75 @@
+.entry-onboarding { background: radial-gradient(ellipse at center, var(--paper) 25%, var(--fill) 150%); }
+.entry-frame.entry-onboarding .entry-main { max-width: none; padding: 24px 32px 160px; }
+.entry-frame.entry-onboarding .entry-back { margin-bottom: 24px; }
+.entry-onboarding:has(.plan-actions) > .app-footer { margin-bottom: 110px; }
+.entry-frame.entry-onboarding:has(.plan-gate) .entry-main { padding-bottom: 40px; }
+.entry-onboarding .data-status { display: none; }
+.plan-onboarding { width: 100%; max-width: 512px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+.plan-progress-region { display: flex; flex-direction: column; gap: 4px; }
+.plan-progress-meta { display: flex; justify-content: space-between; gap: 16px; font-size: 11px; color: var(--muted); }
+.plan-progress { display: flex; gap: 4px; }
+.plan-progress button { flex: 1; min-width: 0; height: 44px; display: flex; align-items: center; padding: 0; background: none; border: 0; border-radius: var(--radius-control); }
+.plan-progress button span { width: 100%; height: 3px; background: var(--rule); }
+.plan-progress button[aria-current="step"] span,
+.plan-progress button[data-completed="true"] span { background: var(--ink); }
+.plan-progress button:disabled { opacity: 1; cursor: not-allowed; }
+.plan-progress button:not(:disabled):hover span { background: var(--muted); }
+.plan-frame { position: relative; border: 1px dashed var(--rule); border-radius: var(--radius-panel); background: var(--paper); }
+.plan-corners i { position: absolute; width: 10px; height: 10px; color: var(--muted); pointer-events: none; }
+.plan-corners i::before,.plan-corners i::after { content: ""; position: absolute; background: currentColor; }
+.plan-corners i::before { width: 10px; height: 1px; top: 4px; left: 0; }
+.plan-corners i::after { height: 10px; width: 1px; left: 4px; top: 0; }
+.plan-corners i:nth-child(1) { top: -5px; left: -5px; }
+.plan-corners i:nth-child(2) { top: -5px; right: -5px; }
+.plan-corners i:nth-child(3) { bottom: -5px; left: -5px; }
+.plan-corners i:nth-child(4) { bottom: -5px; right: -5px; }
+.plan-stage { display: flex; flex-direction: column; gap: 28px; padding: 32px; }
+.plan-heading { display: flex; flex-direction: column; gap: 12px; }
+.plan-heading h1 { font: 500 28px/1.16 var(--font-head); letter-spacing: -0.04em; outline: none; }
+.plan-heading p { color: var(--muted); font-size: 13px; line-height: 1.65; }
+.plan-fields { display: flex; flex-direction: column; gap: 20px; }
+.plan-fields .field { font-size: 12px; gap: 8px; }
+.plan-fields .field small { line-height: 1.55; }
+.plan-fields input { min-height: 44px; scroll-margin-block: 24px 140px; }
+.plan-fields input[aria-invalid="true"] { border-color: var(--ink); }
+.plan-field-error { color: var(--ink); font-weight: 500; }
+.plan-help { border-top: 1px dashed var(--rule); padding-top: 20px; display: flex; align-items: flex-start; gap: 10px; color: var(--muted); }
+.plan-help > svg { flex-shrink: 0; margin-top: 1px; }
+.plan-help p { font-size: 11px; line-height: 1.7; }
+.plan-context { color: var(--muted); text-align: center; font-size: 11px; line-height: 1.7; max-width: 400px; align-self: center; }
+.plan-context-actions { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px 16px; padding-top: 8px; }
+.plan-context button,.plan-review-links button { background: none; border: 0; padding: 8px 0; font-size: 11px; color: inherit; min-height: 40px; }
+.plan-review .key-values { font-size: 12px; }
+.plan-review .key-values > div { align-items: flex-start; }
+.plan-review .key-values dd { max-width: 65%; overflow-wrap: anywhere; }
+.plan-review .mono { font-size: 11px; }
+.plan-review-links { display: flex; flex-wrap: wrap; gap: 0 16px; padding-top: 16px; }
+.plan-actions { position: fixed; z-index: 30; inset: auto 0 0; padding: 12px 24px max(16px, env(safe-area-inset-bottom)); border-top: 1px dashed var(--rule); background: var(--paper); }
+.plan-actions-inner { max-width: 512px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+.plan-save-status { color: var(--muted); font-size: 10px; line-height: 1.5; min-height: 15px; }
+.plan-action-row { display: flex; justify-content: space-between; gap: 12px; }
+.plan-forward { display: flex; gap: 8px; }
+.plan-actions .button { min-height: 44px; }
+.plan-complete { text-align: center; align-items: center; }
+.plan-success-mark { width: 64px; height: 64px; display: grid; place-items: center; border: 1px dashed var(--rule); border-radius: var(--radius-panel); background: var(--fill); }
+.plan-boundary { display: flex; align-items: flex-start; gap: 8px; font-size: 12px; line-height: 1.7; color: var(--muted); text-align: left; }
+.plan-boundary > svg { flex-shrink: 0; margin-top: 2px; }
+.plan-gate { margin-top: 40px; }
+.plan-stage-icon { color: var(--muted); }
+@media (min-width: 769px) { .entry-frame.entry-onboarding .entry-main { min-height: calc(100dvh - 140px); } }
+@media (max-width: 560px) {
+  .entry-frame.entry-onboarding .entry-main { padding: 20px 20px 140px; }
+  .entry-frame.entry-onboarding .entry-back { margin-bottom: 20px; }
+  .plan-onboarding { gap: 16px; }
+  .plan-stage { padding: 24px 20px; gap: 24px; }
+  .plan-heading h1 { font-size: 26px; }
+  .plan-actions { padding: 10px 16px max(12px, env(safe-area-inset-bottom)); }
+  .plan-action-row { gap: 8px; }
+  .plan-actions .button { padding: 10px; font-size: 11px; }
+  .plan-actions .button > svg { display: none; }
+  .plan-forward { gap: 6px; }
+  .plan-review .key-values > div { flex-direction: column; gap: 6px; }
+  .plan-review .key-values dd { max-width: 100%; text-align: left; }
+  .plan-gate { margin-top: 20px; }
+}
+@media (prefers-reduced-motion: reduce) { .plan-onboarding *, .plan-onboarding *::before, .plan-onboarding *::after { animation: none !important; transition: none !important; scroll-behavior: auto; } }
