@@ -19,27 +19,43 @@ async function fixture(page: Page, signed = false) {
     ReactDOM.createRoot(document.getElementById('root')).render(React.createElement('main',{className:'dg-app',style:{padding:'16px',maxWidth:'1100px',margin:'auto'}},React.createElement(AgreementDocument,{...props,onSign:name=>document.body.dataset.acceptedName=name})));
   ` }); });
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'EARLY EXIT FINANCING AND CLAIM DISCHARGE LETTER', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'TEST financing and claim discharge letter', exact: true })).toBeVisible();
 }
 for (const width of [375, 768, 1440]) test(`fresh letter is readable at ${width}px and retains every canonical line`, async ({ page }) => {
   await page.setViewportSize({ width, height: 1000 });
   await fixture(page);
   await expect(page.locator('.dg-legal-letterhead')).toContainText('Draft for review');
-  const rendered = await page.locator('.dg-legal-paper').textContent();
-  for (const line of text.split('\n').filter(line => line.trim())) expect(rendered).toContain(line);
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
-  expect(await page.locator('.dg-legal-paper > p:not([class])').first().evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(15);
-  await expect(page.locator('.dg-legal-paper > h3')).toHaveCount(12);
-  if (process.env.LOCKGATE_VISUAL_REVIEW === '1') {
-    await page.screenshot({ path: `/tmp/lockgate-fresh-agreement-${width}.png` });
-    await page.getByRole('heading', { name: '1. PURPOSE AND PARTIES', exact: true }).evaluate(el => el.scrollIntoView({ block: 'start' }));
-    await page.screenshot({ path: `/tmp/lockgate-fresh-agreement-clauses-${width}.png` });
+  await page.evaluate(() => document.fonts.ready);
+  const count = await page.getByLabel('Page', { exact: true }).locator('option').count();
+  expect(count).toBeGreaterThan(1);
+  let rendered = '';
+  for (let index = 0; index < count; index++) {
+    await page.getByLabel('Page', { exact: true }).selectOption({ value: String(index) });
+    await expect(page.locator('.dg-legal-paper')).toHaveAttribute('aria-label', new RegExp(`page ${index + 1} of`));
+    rendered += await page.locator('.dg-legal-page-body .dg-legal-text').textContent();
+    expect(await page.locator('.dg-legal-page-body').evaluate(el => el.scrollHeight <= el.clientHeight)).toBe(true);
   }
+  expect(rendered).toBe(text);
+  await page.getByLabel('Page', { exact: true }).selectOption({ value: '0' });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  expect(await page.locator('.dg-legal-page-body .dg-legal-text').evaluate(el => parseFloat(getComputedStyle(el).fontSize))).toBeGreaterThanOrEqual(13);
+  await expect(page.getByRole('button', { name: 'Previous page' })).toBeDisabled();
+  await page.locator('.dg-legal-paper').focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(page.getByLabel('Page', { exact: true })).toHaveValue('1');
+  await page.keyboard.press('Home');
+  await expect(page.getByLabel('Page', { exact: true })).toHaveValue('0');
+  if (width === 1440) {
+    const controls = await page.locator('.dg-agreement-controls').boundingBox();
+    const viewer = await page.locator('.dg-agreement-viewer').boundingBox();
+    expect(viewer!.x).toBeGreaterThan(controls!.x + controls!.width);
+  }
+  if (process.env.LOCKGATE_VISUAL_REVIEW === '1') await page.screenshot({ path: `/tmp/lockgate-fresh-agreement-${width}.png` });
 });
 test('download is byte-exact and full name plus consent gates the signature', async ({ page }) => {
   await fixture(page);
   const pending = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Download agreement' }).click();
+  await page.getByRole('button', { name: 'Download .txt' }).click();
   expect(await readFile((await (await pending).path())!, 'utf8')).toBe(text);
   const name = page.getByRole('textbox', { name: 'Full name' });
   const sign = page.getByRole('button', { name: 'Sign agreement' });
@@ -62,4 +78,19 @@ test('signed letter labels the recorded state and removes acceptance controls', 
   await expect(page.getByRole('textbox', { name: 'Full name' })).toHaveAttribute('readonly', '');
   await expect(page.getByRole('checkbox')).toHaveCount(0);
   await expect(page.getByRole('button', { name: 'Sign agreement' })).toHaveCount(0);
+});
+test('print export preserves full unsigned text and page changes keep consent', async ({ page }) => {
+  await fixture(page);
+  await page.getByLabel('Full name').fill('Lucas Chen');
+  await page.getByRole('checkbox').check();
+  await page.getByRole('button', { name: 'Next page' }).click();
+  await expect(page.getByLabel('Full name')).toHaveValue('Lucas Chen');
+  await expect(page.getByRole('checkbox')).toBeChecked();
+  const pending = page.waitForEvent('popup');
+  await page.getByRole('button', { name: 'Print / PDF' }).click();
+  const popup = await pending;
+  await expect(popup.locator('header')).toContainText('Unsigned draft for review');
+  expect(await popup.locator('pre').textContent()).toBe(text);
+  await expect(popup.getByRole('button', { name: 'Print / save as PDF' })).toBeVisible();
+  await popup.close();
 });

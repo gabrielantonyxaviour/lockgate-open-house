@@ -2,9 +2,9 @@ import { createPublicClient, http, isAddressEqual, keccak256, stringToHex, parse
 import { arbitrumSepolia } from 'viem/chains';
 import { z } from 'zod';
 import { authorizedWallet, getProvider, walletChainId } from '../chain/wallet';
-import type { DemoGateway, DemoRole, DemoState, Enquiry, EnquiryReceipt, Offer, PreparedSubscription, Receipt, WalletProgress } from '../demo/types';
+import type { DemoGateway, DemoRole, DemoState, Enquiry, EnquiryReceipt, Offer, PreparedSubscription, Receipt, ResumedDocument, WalletProgress } from '../demo/types';
 import { clearPending, pending, rememberPending } from './demo-pending';
-import { DemoTransport, configuration, identityResponse, preparedSubscriptionResponse, quoteSchema, receiptSchema, stateSchema, subscriptionResponse, type Configuration, type Quote } from './demo-transport';
+import { DemoTransport, configuration, draftDocumentSchema, identityResponse, preparedSubscriptionResponse, quoteSchema, receiptSchema, resumedDocumentResponse, stateSchema, subscriptionResponse, type Configuration, type Quote } from './demo-transport';
 const registryAbi=parseAbi(['function bindIdentity(bytes32 identity,uint64 validUntil,uint256 nonce,bytes signature)']);
 const assetAbi=parseAbi(['function approve(address spender,uint256 amount) returns (bool)','function allowance(address owner,address spender) view returns (uint256)']);
 const vaultAbi=parseAbi(['function deposit(uint256 id,bytes32 acceptedTerms,uint256 minUnits) returns (uint256)','function withdraw(uint256 units) returns (uint256)','function claim()','function processQueue(uint256 maxRequests)','function cancelWithdrawal(uint256 id)','function requestWithdrawal(uint256 units) returns (uint256)','function bookUnits(address) view returns (uint256)','function queuedUnits(address) view returns (uint256)','function totalUnits() view returns (uint256)','function totalAssets() view returns (uint256)','function availableCash() view returns (uint256)','function queueHead() view returns (uint256)','function queueTail() view returns (uint256)']);
@@ -80,6 +80,23 @@ class Gateway implements DemoGateway {
   const raw=z.array(z.object({id:z.string(),quote:quoteSchema}).passthrough()).parse(await this.api.request('offers',{positionId,amount}));
   return raw.map(item=>{const offer=item as unknown as SignedOffer & {investorSignature?:Hex};if(offer.agreement.signed&&offer.investorSignature)offer.signature=offer.investorSignature;this.signed.set(offer.id,offer);return offer;});
  }
+ async saveDocumentDraft(kind:'exit'|'subscription',id:string):Promise<void> {
+  const draft=draftDocumentSchema.parse(await this.api.request('document-draft/save',{kind,id}));
+  if(draft.id!==id||draft.kind!==kind||keccak256(stringToHex(draft.text))!==draft.digest)throw new Error('The saved document does not match the reviewed letter.');
+ }
+ private acceptResumedDocument(value:unknown):ResumedDocument {
+  const resumed=resumedDocumentResponse.parse(value);
+  if(resumed.kind==='exit'){
+   const offer=resumed.offer as unknown as SignedOffer;
+   if(!this.account||!isAddressEqual(offer.quote.investor,this.account)||offer.agreement.signed||offer.agreement.accepted||offer.agreement.version!=='2'||keccak256(stringToHex(offer.agreement.text))!==offer.agreement.digest||offer.agreement.digest!==offer.quote.agreementHash||parseUnits(offer.amount,6)!==offer.quote.units||Date.parse(offer.expiresAt)<=Date.now())throw new Error('The resumed exit letter does not match this wallet and quote.');
+   this.signed.set(offer.id,offer);return {kind:'exit',offer};
+  }
+  const {vehicleId,amount}=resumed,prepared=resumed.prepared as PreparedSubscription,vehicle=this.state?.vehicles.find(v=>v.id===vehicleId);
+  if(!this.account||keccak256(stringToHex(prepared.message))!==prepared.digest||parseUnits(prepared.amount,6)!==parseUnits(amount,6)||vehicle?.address?.toLowerCase()!==prepared.vault.toLowerCase()||vehicle.policyHash!==prepared.termsHash||!letterWalletMatches(prepared.message,this.account)||!vehicle.policyText||!prepared.message.includes(vehicle.policyText)||prepared.signerName!==this.state?.profile.identity?.name||Date.parse(prepared.expiresAt)<=Date.now())throw new Error('The resumed subscription letter does not match the reviewed wallet, amount and vehicle.');
+  this.preparedSubscriptions.set(vehicleId,prepared);return {kind:'subscription',prepared,vehicleId,amount};
+ }
+ async resumeDocumentDraft(id:string):Promise<ResumedDocument> {return this.acceptResumedDocument(await this.api.request('document-draft/resume',{id}));}
+ async renewDocumentDraft(id:string):Promise<ResumedDocument> {return this.acceptResumedDocument(await this.api.request('document-draft/renew',{id}));}
  async signExit(offer:Offer,typedName:string,consent:true,onProgress?:(progress:WalletProgress)=>void) {
   if(!consent)throw new Error('Accept the exact exit letter before signing.');
   if(!this.matchesSigner(typedName))throw new Error('Type the full name on your verified TEST identity.');
@@ -170,7 +187,7 @@ class Gateway implements DemoGateway {
  }
  async mintPosition() {return receiptSchema.parse(await this.api.request('mint-position',{})) as Receipt;}
  async getTestGas() {const result=receiptSchema.parse(await this.api.request('gas',{}));await this.readState();return result as Receipt;}
- async getTestUsdg() {const result=receiptSchema.parse(await this.api.request('faucet',{}));await this.readState();return result as Receipt;}
+ async getTestUsdg() {return receiptSchema.parse(await this.api.request('faucet',{})) as Receipt;}
  async workspaceAction(actionId:string,inputs:Record<string,string>) {
   const intent=z.object({title:z.string(),amount:z.string().optional(),transactions:z.array(z.object({address:z.string().regex(/^0x[\da-f]{40}$/i),abi:z.array(z.record(z.string(),z.unknown())),functionName:z.string(),args:z.array(z.unknown())})).min(1).max(3)}).parse(await this.api.request('workspace-action',{actionId,inputs}));
   const wallet=await this.wallet(); let result:Receipt|undefined;

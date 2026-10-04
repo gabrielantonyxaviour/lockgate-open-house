@@ -1,12 +1,12 @@
 import { useEffect, useId, useState, type ReactNode } from 'react';
-import { Download, FileText } from 'lucide-react';
+import { AgreementViewer } from './AgreementViewer';
 import { Button } from './Common';
 import './legal-document.css';
 
-export function AgreementDocument({ title, text, version, documentId, digest, identityName, signerName, signed, busy, expiresAt, onSign, signLabel, children }: {
+export function AgreementDocument({ title, text, version, documentId, digest, identityName, signerName, signed, busy, expiresAt, onSign, signLabel, children, summary, onDefer }: {
   title: string; text: string; version: string; documentId: string; digest: string;
   identityName: string; signerName?: string; signed: boolean; busy: boolean; expiresAt?: string;
-  onSign: (name: string) => void; signLabel: string; children?: ReactNode;
+  onSign: (name: string) => void; signLabel: string; children?: ReactNode; summary?: ReactNode; onDefer?: () => void;
 }) {
   const [name, setName] = useState('');
   const [consent, setConsent] = useState(false);
@@ -22,27 +22,10 @@ export function AgreementDocument({ title, text, version, documentId, digest, id
   const expired = expiry !== undefined && (!Number.isFinite(expiry) || now >= expiry);
   const normalize = (value: string) => value.normalize('NFKC').trim().replace(/\s+/g, ' ').toLocaleLowerCase('en-US');
   const validName = Boolean(identityName && normalize(name) === normalize(identityName));
-  const lines = text.split(/\r?\n/);
-  const hasLetterhead = lines[0] === 'LOCKGATE — TEST EXECUTION DOCUMENT' && Boolean(lines[1]?.trim());
-  return <section className="dg-legal-document">
-    <div className="dg-legal-toolbar"><span><FileText size={16}/>Version {version}</span><Button secondary onClick={() => downloadText(documentId, text)}><Download size={15}/>Download agreement</Button></div>
-    <article className="dg-legal-paper" tabIndex={0} aria-label={title}>
-      <header className="dg-legal-letterhead"><span className="dg-legal-wordmark">Lockgate<span>.</span></span><span>{signed ? 'Signed copy' : 'Draft for review'}<br/>Version {version}</span></header>
-      {!hasLetterhead && <h2 className="dg-legal-title">{title}</h2>}
-      {lines.map((line, index) => {
-        if (!line.trim()) return <div className="dg-legal-space" key={index} aria-hidden="true"/>;
-        if (hasLetterhead && index === 0) return <p className="dg-legal-kicker" key={index}>{line}</p>;
-        if (hasLetterhead && index === 1) return <h2 className="dg-legal-title" key={index}>{line}</h2>;
-        if (hasLetterhead && index === 2) return <p className="dg-legal-status" key={index}>{line}</p>;
-        if (/^(?:\d+[.)]\s|[A-Z][A-Z\s/&—–-]{5,}$)/.test(line)) return <h3 key={index}>{line}</h3>;
-        const field = /^([^:.]{1,52}): (.+)$/.exec(line);
-        if (field) return <p className="dg-legal-field" key={index}><span className="dg-legal-field-label">{field[1]}: </span><span className={/wallet|contract|hash|commitment|identifier|nonce|reference|TEST profile/i.test(field[1]) ? 'dg-legal-technical' : undefined}>{field[2]}</span></p>;
-        return <p key={index}>{line}</p>;
-      })}
-    </article>
-    <details className="dg-legal-reference"><summary>Agreement reference</summary><p>{documentId}</p><code>{digest}</code></details>
-    <div className="dg-legal-signature">
-      <h3>Electronic signature</h3>
+  return <section className="dg-agreement-review">
+    <div className="dg-agreement-controls">{summary}
+    <div className="dg-legal-signature dg-panel">
+      <h3>{signed ? 'Electronic signature' : 'Agree when you’re ready'}</h3>{!signed && <p className="dg-caption">Read the document, download a copy, or save it to review later. Saving a draft does not sign it.</p>}
       {signed ? <><label className="dg-field" htmlFor={nameId}>Full name<input id={nameId} value={signerName || identityName} readOnly/></label><p className="dg-caption">Wallet signature recorded for this agreement.</p></> : <>
         <label className="dg-field" htmlFor={nameId}>Full name<input id={nameId} autoComplete="name" maxLength={120} value={name}
           onChange={event => { setName(event.target.value); setConsent(false); }} disabled={busy || expired}
@@ -52,16 +35,9 @@ export function AgreementDocument({ title, text, version, documentId, digest, id
         {expired && <p className="dg-field-error" role="status">This agreement has expired. Go back and request current terms before signing.</p>}
         <div className="dg-actions"><Button disabled={!validName || !consent || expired} busy={busy} onClick={() => onSign(name.normalize('NFKC').trim().replace(/\s+/g, ' '))}>{signLabel}</Button></div>
       </>}
+      {!signed && onDefer && <div className="dg-actions"><Button secondary disabled={busy || expired} onClick={onDefer}>Save & agree later</Button></div>}
       {children}
-    </div>
+    </div></div>
+    <AgreementViewer title={title} text={text} version={version} documentId={documentId} digest={digest} signed={signed}/>
   </section>;
-}
-
-function downloadText(id: string, text: string) {
-  const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = `lockgate-${id.replace(/[^a-z0-9_-]/gi, '-').slice(0, 80)}.txt`;
-  anchor.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { ArrowUpRight, ChevronDown, FileText, House, Layers, ListChecks, RefreshCw, UserRound } from 'lucide-react';
 import { go, useRoute } from '../ui/router';
+import { DraftDocuments } from './DraftDocuments';
 import { AgreementRecords } from './AgreementRecords';
 import { ChainReference } from './ChainReference';
 import { Button, Heading, money, Rows } from './Common';
@@ -36,10 +37,12 @@ export function Dashboard({ state, role, children, refresh, busy, refreshing, ac
     <a key={path} href={`#${path}`} aria-current={current.path === path ? 'page' : undefined} className={path === '/account' ? 'dg-dashboard-account-link' : undefined}
       aria-disabled={busy || undefined} onClick={event => { if(busy){event.preventDefault();return;}if (mobile.current) mobile.current.open = false; }}><Icon size={17} aria-hidden="true"/><span>{label}</span></a>)}</nav>;
   const agreements = state.agreements || [];
+  const drafts=(state.documentDrafts||[]).filter(draft=>draft.kind===(investor?'exit':'subscription'));
+  const justSaved=new URLSearchParams(useRoute().split('?')[1]||'').get('saved')==='1';
   const renderContent = () => {
     if (route === '/positions' || route === '/vehicles') return children;
     if (route === '/records') return <><Heading title="Transaction history" copy="Your activity and transaction references."/><TransactionHistory receipts={state.receipts}/></>;
-    if (route === '/agreements') return <><Heading title="Agreements" copy="Review and download your recorded documents."/>{agreements.length ? <AgreementRecords agreements={agreements}/> : <div className="dg-panel dg-dashboard-empty"><FileText size={23}/><h2>No agreements yet</h2><p>Your agreements will appear here after you sign.</p></div>}</>;
+    if (route === '/agreements') return <><Heading title="Agreements" copy="Review drafts, download documents, and return when you’re ready to agree."/>{justSaved&&<div className="dg-notice" role="status">Draft saved. You can review and agree later from <a href="#/agreements">Agreements</a>.</div>}<DraftDocuments drafts={drafts} busy={busy}/>{agreements.length ? <AgreementRecords agreements={agreements}/> : <div className="dg-panel dg-dashboard-empty"><FileText size={23}/><h2>No signed agreements yet</h2><p>Your signed agreements will appear here. Saved drafts stay available above.</p></div>}</>;
     if (route === '/account') return <><Heading title="Account" copy="Your linked identity and wallet."/><div className="dg-panel"><h2>Account details</h2><Rows items={[
       ['Full name', state.profile.identity?.name || 'Not available'],
       ['Jurisdiction', state.profile.identity?.jurisdiction || 'Not available'],

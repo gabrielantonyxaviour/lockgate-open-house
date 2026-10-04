@@ -79,6 +79,9 @@ export function DemoApp({gateway}:{gateway:DemoGateway}) {
  const onboardingVisible=Boolean(retailRole&&!choose&&(onboarding||identity||!state?.profile.identity));
  const unsupported=Boolean(account&&chainId&&chainId!==421614);
  const dashboardVisible=Boolean(state?.profile.identity&&state.deploymentReady&&retailRole&&!choose&&!onboardingVisible&&!unsupported&&!terms);
+ const draftParams=new URLSearchParams(route.split('?')[1]||'');
+ const draftId=draftParams.get('draft')||undefined;
+ const renewDraft=draftParams.get('renew')==='1';
  const positionId=new URLSearchParams(route.split('?')[1]||'').get('position')||undefined;
  const content=()=>{
   if(terms)return <PublicTerms overview={overview} error={publicError} retry={readPublic}/>;
@@ -93,8 +96,8 @@ export function DemoApp({gateway}:{gateway:DemoGateway}) {
   if(retailRole&&(rolePending||!state.profile.identity||identity||onboarding==='checking'))return onboarding==='checking'?<section className="dg-narrow"><Heading title={`Checking your ${retailRole==='investor'?'positions':'vehicles'}…`} copy="Your identity is linked. Retrieving your account details."/></section>:<IdentityEntry error={error} busy={busy} preparing={rolePending} onSelect={bindIdentity}/>;
   if(!state.deploymentReady)return <section><Heading title="Your account is being prepared." copy="Your profile is saved. Financial actions become available after the deployment is ready."/><Button secondary busy={busy} onClick={()=>void run(refresh).catch(()=>{})}>Check readiness</Button></section>;
   const shared={state,gateway,run,busy,refresh};
-  if(role==='investor')return <Investor key={positionId||'positions'} {...shared} initialPositionId={positionId} showHistory={false} onIdentity={()=>{setIdentity(true);setOnboarding('identity');}} onDemo={()=>setDemo(true)}/>;
-  if(role==='provider')return <Provider {...shared}/>;
+  if(role==='investor')return <Investor key={draftId?`${draftId}:${renewDraft}`:positionId||'positions'} {...shared} draftId={draftId} renewDraft={renewDraft} initialPositionId={positionId} showHistory={false} onIdentity={()=>{setIdentity(true);setOnboarding('identity');}} onDemo={()=>setDemo(true)}/>;
+  if(role==='provider')return <Provider key={draftId?`${draftId}:${renewDraft}`:'vehicles'} {...shared} draftId={draftId} renewDraft={renewDraft}/>;
   return <Institution {...shared}/>;
  };
  return <div className="dg-app"><header className="dg-topbar"><button className="dg-brand" onClick={()=>{go("/");if(state&&!state.profile.identity)setChoose(true);}} aria-label="Lockgate home"><img src="/mark.svg" width="25" height="28" alt=""/>Lockgate<span>.</span></button><div className="dg-top-actions">{account&&state?<Select className="dg-network-select" value={chainId===42161?'42161':'421614'} onValueChange={v=>switchTo(Number(v))} options={[{value:'421614',label:'Arbitrum Sepolia',icon:<ArbitrumMark size={20} decorative/>},{value:'42161',label:'Arbitrum One · Soon',disabled:true,icon:<ArbitrumMark size={20} decorative/>}]} label="Network" disabled={busy}/>:<Button onClick={account?()=>void run(()=>authenticate()).catch(()=>{}):connect} busy={busy}><Wallet size={17}/>{busy?'Connecting wallet…':'Connect Wallet'}</Button>}{state&&!unsupported&&<Button secondary disabled={busy} onClick={()=>setDemo(true)}>Demo</Button>}{account&&state&&<WalletMenu key={account} account={account} gas={state?.setup.gas} usdg={state?.setup.usdg} busy={busy} onDisconnect={disconnect}/>}</div></header>

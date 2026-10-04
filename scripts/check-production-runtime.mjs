@@ -130,6 +130,9 @@ if (checks.at(-1).status === 'fail') {
   await check('api-boundaries', async () => {
     const state = await json('/api/demo/state', {}, 401);
     errorShape(state, 'AUTH_REQUIRED');
+    for (const action of ['save', 'resume', 'renew']) {
+      errorShape(await json(`/api/demo/document-draft/${action}`, post(`/api/demo/document-draft/${action}`, { id: 'smoke-draft', ...(action === 'save' ? { kind: 'exit' } : {}) }), 401), 'AUTH_REQUIRED');
+    }
     const unknown = await json('/api/demo/__production_smoke_unknown__', {}, 404);
     errorShape(unknown, 'NOT_FOUND');
     const wrongOrigin = await json('/api/demo/challenge', post('/api/demo/challenge', { account: '0x0000000000000000000000000000000000000001', chainId: 421614 }, 'https://wrong.example'), 403);
@@ -167,6 +170,10 @@ if (checks.at(-1).status === 'fail') {
       errorShape(await json('/api/demo/role', roleRequest({ role, intent: 'create' }), 403), 'INSTITUTION_ACCOUNT_REQUIRED');
     }
     errorShape(await json('/api/demo/role', roleRequest({ role: 'investor', intent: 'invalid' }), 400), 'INVALID_INPUT');
+    for (const action of ['save', 'resume', 'renew']) {
+      const path = `/api/demo/document-draft/${action}`;
+      errorShape(await json(path, { ...post(path, { id: 'EXIT-LETTER-000000000000', ...(action === 'save' ? { kind: 'exit' } : {}) }), authorization: result.token }, 403), 'IDENTITY_REQUIRED');
+    }
     const retained = await json('/api/demo/state', { authorization: result.token });
     assert(JSON.stringify(retained.profile) === JSON.stringify(state.profile), 'rejected role request changed profile');
     const replay = await json('/api/demo/authenticate', post('/api/demo/authenticate', { ...input, signature }), 401);

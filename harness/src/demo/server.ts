@@ -10,13 +10,14 @@ import { workspaceAction } from './workspace.js';
 import { enqueueAcknowledgement } from './email.js';
 import { proxyRpc } from './rpc-proxy.js';
 import { changeProfileRole } from './profile-roles.js';
+import { renewDocumentDraft, resumeDocumentDraft, saveDocumentDraft } from './document-drafts.js';
 
 const address=z.string().refine(isAddress,'Invalid wallet address').transform(x=>getAddress(x));
 const hex=z.string().regex(/^0x[0-9a-fA-F]+$/).transform(x=>x as Hex);
 const amount=z.string().regex(/^(0|[1-9]\d{0,8})(\.\d{1,6})?$/,'Invalid 6-decimal amount');
 export const challenges=new Map<string,{account:Address;chainId:number;message:string;expiresAt:number}>();
 const allowedOrigins=new Set(['https://openhouse.lockgate.finance','http://localhost:5197','http://127.0.0.1:5197']);
-const knownRoutes=new Set(['rpc/421614','config','public','challenge','authenticate','state','role','identity','enquiries','offers','reserve-offer','exit-signature','eligibility','subscription','subscription-resume','mint-position','faucet','gas','receipts','workspace-action']);
+const knownRoutes=new Set(['rpc/421614','config','public','challenge','authenticate','state','role','identity','enquiries','offers','reserve-offer','exit-signature','eligibility','subscription','subscription-resume','document-draft/save','document-draft/resume','document-draft/renew','mint-position','faucet','gas','receipts','workspace-action']);
 const enquiry=z.object({role:z.enum(['originator','manager']),representative:z.string().trim().min(2).max(100),email:z.string().trim().email().max(254),organization:z.string().trim().min(2).max(150),jurisdiction:z.string().trim().min(2).max(100),summary:z.string().trim().min(20).max(1500),requestId:z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional()});
 
 function json(res:ServerResponse,status:number,value:unknown) {res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(value));}
@@ -117,6 +118,18 @@ async function handle(req:IncomingMessage,res:ServerResponse) {
  if(path==='/api/demo/subscription-resume'&&req.method==='POST') {
   const v=z.object({vehicleId:z.string().min(1).max(80),amount}).parse(await body(req));
   return json(res,200,await resumeSubscription(account,v.vehicleId,v.amount));
+ }
+ if(path==='/api/demo/document-draft/save'&&req.method==='POST') {
+  const {kind,id}=z.object({kind:z.enum(['exit','subscription']),id:z.string().regex(/^(EXIT-LETTER|SUBSCRIPTION-LETTER)-[0-9a-f]{12}$/)}).strict().parse(await body(req));
+  return json(res,200,await saveDocumentDraft(account,kind,id));
+ }
+ if(path==='/api/demo/document-draft/resume'&&req.method==='POST') {
+  const {id}=z.object({id:z.string().regex(/^(EXIT-LETTER|SUBSCRIPTION-LETTER)-[0-9a-f]{12}$/)}).strict().parse(await body(req));
+  return json(res,200,await resumeDocumentDraft(account,id));
+ }
+ if(path==='/api/demo/document-draft/renew'&&req.method==='POST') {
+  const {id}=z.object({id:z.string().regex(/^(EXIT-LETTER|SUBSCRIPTION-LETTER)-[0-9a-f]{12}$/)}).strict().parse(await body(req));
+  return json(res,200,await renewDocumentDraft(account,id));
  }
  if(path==='/api/demo/mint-position'&&req.method==='POST') return json(res,200,await mintPosition(account));
  if(path==='/api/demo/faucet'&&req.method==='POST') return json(res,200,await faucet(account));

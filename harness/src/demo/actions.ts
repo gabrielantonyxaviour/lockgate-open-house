@@ -43,7 +43,7 @@ async function firmReadiness(vault:Address,originator:Address) {
  return {mask:mandate[2],fits};
 }
 
-export async function createOffers(account:Address,positionId:string,amount:string) {
+export async function createOffers(account:Address,positionId:string,amount:string,forceNew=false) {
  const identity=await requireBound(account),m=manifest(),p=profile(account);
  if(p.role!=='investor'||identity.fixtureCase==='mismatch') err('A matching investor TEST identity is required','INELIGIBLE',403);
  const holding=(await allHoldings()).find(h=>h.id===positionId);
@@ -55,7 +55,7 @@ export async function createOffers(account:Address,positionId:string,amount:stri
  const orgIndex=m.originators.findIndex(o=>o.address.toLowerCase()===holding.originatorAddress.toLowerCase());
  if(orgIndex<0) err('Originator missing','FIXTURE_ERROR',500);
  const chainNow=Number((await publicClient.getBlock()).timestamp);
- const candidates=p.offers.filter(o=>!o.cancelled&&(o.agreement.version==='2'||Boolean(o.investorSignature&&o.reserveHash))&&o.account.toLowerCase()===account.toLowerCase()&&o.holdingId===holding.id&&BigInt(o.quote.units)===units&&o.quote.identity===identityHash(identity.identityRef)&&Number(o.quote.deadline)>chainNow);
+ const candidates=forceNew?[]:p.offers.filter(o=>!o.cancelled&&(o.agreement.version==='2'||Boolean(o.investorSignature&&o.reserveHash))&&o.account.toLowerCase()===account.toLowerCase()&&o.holdingId===holding.id&&BigInt(o.quote.units)===units&&o.quote.identity===identityHash(identity.identityRef)&&Number(o.quote.deadline)>chainNow);
  const existing=[] as OfferRecord[];
  for(const item of candidates) {
   if(!item.reserveHash){const ready=await firmReadiness(item.quote.vault as Address,holding.originatorAddress);if(ready.fits(Number(item.quote.route),BigInt(item.quote.payout)))existing.push(item);continue;}
