@@ -42,7 +42,9 @@ test('API challenge replay, private ledger, canonical receipt, provider mismatch
  const eligible=await post(request,'eligibility',{vehicleId:m.vaults[0].id},mismatch.token);expect(eligible.status()).toBe(200);
  const mismatchState=await eligible.json() as {positionStatus:string;positions:unknown[];vehicles:{eligible:boolean}[]};
  expect(mismatchState.positionStatus).toBe('mismatch');expect(mismatchState.positions).toHaveLength(0);expect(mismatchState.vehicles[0].eligible).toBe(true);
- checks.push({mismatchInvestorPositionDenied:true,providerEligibility:mismatchState.vehicles[0].eligible});
+ const providerTerms=await post(request,'subscription',{vehicleId:m.vaults[0].id,amount:'1000'},mismatch.token);expect(providerTerms.status()).toBe(200);
+ expect((await providerTerms.json()).amount).toBe('1000');
+ checks.push({mismatchInvestorPositionDenied:true,providerEligibility:mismatchState.vehicles[0].eligible,subscriptionPrepareStatus:providerTerms.status()});
  const invalid=await post(request,'enquiries',{role:'originator',representative:'Mira Sato',email:'mira.sato@example.test',organization:'Aperture',jurisdiction:'Singapore',summary:'too short'},enquirer.token);
  expect(invalid.status()).toBe(400);checks.push({invalidEnquiryStatus:invalid.status()});
  const unsafe='Aperture <script>alert("bad")</script>';

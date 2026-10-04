@@ -41,7 +41,7 @@ test('originator collects purchased route-A claim and provider earns actual TEST
   phase='originator wallet collects claim';
   await page.goto('/');await page.getByRole('button',{name:/Connect wallet/}).click();
   await expect(page.getByRole('heading',{name:'Originator workspace'})).toBeVisible();
-  await page.getByRole('button',{name:'Repay a financed exit'}).click();
+  await page.getByRole('button',{name:'Repay an exit obligation'}).click();
   await page.getByRole('combobox',{name:'Exit obligation'}).click();await page.getByRole('option',{name:/Purchase/}).click();
   await page.getByRole('button',{name:'Review action'}).click();
   await page.getByRole('button',{name:'Confirm in wallet'}).click();

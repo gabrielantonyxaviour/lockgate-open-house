@@ -12,5 +12,14 @@ export function Notice({children,error=false}:{children:ReactNode;error?:boolean
 export function Rows({items}:{items:[string,ReactNode][]}){return <dl className="dg-rows">{items.map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>;}
 export const money=(value:string|undefined)=>value===undefined?'—':new Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(Number(value));
 export function Records({receipts,agreements=[]}:{receipts:Receipt[];agreements?:AgreementRecord[]}) {
- return <section className="dg-panel"><h2>Agreements & history</h2><AgreementRecords agreements={agreements}/>{receipts.length===0?<p className="dg-empty">Your confirmed activity and submitted transaction references will appear here.</p>:<div className="dg-records">{receipts.map(r=><article key={r.id}><div><strong>{r.title}</strong><p>{r.detail||r.createdAt}</p>{r.amount&&<span>{money(r.amount)} USDG</span>}</div><div className="dg-record-end"><span className={`dg-badge ${r.status==='confirmed'?'':'dg-muted-badge'}`}>{r.status}</span>{r.explorerUrl&&<a href={r.explorerUrl} target="_blank" rel="noreferrer">Transaction <ExternalLink size={12}/></a>}{r.hash&&!r.explorerUrl&&<code title={r.hash}>{r.hash.slice(0,10)}…{r.hash.slice(-6)}</code>}</div></article>)}</div>}</section>;
+ return <section className="dg-panel"><h2>Agreements & history</h2><AgreementRecords agreements={agreements}/>{receipts.length===0?<p className="dg-empty">Your confirmed activity and submitted transaction references will appear here.</p>:<div className="dg-records">{receipts.map(r=><article key={r.id}><div><strong>{r.title}</strong><p>{r.detail||r.createdAt}</p>{r.amount&&<span>{receiptAmount(r.amount)}</span>}</div><div className="dg-record-end"><span className={`dg-badge ${r.status==='confirmed'?'':'dg-muted-badge'}`}>{r.status}</span>{r.explorerUrl&&<a href={r.explorerUrl} target="_blank" rel="noreferrer">Transaction <ExternalLink size={12}/></a>}{r.hash&&!r.explorerUrl&&<code title={r.hash}>{r.hash.slice(0,10)}…{r.hash.slice(-6)}</code>}</div></article>)}</div>}</section>;
+}
+
+function receiptAmount(value:string){
+ const match=/^(-?)(\d+)(?:\.(\d+))?(?:\s+(ETH|USDG))?$/.exec(value.trim());
+ if(!match)return value;
+ const [,sign,whole,fraction,unit]=match;
+ const integer=whole.replace(/^0+(?=\d)/,'').replace(/\B(?=(\d{3})+(?!\d))/g,',');
+ const decimal=fraction?.replace(/0+$/,'');
+ return `${sign}${integer}${decimal?`.${decimal}`:''} ${unit||'USDG'}`;
 }

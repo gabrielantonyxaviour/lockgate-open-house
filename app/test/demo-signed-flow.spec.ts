@@ -96,7 +96,7 @@ test('four TEST personas complete real local signed-wallet journeys with scoped 
   await provider.page.getByRole('button',{name:'Demo',exact:true}).click();
   const testBalance=await chain.readContract({address:manifest.asset,abi:tokenAbi,functionName:'balanceOf',args:[provider.account]});
   if(testBalance<parseUnits('1000',6))await provider.page.getByRole('dialog').getByRole('button',{name:'Get test USDG'}).click();
-  const spendable=await chain.readContract({address:manifest.asset,abi:tokenAbi,functionName:'balanceOf',args:[provider.account]});
+  const spendable=await until(()=>chain.readContract({address:manifest.asset,abi:tokenAbi,functionName:'balanceOf',args:[provider.account]}),value=>value>=parseUnits('1000',6));
   expect(spendable).toBeGreaterThanOrEqual(parseUnits('1000',6));
   await expect(provider.page.getByRole('dialog')).toContainText(`${formatUnits(spendable,6)} USDG`);
   await provider.page.getByRole('button',{name:'Close Demo'}).click();
@@ -210,7 +210,7 @@ test('four TEST personas complete real local signed-wallet journeys with scoped 
   const registered=parseEventLogs({abi:eventAbi,eventName:'HoldingRegistered',logs:(await chain.getTransactionReceipt({hash:registerTx!})).logs});
   expect(registered).toHaveLength(1);
   expect((await chain.readContract({address:manifest.registry,abi:registryAbi,functionName:'holding',args:[registered[0].args.id]}))[2]).toBe(parseUnits('500',6));
-  await originator.page.getByRole('button',{name:'Repay a financed exit'}).click();
+  await originator.page.getByRole('button',{name:'Repay an exit obligation'}).click();
   await originator.page.getByRole('combobox',{name:'Exit obligation'}).click();await originator.page.getByRole('option',{name:/Finance/}).click();
   await originator.page.getByRole('button',{name:'Review action'}).click();
   const originatorBalanceBefore=await chain.readContract({address:manifest.asset,abi:tokenAbi,functionName:'balanceOf',args:[originator.account]});
