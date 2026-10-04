@@ -1,0 +1,87 @@
+<!-- Proposed for discussion; this does not amend the approved product contract.
+Job: establish a firm relationship, then let authorised staff operate it.
+Outcome: human-reviewed entity/vehicle approval and scoped app access.
+Consequence: enquiry, wallet connection and invitation do not activate financing.
+Decisions: rule/one-primary-action, rule/cover-reachable-states,
+rule/name-object-scope-consequence, rule/no-redundant-entry.
+Coverage gap (proposed) rule/entity-approval-separate-from-wallet: activation
+requires accountable entity/vehicle approval independently of wallet control.
+Open: accountable reviewers, applicable agreement package and capital ownership.
+Pending/declined/expired relationships must retain their truthful status.
+Five normal-demo TEST firms remain separately funded and active; this explorer
+illustrates the preceding onboarding, not automatic legal approval.
+-->
+<div id="lockgate-managed-firm-journey">
+  <style>
+    #lockgate-managed-firm-journey { display: grid; gap: 16px; }
+    #lockgate-managed-firm-journey .firm-stages { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    #lockgate-managed-firm-journey .firm-actors { display: grid; gap: 20px; }
+    #lockgate-managed-firm-journey .firm-lane { display: grid; grid-template-columns: 100px minmax(0, 1fr); gap: 16px; align-items: baseline; }
+    #lockgate-managed-firm-journey .firm-step-label { display: block; }
+    #lockgate-managed-firm-journey strong { font-weight: 500; }
+    #lockgate-managed-firm-journey [data-field] { overflow-wrap: anywhere; }
+    @media (max-width: 480px) {
+      #lockgate-managed-firm-journey .firm-stages { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #lockgate-managed-firm-journey .firm-lane { grid-template-columns: 1fr; gap: 4px; }
+    }
+  </style>
+  <div class="viz-row">
+    <strong>Investment firm journey</strong>
+    <span class="text-muted text-small">Proposed · managed onboarding</span>
+  </div>
+  <nav class="firm-stages" aria-label="Explore firm onboarding stages">
+    <button type="button" class="btn" data-stage="0" aria-pressed="true" aria-controls="firm-stage-detail"><span class="firm-step-label">1 · Contact</span></button>
+    <button type="button" class="btn" data-stage="1" aria-pressed="false" aria-controls="firm-stage-detail"><span class="firm-step-label">2 · Review</span></button>
+    <button type="button" class="btn" data-stage="2" aria-pressed="false" aria-controls="firm-stage-detail"><span class="firm-step-label">3 · Agreements</span></button>
+    <button type="button" class="btn" data-stage="3" aria-pressed="false" aria-controls="firm-stage-detail"><span class="firm-step-label">4 · Setup</span></button>
+    <button type="button" class="btn" data-stage="4" aria-pressed="false" aria-controls="firm-stage-detail"><span class="firm-step-label">5 · Activate</span></button>
+    <button type="button" class="btn" data-stage="5" aria-pressed="false" aria-controls="firm-stage-detail"><span class="firm-step-label">6 · Use the app</span></button>
+  </nav>
+  <section id="firm-stage-detail" aria-live="polite" aria-atomic="true">
+    <h3 data-field="title">Start a conversation</h3>
+    <div class="text-muted" data-field="access">Public website · wallet not required</div>
+    <hr>
+    <div class="firm-actors">
+      <div class="firm-lane"><strong>The firm</strong><span data-field="firm">Request an introduction</span></div>
+      <div class="firm-lane"><strong>Our team</strong><span data-field="team">Discuss the mandate, vehicle and capital source</span></div>
+      <div class="firm-lane"><strong>Software</strong><span data-field="software">Enquiry and assigned contact</span></div>
+    </div>
+    <hr>
+    <div class="text-small" data-field="gate">Next: agree whether a partnership is suitable.</div>
+  </section>
+  <script>
+    (() => {
+      const root = document.getElementById('lockgate-managed-firm-journey');
+      const stages = [
+        { title: 'Start a conversation', access: 'Public website · wallet not required', firm: 'Request an introduction', team: 'Discuss the mandate, vehicle and capital source', software: 'Enquiry and assigned contact', gate: 'Next: agree whether a partnership is suitable.' },
+        { title: 'Verify the firm and vehicle', access: 'Invited document workspace · review in progress', firm: 'Supply entity, vehicle and representative evidence', team: 'Verify permitted activities, ownership and signatory authority', software: 'Secure document requests and review status', gate: 'Next: recorded reviewer approval; uploading documents is not approval.' },
+        { title: 'Agree the relationship', access: 'Private agreement workspace · awaiting execution', firm: 'Negotiate and sign the applicable agreement package', team: 'Coordinate legal review, counterpart signatures and acceptance', software: 'Document versions, signing status and executed copies', gate: 'Next: all required signatures and acceptance; a wallet signature alone is insufficient.' },
+        { title: 'Prepare operations', access: 'Restricted setup workspace · funding disabled until authorised', firm: 'Approve the vault, staff wallets, mandate and funding source', team: 'Test settlement, record access, permissions and capital readiness', software: 'Setup tasks, risk limits and integration checks', gate: 'Next: approved capital, reconciled funding and verified operating readiness.' },
+        { title: 'Activate the approved vehicle', access: 'Authorised workspace · governed activation', firm: 'Confirm the approved configuration and assigned staff', team: 'Record accountable approval and authorise vehicle activation', software: 'Scoped invitations and audited activation controls', gate: 'Next: confirmed activation and refreshed permissions; invitation alone is not activation.' },
+        { title: 'Operate the firm workspace', access: 'App · authenticated authorised wallet → dashboard', firm: 'Manage offers, exposure, liquidity, collections and reports', team: 'Monitor service and coordinate ongoing reviews', software: 'Firm dashboard, documents, transactions and scoped team access', gate: 'Returning approved staff go directly to their assigned dashboard.' }
+      ];
+      const buttons = Array.from(root.querySelectorAll('[data-stage]'));
+      const validStage = value => Number.isInteger(value) && value >= 0 && value < stages.length ? value : 0;
+      let selected = validStage(window.openai?.widgetState?.privateContent?.stage);
+      function render(stage) {
+        selected = validStage(stage);
+        buttons.forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.stage) === selected)));
+        Object.entries(stages[selected]).forEach(([field, value]) => {
+          root.querySelector(`[data-field="${field}"]`).textContent = value;
+        });
+      }
+      buttons.forEach(button => button.addEventListener('click', () => {
+        render(Number(button.dataset.stage));
+        window.openai?.setWidgetState?.({
+          modelContent: { proposal: 'managed-firm-onboarding', stage: stages[selected].title },
+          privateContent: { stage: selected }
+        })?.catch(() => {});
+      }));
+      window.addEventListener('openai:set_globals', event => {
+        const state = event.detail?.globals?.widgetState;
+        if (state) render(state.privateContent?.stage);
+      });
+      render(selected);
+    })();
+  </script>
+</div>
