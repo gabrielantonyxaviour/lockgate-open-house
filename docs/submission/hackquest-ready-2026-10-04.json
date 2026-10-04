@@ -1,0 +1,69 @@
+{
+  "projectUrl": "https://www.hackquest.io/projects/Lockgate",
+  "editorUrl": "https://www.hackquest.io/projects/setup/6260cf6e-870b-422a-a3b4-691214bfc9a9",
+  "submissionUrl": "https://www.hackquest.io/hackathon/17bfad43-fdef-4432-a8d7-7595b7538c41/null/submit",
+  "checkedOn": "2026-10-04",
+  "owner": "Gabriel Antony, solo founder",
+  "status": "Project text saved; all event answers filled in the retained browser tab; not submitted.",
+  "readiness": {
+    "score": 80,
+    "label": "Meets Entry Standard",
+    "blocker": "Lockgate project selector is disabled until at least one video is attached."
+  },
+  "savedProjectFields": [
+    "Intro (199/200)",
+    "Description: problem, evidence, mechanism, users, business model, Arbitrum/USDG, validation, deployment status and next steps",
+    "Progress During Hackathon",
+    "Fundraising Status",
+    "Solo-founder Team Intro (182/200)",
+    "Wallet connected (0x32FE...5847 shown by HackQuest)",
+    "Complete deployment addresses and explorer links, visible only to judges"
+  ],
+  "unchangedProjectFields": [
+    "Logo",
+    "DeFi/Infra/RWA",
+    "React/Web3/Node/Solidity/Foundry/TypeScript/viem/OpenZeppelin",
+    "MVP link",
+    "Website link",
+    "X link"
+  ],
+  "eventAnswers": {
+    "contract": "0xd80B6cD54Af98eEc49300259762c483d60F90111",
+    "frontend": "Arbitrum Sepolia app: https://open-house.lockgate.finance | Website: https://lockgate.finance",
+    "core": "Arbitrum Sepolia: CreditLine 0xd80B6cD54Af98eEc49300259762c483d60F90111; PricingEngine 0x0c2E226f4Da24975Aa3688a8abfbd034C594c06D; PlatformReserve 0xC5865AC922aCDA1C13fD06aF5b66CFfA6eAA333D; Router 0x9646c780e728C498f375768957330C50406E3370; full list in project Deployment Details.",
+    "factory": "Arbitrum Sepolia: FundFactory 0x0f70e5Eeb646D60d104Be26ef5130926fDdAaBbA; WeeklyQueuePlatform 0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25; PartnerVaultA 0xDa1AB87bC22730f21EC60F4B53f2271b95B6bAfb; PartnerVaultB 0xb2D6e88e71341B9aa415F9cA0E2Eb98F9a0FdaB1.",
+    "token": "Paxos-issued testnet USDG on Arbitrum Sepolia (421614): 0xFFC95faa3d63Cde504a05B567C600B78C0b41892. Lockgate issues no token. The separate local TEST demo uses a mock asset; these are the public Sepolia deployment details.",
+    "code": "The entire product was researched, validated and built from scratch by me, solo founder Gabriel Antony, during the Buildathon: Solidity contracts, pricing/proposal engine, React/TypeScript app, website, deployment tooling, simulations and end-to-end tests. Third-party libraries are dependencies."
+  },
+  "prizeTracks": [
+    "Overall Prize",
+    "Promising Products Track",
+    "Grants"
+  ],
+  "technologies": [
+    "OpenZeppelin",
+    "Paxos/USDG"
+  ],
+  "remaining": [
+    "Attach final demo video",
+    "Attach final pitch video",
+    "Choose Lockgate in the already-filled event form and submit; verify platform success"
+  ],
+  "formPersistence": "Browser tab retained with markHandoff. Server-side draft persistence is not confirmed; these exact answers are the recovery copy.",
+  "verification": [
+    "Public saved narrative read back",
+    "Team Intro saved and solo-founder status verified",
+    "Wallet connected and readiness increased to 80",
+    "Public app loaded on Arbitrum Sepolia and read 300.3472 USDG idle capital, zero outstanding, one platform at block 315646302",
+    "Website HTTP 200",
+    "All event answer lengths <=300",
+    "All supplied contract addresses matched repo/docs/DEPLOYMENTS.md",
+    "Only OpenZeppelin and Paxos/USDG checked as sponsor technologies"
+  ],
+  "boundaries": [
+    "Existing public Sepolia contracts use Paxos-issued testnet USDG. Newer local TEST contracts and mock asset are separate.",
+    "No final video, mainnet, signed pilot or independent security/legal sign-off is claimed.",
+    "GitHub repository is private. Visibility and permissions were not changed.",
+    "Concurrent product and video source files were not modified."
+  ]
+}
