@@ -1,0 +1,22 @@
+import { style } from './style.js';
+
+export const escape = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+const paragraphs = value => (Array.isArray(value) ? value : [value]).filter(Boolean).map(p => `<p>${escape(p)}</p>`).join('');
+const shell = (title, content) => `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${escape(title)} · Lockgate</title><style>${style}</style></head><body>${content}</body></html>`;
+
+export function loginPage(error = '') {
+  return shell('Private judge room', `<main class="gate"><div class="wordmark">LOCKGATE <span>PRIVATE JUDGE ROOM</span></div><p class="eyebrow">ARBITRUM OPEN HOUSE · BUILDATHON</p><h1>The evidence<br>behind the build.</h1><p class="intro">Customer discovery, product decisions and the founder’s acquisition plan. Access is reserved for the judging team.</p><form method="post" action="/judges/login"><label for="password">Judge access password</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="128">${error ? `<p role="alert" class="error">${escape(error)}</p>` : ''}<button type="submit">Open private room <span aria-hidden="true">↗</span></button></form><p class="muted">Confidential supporting evidence. Please keep the access password and customer material within the judging team.</p></main>`);
+}
+
+function appendix(title, value) {
+  return `<details class="appendix"><summary>${escape(title)}</summary><pre>${escape(JSON.stringify(value, null, 2))}</pre></details>`;
+}
+
+export function dossierPage(data) {
+  const nav = data.sections.map(section => `<a href="#${escape(section.id)}">${escape(section.title)}</a>`).join('');
+  const metrics = data.metrics.map(metric => `<div><strong>${escape(metric.value)}</strong><span>${escape(metric.label)}</span><small>${escape(metric.scope)}</small></div>`).join('');
+  const sections = data.sections.map((section, index) => `<section id="${escape(section.id)}"><p class="eyebrow">${String(index + 1).padStart(2, '0')} / EVIDENCE</p><h2>${escape(section.title)}</h2><p class="section-intro">${escape(section.summary)}</p>${section.items.map(item => `<article><div class="meta">${escape(item.date)}${item.status ? ` · ${escape(item.status)}` : ''}</div><h3>${escape(item.title)}</h3>${paragraphs(item.body)}${item.sources?.length ? `<details class="sources"><summary>Source references</summary><ul>${item.sources.map(source => `<li>${escape(source)}</li>`).join('')}</ul></details>` : ''}</article>`).join('')}</section>`).join('');
+  const titles = { historicalOutboundTimeline: 'Historical outreach timeline', historicalHumanReplyTimeline: 'Retained human replies', token2049AppEvidence: 'TOKEN2049 app evidence', qualifiedProspectInventory: 'Complete qualified prospect inventory', eventCandidateInventory: 'Researched events and attendance plan', excludedEvidence: 'Evidence reconciliation notes' };
+  const appendices = Object.entries(data.appendices).map(([key, value]) => appendix(titles[key] ?? key, value)).join('');
+  return shell('Founder evidence dossier', `<header><div class="wordmark">LOCKGATE <span>CONFIDENTIAL</span></div><form method="post" action="/judges/logout"><button class="quiet" type="submit">Sign out</button></form></header><div class="layout"><aside><p class="eyebrow">IN THIS ROOM</p><nav>${nav}<a href="#supporting-records">Supporting records</a></nav><p class="muted">Solo founder<br>Gabriel Antony<br><br>Evidence snapshot<br>${escape(data.asOf)}</p></aside><main><div class="hero"><p class="eyebrow">BUILDATHON · FOUNDER EVIDENCE DOSSIER</p><h1>Discovery.<br>Decisions. Delivery.</h1><p class="intro">${escape(data.overview)}</p><p class="notice">Private customer and partner material. Shared exclusively for judging; please do not redistribute.</p></div><div class="metrics">${metrics}</div>${sections}<section id="supporting-records"><p class="eyebrow">08 / SOURCE RECORDS</p><h2>The supporting detail</h2><p class="section-intro">Retained outreach, reply text and research inventories. Counts carry their own time windows and scopes; overlapping channels are not added together.</p><a class="download" href="/judges/data.json">Download the complete evidence dossier ↓</a>${appendices}</section><footer>Lockgate · Researched, validated and built from scratch during the Buildathon by Gabriel Antony.</footer></main></div>`);
+}

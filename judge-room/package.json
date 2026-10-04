@@ -1,0 +1,7 @@
+{
+  "name": "@lockgate/private-judge-room",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test test/*.test.js", "dev": "wrangler dev --port 8794", "deploy": "wrangler deploy" },
+  "dependencies": { "zod": "4.6.5" }
+}

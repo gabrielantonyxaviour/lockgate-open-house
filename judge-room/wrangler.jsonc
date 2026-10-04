@@ -1,0 +1,11 @@
+{
+  "name": "lockgate-private-judges",
+  "main": "src/index.js",
+  "compatibility_date": "2026-05-11",
+  "account_id": "893c47ccb111ed55932bf2c9316d5f9d",
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "open-house.lockgate.finance/judges*", "zone_name": "lockgate.finance" }],
+  "unsafe": { "bindings": [{ "name": "LOGIN_LIMITER", "type": "ratelimit", "namespace_id": "20491004", "simple": { "limit": 8, "period": 60 } }] },
+  "observability": { "enabled": false }
+}
