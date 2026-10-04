@@ -1,48 +1,50 @@
-# Lockgate exit desk
+# Lockgate four-persona demo
 
-Approved screen set, implemented in React + TypeScript + custom CSS. Layout hierarchy was reviewed against ReUI dashboard-8/app-shell-2/wizard-7/wizard-2/timeline-3/settings-3 and the official shadcn dashboard. No paid registry source or licensed bundles are included. Typography and tokens match `../site`.
+The local app now implements the approved four-persona journey. Public liquidity metrics precede wallet connection. Signed wallet authentication retrieves a persisted profile; new wallets choose a path, while completed identities return to their workspace.
 
-## Run
+| Path | Entry | Working demo |
+|---|---|---|
+| 01 Exit investor | Get Started | TEST identity, matched positions, firm offers, exact exit agreement, signed settlement, payout and remaining position |
+| 02 Originating fund/platform | Talk to us | Durable enquiry; invited organization wallet registers claims and settles collections/borrower repayments |
+| 03 Investment firm | Talk to us | Durable enquiry; invited manager wallet configures whitelists, routes, limits and current-NAV exposure caps, views capital and processes withdrawals |
+| 04 Capital provider | Get Started | TEST identity, one vehicle, vehicle eligibility, amount-specific subscription and firm acceptance, token approval/deposit, individual ledger and withdrawals |
+
+Institutional activation is managed; choosing a role or submitting a form does not create licensing or wallet authority. The demo fixtures are fictional. No prospect is represented as an integrated fund.
+
+## Local runtime
+
+Follow [DEMO_RUNTIME.md](../docs/DEMO_RUNTIME.md) to start the isolated local chain, seed and API. The frontend runs at http://127.0.0.1:5197; Vite proxies `/api/demo` to loopback port8788. Do not restart another session's development server.
 
 ```sh
-npm ci
 npm run dev
 npm run build
-npm test
-npm run test:e2e
+npm run typecheck
 npm run lint
+npm test
+LOCKGATE_DEMO_E2E=1 npm run test:e2e -- test/demo-signed-flow.spec.ts --workers=1
 ```
 
-Development URL: http://127.0.0.1:5197. The default mode reads deployed Arbitrum Sepolia contracts. `/?preview=1#/overview` enables an explicitly labelled illustrative, read-only layout preview. Preview data never replaces failed live reads, and cannot send transactions.
+The chain uses ID421614 for the demo contract guards but is a **local EVM**, not public Arbitrum Sepolia. Its token is a locally deployed six-decimal TEST ERC20, not Paxos-issued USDG. The gateway compares the wallet's genesis block with the configured RPC before signatures or transactions, preventing a public Sepolia wallet from accidentally sending to local addresses. Arbitrum One remains unavailable for financial actions until an approved deployment exists.
 
-## Screens
+The current work is local only. Existing public Sepolia deployment history remains in [DEPLOYMENTS.md](../docs/DEPLOYMENTS.md); it does not prove these new contracts or journeys were deployed. No production domain or mainnet changes are included.
 
-Public live overview; wallet connection and equal investor/platform journey choice; platform directory/detail; positions and requests; live exit quote; receipt and advance lifecycle; activity; issuer settlement and controls; own-book operations; partner vaults/mandates, reserves and repayment; partner proposal review; senior/junior institutional facility; platform onboarding draft; integration references; settings/help. The optional judge guide follows connected-wallet contract state. Custom Radix Select controls support keyboard navigation and typeahead. Search opens with `/` or Cmd/Ctrl-K. The wallet dialog includes account, network, USDG, gas balance, explorer access and disconnect. A remembered connection restores only already-authorized accounts, without prompting.
+## Transaction and record boundaries
 
-## Transaction boundary
+- Browser actions use the connected EIP1193 account. No private key is bundled in the frontend.
+- Wallet-signed authentication is nonce-scoped; financial approvals and transactions require separate wallet confirmations.
+- Selecting a TEST identity requests a reviewer attestation; the actual wallet binds it on chain. Original holding identity stays immutable.
+- Wrong-owner fixtures reveal no private position metadata and cannot request offers. Empty holdings are distinct from failed reads.
+- Firm quotes are indicative until the selected offer reserves actual cash and holding units. The investor signs its exact EIP712 quote and agreement hash; settlement rechecks identity, route, limits, expiry and reservation.
+- Route A records acquired claim rights. Route B discharges the agreed old slice and records separate originator debt. The investor is not the borrower.
+- Provider interests are individual, nontransferable bookkeeping entries. There is no pooled vault token, provider-selected exit allocation or custom lock switch.
+- Receipts require successful EVM execution. Submitted hashes survive uncertainty and block another financial action until reconciled. Local hashes are not linked to a public explorer.
+- Withdrawals use available cash or FIFO queueing; unfilled portions can be cancelled, filled cash claimed. Queued cash cannot fund another exit.
+- Enquiries persist before acknowledgement. Branded HTML/text email stays queued without a verified Lockgate sender; provider acceptance is distinct from inbox delivery.
 
-An injected browser wallet is required for wallet actions. Writes use only chain421614 and the connected account. Inputs are validated with zod; amount conversion uses bigint. USDG approvals are exact amounts, contract calls simulate before signing, and receipts must be successful before a transaction is labelled confirmed. Quote freshness is checked immediately before sending; minimum received is enforced in the contract. A confirmation timeout retains its hash and disables immediate retry in that review. No private-key connector or admin key is shipped.
+The chain contract and accounting limitations are documented in [DEMO_CHAIN_CONTRACT.md](../docs/DEMO_CHAIN_CONTRACT.md). Tests use real local signatures and raw broadcasts through an injected EIP1193 test wallet; that is not evidence of a browser extension's popup or public-network broadcasts.
 
-Permissions are determined by current owner/issuer/partner contracts and checked again during simulation. Browsing a workspace grants no permissions. Processing a due platform settlement window is permissionless. Platform registration verifies the actual factory owner, supports weekly/epoch/quarterly platforms, and decodes the created address from the confirmed receipt. Registration does not fund a platform or supply investor USDG.
+## Design and scope
 
-## Boundaries
+Compact headings, custom Radix selectors, shared radii, visible wallet balances, standalone `/#/terms`, `/#/records`, and a transaction-backed Demo sheet implement the reviewed design. The existing product blueprint remains the decision history; its preview is illustrative and cannot replace chain evidence.
 
-- Real Paxos test USDG on Arbitrum Sepolia; platform contracts are demonstrations. The network selector also supports Arbitrum One wallet switching; One displays an unavailable desk until its deployment is configured. Sepolia addresses are never reused on One.
-- Partner proposals require imported complete engine JSON. The UI validates the chain, vault, terms, filed digest, nonce and mandate before partner approval. A hosted automatic proposal feed is not connected.
-- Onboarding stores a bounded local planning draft and exports JSON. It does not submit documents, execute legal verification, accept facility terms, or activate a platform.
-- Partner vaults and the institutional facility require funding. Facility deposits require governor approval; draws require the designated borrower and borrowing capacity. Lenders can redeem available idle principal and claim paid interest. Recovery follows the contract waterfall. Connecting an arbitrary wallet does not grant these roles.
-- Histories and queues are bounded; a larger deployment needs an indexed event/history service. Historical Advanced requests may have cleared advances; a Late advance with zero remaining is shown as recovered.
-- RPC failures leave live data unavailable or visibly stale. They never silently switch to a populated preview.
-- `wrangler.jsonc` serves the same Open House app at `openhouse.lockgate.finance` and `open-house.lockgate.finance`. `app.lockgate.finance` is not configured by this project.
-
-Current contract addresses are from `../docs/DEPLOYMENTS.md`; source truth is `../contracts`. The older outer `SPEC.md` describes superseded permissionless creation and Door2 and must not be used as an integration contract.
-
-Interface styling follows [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md). Adapt registry components to shared tokens rather than preserving each reference’s styling.
-
-## Journey and verification
-
-Visitors see public contract metrics and explanatory platform windows immediately; wallet connection reveals the investor/platform choice. The optional `/#/judge` walkthrough checks the actual wallet, selected platform, gas balance, USDG, positions, permissions, and due windows. Old repaid receipts are historical inspection, not proof that a visitor completed the journey. Fresh platform registration is available to the factory owner at `/#/create`.
-
-`LOCKGATE_FORK_TEST=1 npm run test:e2e -- test/fork-flow.spec.ts` runs an opt-in local Arbitrum Sepolia fork with a browser wallet, real contract receipts, deposit, quoted early exit, and repayment settlement. It broadcasts only to loopback Anvil; it requires `anvil`. Normal browser tests skip this scenario.
-
-`LOCKGATE_SIGNED_FORK_TEST=1 npm run test:e2e -- test/signed-wallet-flow.spec.ts --workers=1` runs the expanded persona journey using public Anvil accounts to sign raw transactions. Its EIP1193 adapter uses the application's normal wallet boundary; receipts come from actual contract execution on loopback port 19548. Setup role handovers are recorded separately. The facility uses a genuine local deployment of the same compiled artifact because the public deployment's borrower key is unavailable. These tests do not exercise a browser extension's popup or broadcast to the public network. Proof manifests include receipt hashes, balances, fixture provenance and recording hashes.
+Historical owner-funded rails and their source/tests remain available in the repository. The current App entry uses the new isolated demo sidecar. Production KYC, commercial KYB/licensing, external fund registrar integrations, governed lost-wallet recovery, multi-firm syndication and mainnet release are not claimed by this local demo.

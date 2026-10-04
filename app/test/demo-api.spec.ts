@@ -1,0 +1,63 @@
+import {expect,test,type APIRequestContext} from '@playwright/test';
+import {readFile} from 'node:fs/promises';
+import {resolve} from 'node:path';
+import {keccak256,toHex,type Address,type Hex} from 'viem';
+import {accountAt} from './demo-wallet';
+import {hashFile,prepareProof,saveProof} from './demo-proof';
+
+type Session={account:Address;token:string;state:Record<string,unknown>};
+const post=(request:APIRequestContext,path:string,data:unknown,token?:string)=>request.post(`/api/demo/${path}`,{data,headers:token?{Authorization:`Bearer ${token}`}:{}});
+async function authenticate(request:APIRequestContext,index:number):Promise<{session:Session;attempt:Record<string,unknown>}>{
+ const signer=accountAt(index),account=signer.address;
+ const challenge=await post(request,'challenge',{account,chainId:421614});expect(challenge.status()).toBe(200);
+ const {message,nonce}=await challenge.json() as {message:string;nonce:string};
+ const signature=await signer.signMessage({message});const attempt={account,chainId:421614,message,nonce,signature};
+ const response=await post(request,'authenticate',attempt);expect(response.status()).toBe(200);
+ const authenticated=await response.json() as {token:string;state:Record<string,unknown>};
+ return {session:{account,token:authenticated.token,state:authenticated.state},attempt};
+}
+
+test('API challenge replay, private ledger, canonical receipt, provider mismatch and durable enquiry',async({request})=>{
+ test.skip(process.env.LOCKGATE_DEMO_API!=='1','Run after main signed-wallet E2E on the same local chain.');
+ test.setTimeout(120_000);await prepareProof();
+ const checks:unknown[]=[],m=JSON.parse(await readFile(resolve('public/demo-contracts.json'),'utf8')) as {vaults:{id:string}[]};
+ const {session:enquirer,attempt}=await authenticate(request,17);
+ const replay=await post(request,'authenticate',attempt);expect(replay.status()).toBe(401);
+ expect((await replay.json()).code).toBe('CHALLENGE_INVALID');checks.push({challengeReplayStatus:replay.status(),code:'CHALLENGE_INVALID'});
+ const {session:primary}=await authenticate(request,11),{session:other}=await authenticate(request,12);
+ const primaryState=primary.state as {vehicles:{providerPrincipal:string}[];receipts:{hash?:Hex;title:string;amount?:string}[]};
+ const otherState=other.state as {vehicles:{providerPrincipal:string}[]};
+ expect(Number(primaryState.vehicles[0].providerPrincipal)).toBeGreaterThan(0);
+ expect(otherState.vehicles[0].providerPrincipal).toBe('0');
+ expect(Number(otherState.vehicles[1].providerPrincipal)).toBeGreaterThan(0);
+ checks.push({privateLedger:{primaryAccount:primary.account,primaryFirm1:primaryState.vehicles[0].providerPrincipal,otherAccount:other.account,otherFirm1:otherState.vehicles[0].providerPrincipal,otherFirm2:otherState.vehicles[1].providerPrincipal}});
+ const prior=primaryState.receipts.find(item=>item.hash);expect(prior).toBeDefined();
+ const forgedTitle='Fabricated receipt 999999 TEST USDG';
+ const tampered=await post(request,'receipts',{hash:prior!.hash,title:forgedTitle,amount:'999999'},primary.token);expect(tampered.status()).toBe(200);
+ const canonical=await tampered.json() as {hash:Hex;title:string;amount?:string;status:string};
+ expect(canonical.hash).toBe(prior!.hash);expect(canonical.title).not.toBe(forgedTitle);expect(canonical.amount).not.toBe('999999');
+ expect(canonical.status).toBe('confirmed');checks.push({receipt:{hash:canonical.hash,submittedTitle:forgedTitle,canonicalTitle:canonical.title,submittedAmount:'999999',canonicalAmount:canonical.amount,status:canonical.status}});
+ const {session:mismatch}=await authenticate(request,3);
+ const chosen=await post(request,'role',{role:'provider'},mismatch.token);expect(chosen.status()).toBe(200);
+ const eligible=await post(request,'eligibility',{vehicleId:m.vaults[0].id},mismatch.token);expect(eligible.status()).toBe(200);
+ const mismatchState=await eligible.json() as {positionStatus:string;positions:unknown[];vehicles:{eligible:boolean}[]};
+ expect(mismatchState.positionStatus).toBe('mismatch');expect(mismatchState.positions).toHaveLength(0);expect(mismatchState.vehicles[0].eligible).toBe(true);
+ checks.push({mismatchInvestorPositionDenied:true,providerEligibility:mismatchState.vehicles[0].eligible});
+ const invalid=await post(request,'enquiries',{role:'originator',representative:'Mira Sato',email:'mira.sato@example.test',organization:'Aperture',jurisdiction:'Singapore',summary:'too short'},enquirer.token);
+ expect(invalid.status()).toBe(400);checks.push({invalidEnquiryStatus:invalid.status()});
+ const unsafe='Aperture <script>alert("bad")</script>';
+ const requestId=keccak256(toHex(`api-enquiry-${Date.now()}-${enquirer.account}`));
+ const fields={role:'originator',representative:'Mira Sato',email:'mira.sato@example.test',organization:unsafe,jurisdiction:'Singapore',summary:'We want to discuss onboarding a TEST private credit claim for the local Lockgate demonstration.',requestId};
+ const first=await post(request,'enquiries',fields,enquirer.token);expect(first.status()).toBe(201);
+ const firstBody=await first.json() as {reference:string;receivedAt:string;emailStatus:string};
+ expect(firstBody.reference).toMatch(/^ENQ-[\da-f]{12}$/);expect(firstBody.emailStatus).not.toMatch(/delivered/i);
+ const outboxPath=resolve('../scripts/demo/local/email',`${firstBody.reference}.json`);
+ const outbox=JSON.parse(await readFile(outboxPath,'utf8')) as {html:string;status:string;reference:string};
+ expect(outbox.reference).toBe(firstBody.reference);expect(outbox.html).not.toContain('<script>');expect(outbox.html).toContain('&lt;script&gt;');
+ const replayEnquiry=await post(request,'enquiries',fields,enquirer.token);expect(replayEnquiry.status()).toBe(200);
+ const replayBody=await replayEnquiry.json() as {reference:string;receivedAt:string;emailStatus:string};
+ expect(replayBody.reference).toBe(firstBody.reference);expect(replayBody.receivedAt).toBe(firstBody.receivedAt);expect(replayBody.emailStatus).not.toMatch(/delivered/i);
+ const conflict=await post(request,'enquiries',{...fields,summary:fields.summary+' Changed.'},enquirer.token);expect(conflict.status()).toBe(409);expect((await conflict.json()).code).toBe('IDEMPOTENCY_CONFLICT');
+ checks.push({enquiry:{reference:firstBody.reference,firstStatus:first.status(),replayStatus:replayEnquiry.status(),conflictStatus:conflict.status(),sameReference:true,sameReceivedAt:true,escapedHtml:true,outboxStatus:outbox.status,emailStatus:replayBody.emailStatus}});
+ await saveProof('api-boundary-evidence.json',{environment:'LOCAL API/ANVIL TEST ONLY; no email delivery claimed',checks,sourceHashes:{test:await hashFile(resolve('test/demo-api.spec.ts')),manifest:await hashFile(resolve('public/demo-contracts.json'))}});
+});
