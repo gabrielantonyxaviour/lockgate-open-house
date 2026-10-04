@@ -123,8 +123,8 @@ test('history adds explorer links and opens only useful transaction details',asy
  await page.getByRole('button',{name:'Use selected profile'}).click();await page.evaluate(()=>{Reflect.get(window,'resolveBinding')();Reflect.get(window,'resolveDiscovery')();});
  await page.getByRole('navigation',{name:'Dashboard navigation'}).getByRole('link',{name:'Transaction history'}).click();
  await expect(page.getByRole('heading',{name:'Transaction History',exact:true})).toBeVisible();
- await expect(page.getByRole('button',{name:'View details for Test gas funded'})).toHaveCount(0);
- const explorer=page.getByRole('link',{name:'View Test gas funded transaction in explorer'});
+ await expect(page.getByRole('button',{name:'View details for gas funded'})).toHaveCount(0);
+ const explorer=page.getByRole('link',{name:'View gas funded transaction in explorer'});
  await expect(explorer).toHaveAttribute('href',`https://sepolia.arbiscan.io/tx/${hash}`);await expect(explorer).toHaveAttribute('target','_blank');
  await page.getByRole('button',{name:'View details for Exit settled'}).click();
  await expect(page.getByRole('dialog')).toContainText('Residual units');await expect(page.getByRole('dialog')).toContainText('0x111111…111111');await expect(page.getByRole('dialog').getByRole('link',{name:'View address in explorer'})).toHaveAttribute('href',`https://sepolia.arbiscan.io/address/${account}`);
@@ -154,4 +154,29 @@ for(const width of [375,768,1440])test(`dashboard navigation and direct exit fit
  await (await dashboardNav(page)).getByRole('link',{name:'Agreements',exact:true}).click();
  await expect(page.getByRole('heading',{name:'Agreements',exact:true})).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+});
+
+for(const role of ['investor','provider'] as const)test(`${role} repeats verification with its existing linked profile and retains its account`,async({page})=>{
+ await fixture(page,true,false,[],role);
+ await expect(page.getByRole('heading',{name:'Overview',exact:true})).toBeVisible();
+ await page.getByRole('button',{name:'Demo',exact:true}).click();
+ await page.getByRole('button',{name:'Repeat onboarding',exact:true}).click();
+ const progress=page.getByRole('region',{name:'Account setup'});
+ await expect(progress).toContainText('Verification required');
+ await page.getByRole('button',{name:'Start KYC',exact:true}).click();
+ await expect(page.getByRole('radio',{name:'Alex Morgan',exact:true})).toBeChecked();
+ await expect(page.getByRole('radio',{name:'Lucas Chen',exact:true})).toBeDisabled();
+ if(process.env.LOCKGATE_VISUAL_REVIEW==='1')await page.screenshot({path:`/tmp/lockgate-reverify-${role}.png`});
+ await page.getByRole('button',{name:'Use selected profile',exact:true}).click();
+ await expect(progress).toContainText('Linking identity…');
+ await page.evaluate(()=>Reflect.get(window,'resolveBinding')());
+ await expect(progress).toContainText('Verified');
+ await page.evaluate(()=>Reflect.get(window,'resolveDiscovery')());
+ await expect(page.getByRole('heading',{name:'Overview',exact:true})).toBeVisible();
+ await expect(progress).toHaveCount(0);
+ if(role==='investor')await expect(page.getByRole('heading',{name:'Cedar Income Fund'})).toBeVisible();
+ await page.getByRole('button',{name:'Demo',exact:true}).click();
+ await page.getByRole('button',{name:'Repeat onboarding',exact:true}).click();
+ await page.getByRole('button',{name:'Return to dashboard',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Overview',exact:true})).toBeVisible();
 });

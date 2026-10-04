@@ -4,16 +4,17 @@ import { Button, Notice } from './Common';
 import { identities } from './fixtures';
 import './identity-dialog.css';
 
-export function IdentityDialog({ onClose, onSelect, busy, error }: {
+export function IdentityDialog({ onClose, onSelect, busy, error, linkedProfileId }: {
   onClose: () => void;
   onSelect: (id: string) => void;
   busy: boolean;
   error?: string;
+  linkedProfileId?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const heading = useRef<HTMLHeadingElement>(null);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState('');
+  const [selected, setSelected] = useState(linkedProfileId||'');
   const titleId = useId();
   const descriptionId = useId();
 
@@ -65,7 +66,7 @@ export function IdentityDialog({ onClose, onSelect, busy, error }: {
         <div className="dg-profile-grid" role="radiogroup" aria-label="identity">
           {identities.map((profile, index) => <label key={profile.id} className={`dg-profile-choice ${selected === profile.id ? 'selected' : ''}`}>
             <input type="radio" name="identity" value={profile.id} aria-label={profile.name}
-              checked={selected === profile.id} onChange={() => setSelected(profile.id)}/>
+              disabled={Boolean(linkedProfileId&&linkedProfileId!==profile.id)} checked={selected === profile.id} onChange={() => setSelected(profile.id)}/>
             <ProfileAvatar index={index}/>
             <span className="dg-profile-details"><strong>{profile.name}</strong><span>{profile.jurisdiction}</span>
               <small><ShieldCheck size={12}/>Preverified profile</small>
@@ -77,7 +78,7 @@ export function IdentityDialog({ onClose, onSelect, busy, error }: {
       </div>
       <div className="dg-identity-dialog-footer">
         {error && <Notice error>{error}</Notice>}
-        <p>Confirm your selection to link this profile to your wallet.</p>
+        <p>{linkedProfileId?'Confirm your linked profile to renew its verification on this wallet.':'Confirm your selection to link this profile to your wallet.'}</p>
         <div className="dg-identity-dialog-buttons"><Button secondary onClick={onClose}>Cancel</Button><Button disabled={!selected} onClick={() => onSelect(selected)}>Use selected profile</Button></div>
       </div>
     </>}

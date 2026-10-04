@@ -9,9 +9,9 @@ import './demo-sheet.css';
 
 type Action = 'mint' | 'check' | 'usdg';
 type Feedback = { title:string; detail:string; error?:boolean; confirmed?:boolean; hash?:Receipt['hash'] };
-type Props = { state:DemoState; gateway:DemoGateway; busy:boolean; run:<T>(task:()=>Promise<T>)=>Promise<T>; refresh:()=>Promise<void>; close:()=>void };
+type Props = { state:DemoState; gateway:DemoGateway; busy:boolean; run:<T>(task:()=>Promise<T>)=>Promise<T>; refresh:()=>Promise<void>; close:()=>void; reverify?:()=>void };
 
-export function DemoSheet({state,gateway,busy,run,refresh,close}:Props) {
+export function DemoSheet({state,gateway,busy,run,refresh,close,reverify}:Props) {
  const ref=useRef<HTMLElement>(null);
  const inFlight=useRef(false);
  const [action,setAction]=useState<Action>();
@@ -84,6 +84,7 @@ export function DemoSheet({state,gateway,busy,run,refresh,close}:Props) {
   <section ref={ref} className="dg-sheet" role="dialog" aria-modal="true" aria-labelledby="demo-title" tabIndex={-1}>
    <div className="dg-card-top"><span className="dg-badge">{state.environment||'setup · chain 421614'}</span><button className="dg-icon-button" aria-label="Close Demo" disabled={locked} onClick={close}><X size={20}/></button></div>
    <h2 id="demo-title">Demo setup</h2><p>Prepare this wallet with supported assets.</p>
+   {reverify&&<div className="dg-setup-item"><h3>Repeat identity verification</h3><p>Reopen onboarding with your linked profile. Positions, agreements and transaction history are retained. Confirmation renews your identity binding through a wallet transaction.</p><Button secondary disabled={locked} onClick={reverify}>Repeat onboarding</Button></div>}
    <Rows items={[["Test gas",`${state.setup.gas} ETH`],["Test USDG",`${money(state.setup.usdg)} USDG`]]}/>
    {state.setup.message&&<Notice>{state.setup.message}</Notice>}
    {state.setup.canGetGas!==undefined&&<div className="dg-setup-item"><h3>Get gas</h3><p>Open the Arbitrum Sepolia faucet to request ETH.</p><a className="dg-button dg-secondary" href="https://www.alchemy.com/faucets/arbitrum-sepolia" target="_blank" rel="noopener noreferrer">Get gas</a></div>}
