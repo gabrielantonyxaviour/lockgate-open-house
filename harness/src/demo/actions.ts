@@ -187,7 +187,7 @@ export async function mintPosition(account:Address):Promise<ReceiptRecord> {
  p.pendingMint={id,identityId:identity.id};save();
  const units=paxosMode?'3':'100000';
  const hash=await tx(1,m.registry,registryAbi,'registerHolding',[id,identityHash(identity.identityRef),parseUnits(units,6),3,true]);
- p.minted.push({id,identityId:identity.id,name:'Alder Private Credit TEST position',originator:m.originators[0].name,originatorAddress:m.originators[0].address,units});
+ p.minted.push({id,identityId:identity.id,name:'Alder Private Credit',originator:m.originators[0].name,originatorAddress:m.originators[0].address,units});
  const r:ReceiptRecord={id:newId('receipt'),title:'TEST position registered',status:'confirmed',hash,amount:units,createdAt:new Date().toISOString(),account,detail:'Originator-authorized position issuance'};
  p.receipts.unshift(r);delete p.pendingMint;save();return r;
 }

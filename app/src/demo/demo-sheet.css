@@ -1,0 +1,6 @@
+.dg-setup-feedback{display:flex;gap:10px;margin-top:16px;padding:14px;border:1px solid var(--dg-line);border-radius:8px;background:#f6f6f6;line-height:1.6}
+.dg-setup-feedback>svg{flex-shrink:0;margin-top:2px;color:#525252}
+.dg-setup-feedback>div{min-width:0}
+.dg-setup-feedback strong{display:block;font-size:12px;font-weight:550}
+.dg-setup-feedback p{margin:4px 0 0;font-size:11px;color:#666}
+.dg-setup-feedback .dg-chain-reference{margin-top:8px}

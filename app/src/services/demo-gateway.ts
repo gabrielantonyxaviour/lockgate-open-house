@@ -160,7 +160,7 @@ class Gateway implements DemoGateway {
   const hash=await wallet.writeContract({address:vehicle.address,abi:vaultAbi,functionName,args});
   return this.record(hash,action==='claim'?'Queued withdrawal received':action==='cancel'?'Unfilled withdrawal cancelled':'Withdrawal queue checked');
  }
- async mintPosition() {const result=receiptSchema.parse(await this.api.request('mint-position',{}));await this.readState();return result as Receipt;}
+ async mintPosition() {return receiptSchema.parse(await this.api.request('mint-position',{})) as Receipt;}
  async getTestGas() {const result=receiptSchema.parse(await this.api.request('gas',{}));await this.readState();return result as Receipt;}
  async getTestUsdg() {const result=receiptSchema.parse(await this.api.request('faucet',{}));await this.readState();return result as Receipt;}
  async workspaceAction(actionId:string,inputs:Record<string,string>) {

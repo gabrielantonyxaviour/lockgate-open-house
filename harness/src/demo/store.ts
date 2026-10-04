@@ -27,3 +27,5 @@ export function saveEnquiry(entry:Stored['enquiries'][number]) {data.enquiries.p
 export function findEnquiry(account:Address,requestId:string){return data.enquiries.find(x=>x.account.toLowerCase()===account.toLowerCase()&&x.requestId===requestId);}
 export function setEnquiryStatus(reference:string,emailStatus:string){const item=data.enquiries.find(x=>x.reference===reference);if(item){item.emailStatus=emailStatus;persist();}}
 export function newId(prefix:string){return `${prefix}-${randomBytes(6).toString('hex')}`;}
+
+export function issuedHolding(id:Hex){return Object.values(data.profiles).flatMap(p=>p.minted).find(h=>h.id.toLowerCase()===id.toLowerCase());}

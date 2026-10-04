@@ -56,11 +56,11 @@ export async function demoState(account:Address) {
   if(record[0].toLowerCase()!==account.toLowerCase())return;
   agreements.push({id:a.documentId??`agreement-${v.id}-${a.subscriptionId}`,version:a.version??'1',title:`${v.firm} TEST subscription terms`,text:a.message,digest:a.digest,signedAt:a.signedAt,signerName:a.signerName,status:record[4]?'Funded TEST subscription':'Firm accepted TEST subscription',receiptId:a.txHash});
  }));
- await Promise.all(holdings.map(async h=> {
+ positions.push(...await Promise.all(holdings.map(async h=> {
   const chainHolding=await read(m.registry,registryAbi,'holding',[h.id]) as {remaining:bigint;locked:bigint;divisible:boolean};
   const remaining=chainHolding.remaining,locked=chainHolding.locked;
-  positions.push({id:h.id,name:h.name,originator:h.originator,instrument:h.instrument,available:money(remaining-locked),faceValue:money(remaining),partial:chainHolding.divisible});
- }));
+  return {id:h.id,name:h.name,originator:h.originator,instrument:h.instrument,available:money(remaining-locked),faceValue:money(remaining),partial:chainHolding.divisible};
+ })));
  // Exit offers are fetched separately; an investor refresh does not replay provider books.
  const vehicles=p.role==='investor'?[]:await Promise.all(m.vaults.map(async v=>{
   const [cash,totalAssets,totalUnits,bookUnits,queuedUnits,claimable,queueHead,queueTail]=await Promise.all([
