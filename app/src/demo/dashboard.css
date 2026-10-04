@@ -1,0 +1,63 @@
+.dg-body:has(.dg-dashboard){max-width:1440px;width:100%;padding-top:0;padding-bottom:0}
+.dg-body:has(.dg-dashboard)>main{padding-top:0}
+.dg-dashboard{display:grid;grid-template-columns:224px minmax(0,1fr);gap:0;min-height:660px}
+.dg-dashboard-sidebar{position:sticky;top:88px;height:calc(100dvh - 88px);align-self:start;padding:16px 20px 32px 0;border-right:1px solid var(--dg-line);display:flex;flex-direction:column}
+.dg-dashboard-identity{display:grid;gap:5px;padding:6px 12px 28px}
+.dg-dashboard-identity>span{font-size:10px;color:var(--dg-muted)}
+.dg-dashboard-identity strong{font-size:13px;font-weight:550;overflow-wrap:anywhere}
+.dg-dashboard nav{display:flex;flex-direction:column;gap:5px;flex:1}
+.dg-dashboard nav a{display:flex;align-items:center;gap:11px;min-height:44px;padding:11px 12px;border-radius:8px;text-decoration:none;font-size:12px;color:#666}
+.dg-dashboard nav a[aria-current=page]{background:#eaeaea;color:#171717;font-weight:550}
+.dg-dashboard nav a svg{flex-shrink:0}
+.dg-dashboard nav .dg-dashboard-account-link{margin-top:auto}
+.dg-dashboard-main{min-width:0;padding-left:36px}
+.dg-dashboard-toolbar{display:flex;justify-content:space-between;align-items:center;gap:14px;min-height:76px;margin-bottom:16px;font-size:11px;color:#666}
+.dg-dashboard-toolbar>span{display:flex;align-items:center;gap:10px}
+.dg-dashboard-toolbar strong{font-weight:450;color:#404040}
+.dg-dashboard .dg-heading{margin-bottom:25px}
+.dg-dashboard .dg-heading h1{font-size:28px;letter-spacing:-.9px;line-height:1.3}
+.dg-dashboard .dg-heading p{font-size:12px;margin-top:8px;line-height:1.7}
+.dg-dashboard-content{min-width:0;padding-bottom:40px}
+.dg-dashboard .dg-panel{border-radius:12px}
+.dg-dashboard-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));background:white;border:1px solid var(--dg-line);border-radius:12px;margin-bottom:32px}
+.dg-dashboard-metrics>div{display:grid;gap:14px;padding:22px 20px;border-right:1px solid var(--dg-line);min-width:0}
+.dg-dashboard-metrics>div:last-child{border-right:0}
+.dg-dashboard-metrics>div>span{font-size:11px;color:#666}
+.dg-dashboard-metrics strong{font-size:25px;line-height:1.25;font-weight:500;letter-spacing:-.7px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.dg-dashboard-metrics small{font-size:10px;color:#666;letter-spacing:0;font-weight:400;white-space:nowrap}
+.dg-dashboard-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 14px}
+.dg-dashboard-section-title h2{font-size:15px;font-weight:550;letter-spacing:-.25px}
+.dg-dashboard-section-title a{display:flex;align-items:center;gap:5px;font-size:11px;text-decoration:none;min-height:32px}
+.dg-dashboard-holdings{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.dg-dashboard-holdings .dg-panel{padding:21px;margin:0;min-width:0;display:flex;flex-direction:column;align-items:flex-start}
+.dg-dashboard-holding-head{display:flex;align-items:center;gap:11px;min-width:0}
+.dg-dashboard-holding-head>div{min-width:0}
+.dg-dashboard-holding-head h3{font-size:13px;font-weight:550;line-height:1.5;overflow-wrap:anywhere}
+.dg-dashboard-holding-head p{font-size:11px;color:#666;margin-top:3px}
+.dg-dashboard-initials{display:grid;place-items:center;width:36px;height:36px;border-radius:8px;background:#f1f1f1;color:#525252;font-size:11px;flex-shrink:0}
+.dg-dashboard-instrument{font-size:10px!important;color:#666;margin-top:18px!important}
+.dg-dashboard-holding-value{display:block;font-size:24px;font-weight:500;letter-spacing:-.6px;margin:7px 0 20px;overflow-wrap:anywhere}
+.dg-dashboard-holding-value small{font-size:10px;letter-spacing:0;color:#666;font-weight:400}
+.dg-dashboard-holdings .dg-button{margin-top:auto;font-size:11px!important;min-height:40px}
+.dg-dashboard-empty{display:flex;align-items:flex-start;flex-direction:column;gap:9px;padding:26px!important}
+.dg-dashboard-empty>svg{margin-bottom:4px;color:#666}
+.dg-dashboard-empty h2{font-size:15px}
+.dg-dashboard-empty p{font-size:12px;max-width:430px;color:#666}
+.dg-dashboard-overview>.dg-transaction-history>h2{display:none}
+.dg-dashboard-overview>.dg-transaction-history{padding:8px 22px;margin-bottom:0}
+.dg-dashboard-overview>.dg-transaction-history .dg-empty{padding:17px 0}
+.dg-dashboard-document-link{display:flex;align-items:center;gap:13px;padding:20px 22px;border:1px solid var(--dg-line);background:#fff;border-radius:12px;text-decoration:none;margin-top:18px}
+.dg-dashboard-document-link>span{display:grid;gap:4px;flex:1;min-width:0}
+.dg-dashboard-document-link strong{font-size:12px;font-weight:550}
+.dg-dashboard-document-link small{font-size:10px;color:#666}
+.dg-dashboard-document-link>svg{flex-shrink:0;color:#666}
+.dg-dashboard-invest-copy{margin:9px 0 20px!important;font-size:12px!important}
+.dg-dashboard-mobile{display:none}
+.dg-dashboard a:focus-visible,.dg-dashboard summary:focus-visible{outline:2px solid #525252;outline-offset:3px}
+@media(hover:hover){.dg-dashboard nav a:hover{background:#eee;color:#171717}.dg-dashboard-document-link:hover{border-color:#aaa}}
+@media(max-width:1100px){.dg-dashboard-main{padding-left:25px}.dg-dashboard-metrics>div{padding:20px 14px}.dg-dashboard-metrics strong{font-size:22px}}
+@media(max-width:900px){.dg-dashboard{grid-template-columns:190px minmax(0,1fr)}.dg-dashboard-sidebar{padding-right:15px}.dg-dashboard-main{padding-left:22px}.dg-dashboard-holdings{grid-template-columns:1fr}.dg-dashboard-metrics{grid-template-columns:1fr}.dg-dashboard-metrics>div{display:flex;align-items:center;justify-content:space-between;border-right:0;border-bottom:1px solid var(--dg-line);gap:12px;padding:16px}.dg-dashboard-metrics>div:last-child{border-bottom:0}.dg-dashboard-metrics strong{font-size:21px}}
+@media(max-width:650px){.dg-dashboard{display:block;min-height:500px}.dg-dashboard-sidebar{display:none}.dg-dashboard-main{padding:0}.dg-dashboard-mobile{display:block;border:1px solid var(--dg-line);border-radius:8px;background:white;margin-bottom:12px}.dg-dashboard-mobile summary{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:10px 13px;cursor:pointer;font-size:12px;list-style:none}.dg-dashboard-mobile summary::-webkit-details-marker{display:none}.dg-dashboard-mobile[open] summary{border-bottom:1px solid var(--dg-line)}.dg-dashboard-mobile nav{padding:7px}.dg-dashboard nav .dg-dashboard-account-link{margin-top:0}.dg-dashboard-toolbar{margin-bottom:18px;min-height:36px}.dg-dashboard .dg-heading h1{font-size:26px}.dg-dashboard .dg-heading p{font-size:12px}.dg-dashboard-metrics{margin-bottom:25px}.dg-dashboard-holdings{grid-template-columns:1fr}.dg-dashboard-document-link{padding:18px}.dg-dashboard-overview>.dg-transaction-history{padding:6px 16px}}
+
+.dg-app:has(.dg-dashboard) .dg-topbar{position:sticky;top:0;z-index:40}
+.dg-dashboard-mobile summary::before{display:none}

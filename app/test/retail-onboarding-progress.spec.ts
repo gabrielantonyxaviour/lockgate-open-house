@@ -4,7 +4,7 @@ import type { Receipt } from '../src/demo/types';
 async function fixture(page:Page,connected=true,pendingAuth=false,receipts:Receipt[]=[],returningRole?:'investor'|'provider') {
  if(connected)await page.addInitScript(()=>{localStorage.setItem('lockgate.wallet.connected.v1','1');Object.assign(window,{ethereum:{request:async({method}:{method:string})=>{if(method==='eth_chainId')return '0x66eee';if(method==='eth_accounts')return ['0x1111111111111111111111111111111111111111'];throw new Error(`Unexpected wallet action: ${method}`);},on:()=>{},removeListener:()=>{}}});});
  await page.route('**/src/services/demo-gateway.ts*',route=>route.fulfill({contentType:'application/javascript',body:`
- const state={profile:${JSON.stringify(returningRole?{roles:[returningRole],activeRole:returningRole,identity:{id:'alex-morgan',name:'Alex Morgan',jurisdiction:'Singapore',fixtureCase:'match'}}:{roles:[]})},positions:[],positionStatus:'empty',vehicles:[],receipts:${JSON.stringify(receipts)},setup:{gas:'0',usdg:'0',canMint:false,canFund:false},deploymentReady:true};
+ const state={profile:${JSON.stringify(returningRole?{roles:[returningRole],activeRole:returningRole,identity:{id:'alex-morgan',name:'Alex Morgan',jurisdiction:'Singapore',fixtureCase:'match'}}:{roles:[]})},positions:${JSON.stringify(returningRole==='investor'?[{id:'position-ui',name:'Cedar Income Fund',originator:'Cedar Income Trust',instrument:'Fund interest',available:'100',faceValue:'100',partial:true}]:[])},positionStatus:'${returningRole==='investor'?'matched':'empty'}',vehicles:[],receipts:${JSON.stringify(receipts)},setup:{gas:'0',usdg:'0',canMint:false,canFund:false},deploymentReady:true};
  export function createDemoGateway(){return {
  publicOverview:async()=>({originators:0,firms:0,availableCash:'0',outstanding:'0',environment:'UI FIXTURE'}),
  authenticate:()=>${pendingAuth?"new Promise((resolve,reject)=>{window.resolveAuth=()=>resolve({...state});window.rejectAuth=()=>reject(new Error('Signature rejected'));})":"Promise.resolve({...state})"},refresh:async()=>({...state}),
@@ -33,6 +33,8 @@ for(const role of ['Exit investor','Capital provider'])test(`${role} reflects co
  await expect(progress).toContainText('Verified');await expect(progress).toContainText('Checking…');
  await page.evaluate(()=>Reflect.get(window,'resolveDiscovery')());
  await expect(progress).toHaveCount(0);
+ await expect(page.getByRole('heading',{name:'Overview',exact:true})).toBeVisible();
+ await page.getByRole('navigation',{name:'Dashboard navigation'}).getByRole('link',{name:role==='Exit investor'?'My positions':'Investment vehicles'}).click();
  await expect(page.getByRole('heading',{name:role==='Exit investor'?'Your positions.':'Choose your investment vehicle.'})).toBeVisible();
  if(role==='Exit investor'){await page.getByRole('button',{name:'Explore an exit'}).click();await expect(progress).toHaveCount(0);await page.getByRole('textbox',{name:'Exit amount'}).fill('10');await page.getByRole('button',{name:'See eligible offers'}).click();await expect(page.getByRole('heading',{name:'Compare your net payout.'})).toBeVisible();await expect(progress).toHaveCount(0);}
 });
@@ -119,6 +121,7 @@ test('history adds explorer links and opens only useful transaction details',asy
  await page.getByRole('button',{name:'Get Started — Exit investor'}).click();await page.evaluate(()=>Reflect.get(window,'resolveRole')());
  await page.getByRole('button',{name:'Start KYC'}).click();await page.getByRole('radio',{name:'Alex Morgan',exact:true}).check();
  await page.getByRole('button',{name:'Use selected profile'}).click();await page.evaluate(()=>{Reflect.get(window,'resolveBinding')();Reflect.get(window,'resolveDiscovery')();});
+ await page.getByRole('navigation',{name:'Dashboard navigation'}).getByRole('link',{name:'Transaction history'}).click();
  await expect(page.getByRole('heading',{name:'Transaction History',exact:true})).toBeVisible();
  await expect(page.getByRole('button',{name:'View details for Test gas funded'})).toHaveCount(0);
  const explorer=page.getByRole('link',{name:'View Test gas funded transaction in explorer'});
@@ -130,10 +133,25 @@ test('history adds explorer links and opens only useful transaction details',asy
 
 for(const role of ['investor','provider'] as const)test(`returning ${role} opens dashboard without onboarding`,async({page})=>{
  await fixture(page,true,false,[],role);
- await expect(page.getByRole('heading',{name:role==='investor'?'Your positions.':'Choose your investment vehicle.'})).toBeVisible();
+ await expect(page.getByRole('heading',{name:'Overview',exact:true})).toBeVisible();
+ await expect(page.getByRole('navigation',{name:'Dashboard navigation'})).toBeVisible();
  await expect(page.getByRole('region',{name:'Account setup'})).toHaveCount(0);
  await expect(page.getByRole('heading',{name:'Choose your path.'})).toHaveCount(0);
  await expect(page.getByRole('button',{name:'Start KYC'})).toHaveCount(0);
- await expect(page.locator('.dg-workspace-nav')).toContainText('Alex Morgan');
- await expect(page.locator('.dg-workspace-nav')).not.toContainText('TEST identity');
+ await expect(page.locator('.dg-dashboard-sidebar')).toContainText('Alex Morgan');
+ await expect(page.locator('.dg-dashboard-sidebar')).not.toContainText('TEST identity');
+});
+
+async function dashboardNav(page:Page){const disclosure=page.getByLabel('Navigation',{exact:true});if(await disclosure.isVisible()){await disclosure.click();return page.getByRole('navigation',{name:'Mobile account navigation'});}return page.getByRole('navigation',{name:'Dashboard navigation'});}
+for(const width of [375,768,1440])test(`dashboard navigation and direct exit fit ${width}px`,async({page})=>{
+ await page.setViewportSize({width,height:900});await fixture(page,true,false,[],'investor');
+ await expect(page.getByRole('heading',{name:'Overview',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+ await page.getByRole('button',{name:'Explore an exit'}).click();await expect(page.getByRole('heading',{name:'How much would you like to exit?'})).toBeVisible();await expect(page.getByRole('region',{name:'Account setup'})).toHaveCount(0);
+ await (await dashboardNav(page)).getByRole('link',{name:'Account',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Account',exact:true})).toBeVisible();
+ await expect(page.getByRole('link',{name:'View address in explorer'})).toHaveAttribute('href','https://sepolia.arbiscan.io/address/0x1111111111111111111111111111111111111111');
+ await (await dashboardNav(page)).getByRole('link',{name:'Agreements',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'Agreements',exact:true})).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
 });
