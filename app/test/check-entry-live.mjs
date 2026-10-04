@@ -54,6 +54,7 @@ try {
       } });
     }, account);
     await page.goto(`${target}/#/start/issuer`);
+    await page.reload();
     await expect(page.getByRole('link', { name: 'Start platform onboarding', exact: true })).toBeVisible();
     await page.getByRole('link', { name: 'Start platform onboarding', exact: true }).click();
     await expect(page.getByLabel('Legal entity name', { exact: false })).toBeVisible();

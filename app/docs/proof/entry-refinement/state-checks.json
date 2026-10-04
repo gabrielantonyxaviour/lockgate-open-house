@@ -1,0 +1,29 @@
+{
+  "provenance": "Explicit controlled snapshot fixtures over actual application routes",
+  "proof": [
+    {
+      "state": "loading",
+      "passed": true
+    },
+    {
+      "state": "error",
+      "passed": true
+    },
+    {
+      "state": "empty",
+      "passed": true
+    },
+    {
+      "state": "missing",
+      "passed": true
+    },
+    {
+      "state": "loading-detail",
+      "passed": true
+    },
+    {
+      "state": "issuer-error",
+      "passed": true
+    }
+  ]
+}

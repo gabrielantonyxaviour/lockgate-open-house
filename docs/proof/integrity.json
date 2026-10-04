@@ -1,6 +1,6 @@
 {
   "passed": true,
-  "scope": "Local fork proof, independently checked against retained artifacts and current source",
+  "scope": "Local fork proof, independently checked against retained artifacts and pinned Git source da155589d45f820cd50f7ad8ef3741bc16595809",
   "runs": [
     {
       "run": "run-1791063405834",
@@ -14,7 +14,8 @@
       "sourceTreeSha256": "7c594d66367d8edaca807b468c68d1541e8662adf634a6b7816ad61ae02dee03",
       "allHashesMatch": true,
       "allReceiptsSuccessful": true,
-      "sourceMatchesCurrent": true
+      "verifiedSourceRef": "da155589d45f820cd50f7ad8ef3741bc16595809",
+      "sourceMatchesCurrent": false
     },
     {
       "run": "remaining-1791063297328",
@@ -28,7 +29,8 @@
       "sourceTreeSha256": "7c594d66367d8edaca807b468c68d1541e8662adf634a6b7816ad61ae02dee03",
       "allHashesMatch": true,
       "allReceiptsSuccessful": true,
-      "sourceMatchesCurrent": true
+      "verifiedSourceRef": "da155589d45f820cd50f7ad8ef3741bc16595809",
+      "sourceMatchesCurrent": false
     }
   ]
 }

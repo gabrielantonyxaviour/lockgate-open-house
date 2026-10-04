@@ -1,6 +1,6 @@
 # Lockgate app verification — 4 October 2026
 
-The reviewed app build is deployed at [openhouse.lockgate.finance](https://openhouse.lockgate.finance) and [open-house.lockgate.finance](https://open-house.lockgate.finance). The two final signed browser suites passed against the same application source as the deployed build. The report distinguishes public read checks, genuine local-fork wallet execution and read-only layout fixtures.
+The latest entry and onboarding refinement is covered by [its current verification report](ONBOARDING_UX_VERIFICATION.md). The signed wallet evidence below verifies source checkpoint `da155589d45f820cd50f7ad8ef3741bc16595809`, deployed before that refinement. Those recordings have not been rerun against the later entry-only changes. This report preserves the earlier public read checks, genuine local-fork wallet execution and read-only layout fixtures.
 
 ## Deployment evidence
 
@@ -52,7 +52,7 @@ The investor early exit paid 0.49525 USDG. Its refreshed receipt later showed **
 
 Remaining actions include partner pause/unpause, zero-limit platform revocation and reapproval, facility lender revocation with deposits denied, positive senior capital deposit during recovery with junior deposits denied, and actual epoch/quarterly platform creation. Main coverage includes issuer eligibility/gating, actual settlement, registration/reserve funding, partner authorization/repayment, both facility tranches, draw/repay, paid interest claims, idle share redemption and positive loss recognition.
 
-Both retained runs have zero runtime, console and cleanup errors. All 64 image/video hashes were independently checked; all seven recordings fully decoded through FFmpeg. [Integrity results](proof/integrity.json) verify every source file and the shared source-tree digest `7c594d66367d8edaca807b468c68d1541e8662adf634a6b7816ad61ae02dee03`. Supplemental source was captured before its Activity patch was committed; its recorded dirty path and per-file hashes match the final committed source exactly. Main provenance records the clean deployed source checkpoint.
+Both retained runs have zero runtime, console and cleanup errors. All 64 image/video hashes were independently checked; all seven recordings fully decoded through FFmpeg. [Integrity results](proof/integrity.json) verify every source file against the pinned `da155589` Git source and shared source-tree digest `7c594d66367d8edaca807b468c68d1541e8662adf634a6b7816ad61ae02dee03`. Supplemental source was captured before its Activity patch was committed; its recorded dirty path and per-file hashes match that checkpoint exactly. Main provenance records the clean earlier deployment checkpoint.
 
 Review all recordings and screenshots in the [local proof gallery](proof/index.html). These are raw browser journey recordings rather than an edited narrated submission film. Older diagnostic runs are preserved locally and are excluded from the selected gallery and GitHub proof checkpoint.
 
@@ -91,4 +91,4 @@ Use the wallet authorized for each role. Investor USDG, issuer settlement USDG, 
 
 From `repo/app`, run `npm run build`, `npm run lint`, `npm test`, and `npm run test:e2e`. Run the signed scenarios sequentially with `LOCKGATE_SIGNED_FORK_TEST=1 npm run test:e2e -- test/signed-wallet-flow.spec.ts test/signed-remaining-flow.spec.ts --workers=1`. It requires Anvil and an archive-capable Sepolia upstream; it refuses to reuse occupied port 19548.
 
-After deploying the built UI, `node test/check-live.mjs` verifies both existing domains and records the result. From `repo`, `python3 scripts/build-app-proof.py --run run-1791063405834 --run remaining-1791063297328` rebuilds the [local proof gallery](proof/index.html) using only the selected completed signed manifests. `python3 scripts/check-app-proof.py --run run-1791063405834 --run remaining-1791063297328` independently verifies artifacts, receipts and current source hashes.
+After deploying the built UI, `node test/check-entry-live.mjs` verifies the current entry refinement on both domains; `node test/check-live.mjs` is the broader public-read check. From `repo`, `python3 scripts/build-app-proof.py --run run-1791063405834 --run remaining-1791063297328` rebuilds the [local proof gallery](proof/index.html). `python3 scripts/check-app-proof.py --source-ref da155589d45f820cd50f7ad8ef3741bc16595809 --run run-1791063405834 --run remaining-1791063297328` independently verifies the retained signed artifacts, receipts and pinned source hashes.

@@ -16,6 +16,10 @@ These are interaction references, not claims that their products share Lockgateâ
 
 | Before | After | Why |
 | --- | --- | --- |
+| Journey and onboarding headings dominated the working area. | Scoped 32px desktop/tablet and 28px phone headings, shorter journey titles, and less repeated introductory content. | Keep wallet connection and the next task visible. |
+| Explore platform terms entered the application dashboard. | Public, standalone terms list/detail with read-only data, refresh, and a return link preserving investor or issuer origin. | Let visitors inspect terms without entering a workspace. |
+| The issuer introduction exposed a local facility draft link before connection. | Connect first, then start platform onboarding; existing issuers keep their workspace shortcut. | Put planning inside the appropriate platform journey. |
+| Connected onboarding inherited the dashboard shell. | Standalone entry shell, compact step navigation and form spacing; local validation/save/export retained. | Keep attention on preparing the facility plan. |
 | Sidebar persisted at 768px; long breadcrumbs wrapped wallet controls and squeezed table actions. | Drawer navigation applies through 960px; wallet/network controls stay on one row. | Preserve working content width on tablets. |
 | Mobile navigation always showed investor links. | Contextual issuer, operations, or partner links on the relevant workspace. | Keep the current personaâ€™s daily actions in reach. |
 | Entry copy repeated the same product explanation across multiple screens. | Shorter public, role-choice, and journey copy. | Put the next decision ahead of repeated explanation. |
@@ -36,6 +40,7 @@ Control radius stays 8px; panels and financial summary groups use 12px; badges r
 
 ## Evidence
 
+- [Entry refinement checks](proof/entry-refinement/visual-checks.json): eight surfaces at 375/768/1440px, plus [real public terms reads](proof/entry-refinement/public-terms-checks.json) at the same widths. Six explicit loading/error/empty/missing states are recorded in [state checks](proof/entry-refinement/state-checks.json). The coordinator's final suite passed 157 unit tests and 34 regular browser tests, including standalone connected terms, direct-link reload/return, RPC-failure onboarding access, draft validation and save/export. Current deployment checks are recorded in [the entry verification report](../../docs/ONBOARDING_UX_VERIFICATION.md).
 - [Responsive matrix](proof/ux/responsive.json): 19 routes at 375, 768 and 1440px; all 57 checks returned zero document overflow. Full-page PNGs are in `proof/ux/` and were inspected at all three widths.
 - Read-only public Sepolia facility was rendered at all three widths: `capital-live-375.png`, `capital-live-768.png`, `capital-live-1440.png`. The empty facility balances in these captures are live read results, not funded-journey proof.
 - [Partner owner selection checks](proof/ux/partner-owner-selection.json) passed at 375/768/1440px using an explicit two-owner illustrative fixture: B defaults to B, explicit choices persist for the current account, A/B account changes reset the choice, form values reset, exactly one controls form remains, and no console errors, page errors or document overflow were observed. Screenshots: `partner-owner-b-{375,768,1440}.png`.

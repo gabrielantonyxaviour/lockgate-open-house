@@ -1,0 +1,218 @@
+{
+  "proof": [
+    {
+      "name": "investor",
+      "width": 375,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 28,
+      "sidebar": false,
+      "mainTop": 260
+    },
+    {
+      "name": "issuer",
+      "width": 375,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 28,
+      "sidebar": false,
+      "mainTop": 262
+    },
+    {
+      "name": "terms",
+      "width": 375,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 28,
+      "sidebar": false,
+      "mainTop": 254
+    },
+    {
+      "name": "term-detail",
+      "width": 375,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 28,
+      "sidebar": false,
+      "mainTop": 254
+    },
+    {
+      "name": "onboarding",
+      "width": 375,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 28,
+      "sidebar": false,
+      "mainTop": 258
+    },
+    {
+      "name": "investor",
+      "width": 768,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false,
+      "mainTop": 190
+    },
+    {
+      "name": "issuer",
+      "width": 768,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false,
+      "mainTop": 190
+    },
+    {
+      "name": "terms",
+      "width": 768,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false,
+      "mainTop": 182
+    },
+    {
+      "name": "term-detail",
+      "width": 768,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false,
+      "mainTop": 182
+    },
+    {
+      "name": "onboarding",
+      "width": 768,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false,
+      "mainTop": 186
+    },
+    {
+      "name": "investor",
+      "width": 1440,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false,
+      "mainTop": 199
+    },
+    {
+      "name": "issuer",
+      "width": 1440,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false,
+      "mainTop": 199
+    },
+    {
+      "name": "terms",
+      "width": 1440,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false,
+      "mainTop": 191
+    },
+    {
+      "name": "term-detail",
+      "width": 1440,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false,
+      "mainTop": 191
+    },
+    {
+      "name": "onboarding",
+      "width": 1440,
+      "provenance": "Explicit illustrative preview",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false,
+      "mainTop": 195
+    },
+    {
+      "name": "choose",
+      "width": 375,
+      "provenance": "Explicit illustrative preview with injected connected persona",
+      "overflow": 0,
+      "heading": 28,
+      "sidebar": false
+    },
+    {
+      "name": "issuer-new",
+      "width": 375,
+      "provenance": "Explicit illustrative preview with injected connected persona",
+      "overflow": 0,
+      "heading": 28,
+      "sidebar": false
+    },
+    {
+      "name": "issuer-owned",
+      "width": 375,
+      "provenance": "Explicit illustrative preview with injected connected persona",
+      "overflow": 0,
+      "heading": 28,
+      "sidebar": false
+    },
+    {
+      "name": "choose",
+      "width": 768,
+      "provenance": "Explicit illustrative preview with injected connected persona",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false
+    },
+    {
+      "name": "issuer-new",
+      "width": 768,
+      "provenance": "Explicit illustrative preview with injected connected persona",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false
+    },
+    {
+      "name": "issuer-owned",
+      "width": 768,
+      "provenance": "Explicit illustrative preview with injected connected persona",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false
+    },
+    {
+      "name": "choose",
+      "width": 1440,
+      "provenance": "Explicit illustrative preview with injected connected persona",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false
+    },
+    {
+      "name": "issuer-new",
+      "width": 1440,
+      "provenance": "Explicit illustrative preview with injected connected persona",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false
+    },
+    {
+      "name": "issuer-owned",
+      "width": 1440,
+      "provenance": "Explicit illustrative preview with injected connected persona",
+      "overflow": 0,
+      "heading": 32,
+      "sidebar": false
+    },
+    {
+      "name": "terms-public",
+      "width": 1440,
+      "provenance": "Public read-only Sepolia snapshot; no injected wallet"
+    }
+  ],
+  "errors": [],
+  "transactions": 0
+}

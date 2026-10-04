@@ -1,0 +1,157 @@
+{
+  "checkedAt": "2026-10-04T02:30:24.657Z",
+  "expectedBundle": "/assets/index-E-gtT276.js",
+  "scope": "Deployed UI and actual public Sepolia reads. Connected checks use a read-only EIP-1193 account-restoration bridge; no native wallet popup or signing.",
+  "transactions": 0,
+  "targets": [
+    {
+      "target": "https://openhouse.lockgate.finance",
+      "status": 200,
+      "publicRead": "Arbitrum Sepolia · Block 315529296 · Read 8:00:25 AM\nRefresh platform terms",
+      "disconnectedGate": true,
+      "connectedLocalDraft": true,
+      "originAndReload": true,
+      "matrix": [
+        {
+          "route": "/onboarding",
+          "width": 375,
+          "headingPx": 28,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms?from=issuer",
+          "width": 375,
+          "headingPx": 28,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25?from=issuer",
+          "width": 375,
+          "headingPx": 28,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/onboarding",
+          "width": 768,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms?from=issuer",
+          "width": 768,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25?from=issuer",
+          "width": 768,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/onboarding",
+          "width": 1440,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms?from=issuer",
+          "width": 1440,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25?from=issuer",
+          "width": 1440,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        }
+      ],
+      "runtimeErrors": []
+    },
+    {
+      "target": "https://open-house.lockgate.finance",
+      "status": 200,
+      "publicRead": "Arbitrum Sepolia · Block 315529351 · Read 8:00:39 AM\nRefresh platform terms",
+      "disconnectedGate": true,
+      "connectedLocalDraft": true,
+      "originAndReload": true,
+      "matrix": [
+        {
+          "route": "/onboarding",
+          "width": 375,
+          "headingPx": 28,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms?from=issuer",
+          "width": 375,
+          "headingPx": 28,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25?from=issuer",
+          "width": 375,
+          "headingPx": 28,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/onboarding",
+          "width": 768,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms?from=issuer",
+          "width": 768,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25?from=issuer",
+          "width": 768,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/onboarding",
+          "width": 1440,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms?from=issuer",
+          "width": 1440,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        },
+        {
+          "route": "/terms/0x80A66AE4Ce50724b4C9aDb3CAE9c042DFEf51F25?from=issuer",
+          "width": 1440,
+          "headingPx": 32,
+          "sidebar": false,
+          "overflow": 0
+        }
+      ],
+      "runtimeErrors": []
+    }
+  ],
+  "passed": true
+}

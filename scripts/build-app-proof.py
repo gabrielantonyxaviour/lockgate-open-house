@@ -60,6 +60,9 @@ for manifest, data in completed:
 
 ux_cards = ''.join(card(path, path.stem) for path in sorted(UX.glob("*.png")))
 live_cards = ''.join(card(path, path.stem) for path in sorted(path for path in (PROOF / "live").glob("*.png") if path.name != "public-before.png"))
+entry = ROOT / 'app/docs/proof/entry-refinement'
+entry_cards = ''.join(card(path, path.stem) for path in sorted(entry.glob('*.png')))
+entry_live_cards = ''.join(card(path, path.stem) for path in sorted((entry / 'live').glob('*.png')))
 content = '''<!doctype html><html lang="en"><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Lockgate verification evidence</title><style>
@@ -71,11 +74,14 @@ video{height:220px;object-fit:contain}figcaption{padding:12px;font-size:13px;ove
 @media(max-width:600px){body{padding:18px}.grid{grid-template-columns:1fr}}
 </style><body><h1>Lockgate verification evidence</h1>
 <p>Review the app audit, recorded wallet journeys, receipt manifests, and responsive screens. Only the explicitly selected completed signed runs appear here. Layout previews, local fork transactions and public network reads are identified separately.</p>
-<nav><a href="../APP_VERIFICATION.md">Verification report</a><a href="integrity.json">Artifact and source integrity checks</a><a href="../CHAIN_AUDIT.md">Contract integration audit</a><a href="../../app/docs/UX_AUDIT.md">UX review</a></nav>
+<nav><a href="../ONBOARDING_UX_VERIFICATION.md">Current entry UX verification</a><a href="../APP_VERIFICATION.md">Wallet and integration report</a><a href="integrity.json">Artifact and source integrity checks</a><a href="../CHAIN_AUDIT.md">Contract integration audit</a><a href="../../app/docs/UX_AUDIT.md">UX review</a></nav>
 '''
+content += '<section><h2>Entry and onboarding refinement</h2><p>Compact headings, standalone platform terms and connected issuer planning. Images named terms-public use real Sepolia reads; other captures are explicit illustrative layout fixtures.</p><div class="grid">' + entry_cards + '</div></section>'
+content += '<section><h2>Updated deployed entry</h2><p>Actual public Sepolia reads on both Open House domains. Connected-account checks use a read-only account-restoration bridge, with no signing or transaction writes.</p><div class="grid">' + entry_live_cards + '</div></section>'
+content += '<p>Retained wallet recordings below verify the earlier application source pinned in integrity.json. The entry refinement has its own current browser checks; those recordings were not rerun for this layout change.</p>'
 content += ''.join(wallet_sections) or '<p>No completed signed run is available yet.</p>'
-content += '<section><h2>Deployed public app</h2><p>Public reads and disconnected browser states on the deployed Open House app. These images do not prove wallet transactions.</p><div class="grid">' + live_cards + '</div></section>'
-content += '<section><h2>Responsive UX review</h2><p>375, 768 and 1440px. Most screens are explicitly read-only layout previews. Files containing “live” show public Sepolia reads.</p><div class="grid">' + ux_cards + '</div></section></body></html>'
+content += '<section><h2>Earlier deployed public app checks</h2><p>Public reads and disconnected browser states captured before the entry refinement. These images do not prove wallet transactions.</p><div class="grid">' + live_cards + '</div></section>'
+content += '<section><h2>Earlier responsive UX review</h2><p>375, 768 and 1440px. Most screens are explicitly read-only layout previews. Files containing “live” show public Sepolia reads.</p><div class="grid">' + ux_cards + '</div></section></body></html>'
 PROOF.mkdir(parents=True, exist_ok=True)
 (PROOF / "index.html").write_text(content)
 print(f"Gallery: {len(completed)} completed signed runs; {len(list(UX.glob('*.png')))} UX images")
