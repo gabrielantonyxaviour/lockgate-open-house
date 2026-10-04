@@ -1,14 +1,19 @@
 import { randomBytes } from 'node:crypto';
-import { formatUnits, keccak256, parseEther, parseEventLogs, parseUnits, toHex, verifyMessage, verifyTypedData, type Abi, type Address, type Hex } from 'viem';
-import { accountAt, artifact, chain, err, identities, identityHash, manifest, publicClient, terms, walletAt } from './shared.js';
+import { formatUnits, keccak256, parseEther, parseEventLogs, parseUnits, toHex, verifyTypedData, type Abi, type Address, type Hex } from 'viem';
+import { accountAt, artifact, chain, err, identities, identityHash, manifest, paxosMode, publicClient, publicNetwork, terms, walletAt } from './shared.js';
 import { demoState, requireBound } from './state.js';
 import { newId, profile, save, type OfferRecord, type ReceiptRecord } from './store.js';
 import { allHoldings } from './holdings.js';
+import { exitAgreementText, subscriptionAgreementText, type LegalAsset, type LegalProfile, type LegalVehicle } from './legal-documents.js';
+import { requireExactDocument, requireVerifiedFullName, verifySubscriptionAcceptance } from './agreement-validation.js';
 
 const registryAbi=artifact('DemoRegistry').abi as Abi;
 const vaultAbi=artifact('DemoFirmVault').abi as Abi;
 const settlementAbi=artifact('DemoSettlement').abi as Abi;
 const tokenAbi=artifact('MockUSDG').abi as Abi;
+const legalAsset=(m:ReturnType<typeof manifest>):LegalAsset=>({name:paxosMode?'Paxos-issued test USDG':'Lockgate custom TEST USDG',symbol:'USDG',address:m.asset,chainId:chain.id,chainName:publicNetwork?'Arbitrum Sepolia':'Local EVM test network',decimals:6,kind:paxosMode?'paxos-test-usdg':'custom-test-usdg'});
+const legalProfile=(identity:typeof identities[number],wallet:Address):LegalProfile=>({id:identity.id,name:identity.name,jurisdiction:identity.jurisdiction,identityRef:identity.identityRef,identityHash:identityHash(identity.identityRef),wallet});
+const legalVehicle=(v:ReturnType<typeof manifest>['vaults'][number]):LegalVehicle=>({id:v.id,name:v.name,firm:v.firm,address:v.address,manager:v.manager,termsHash:v.termsHash,termsText:v.termsText});
 const quoteTypes={Quote:[
  {name:'holdingId',type:'bytes32'},{name:'vault',type:'address'},{name:'investor',type:'address'},
  {name:'identity',type:'bytes32'},{name:'units',type:'uint256'},{name:'payout',type:'uint256'},
@@ -54,7 +59,7 @@ export async function createOffers(account:Address,positionId:string,amount:stri
  const orgIndex=m.originators.findIndex(o=>o.address.toLowerCase()===holding.originatorAddress.toLowerCase());
  if(orgIndex<0) err('Originator missing','FIXTURE_ERROR',500);
  const chainNow=Number((await publicClient.getBlock()).timestamp);
- const candidates=p.offers.filter(o=>!o.cancelled&&o.account.toLowerCase()===account.toLowerCase()&&o.holdingId===holding.id&&BigInt(o.quote.units)===units&&o.quote.identity===identityHash(identity.identityRef)&&Number(o.quote.deadline)>chainNow);
+ const candidates=p.offers.filter(o=>!o.cancelled&&(o.agreement.version==='2'||Boolean(o.investorSignature&&o.reserveHash))&&o.account.toLowerCase()===account.toLowerCase()&&o.holdingId===holding.id&&BigInt(o.quote.units)===units&&o.quote.identity===identityHash(identity.identityRef)&&Number(o.quote.deadline)>chainNow);
  const existing=[] as OfferRecord[];
  for(const item of candidates) {
   if(!item.reserveHash){const ready=await firmReadiness(item.quote.vault as Address,holding.originatorAddress);if(ready.fits(Number(item.quote.route),BigInt(item.quote.payout)))existing.push(item);continue;}
@@ -68,36 +73,43 @@ export async function createOffers(account:Address,positionId:string,amount:stri
   const v=m.vaults[i],ready=await firmReadiness(v.address,holding.originatorAddress);
   const allowed=onchain.routeMask&ready.mask,preferred=i%2?2:1;
   if(!allowed)continue;
-  const route=allowed&preferred?preferred:allowed&1?1:2;
+  const route=(allowed&preferred?preferred:allowed&1?1:2) as 1|2;
   const payout=units*BigInt([9800,9750,9700,9650,9600][i]-(route===2?100:0))/10000n;
   if(!ready.fits(route,payout)) continue;
   const deadline=BigInt(chainNow+1800), maturity=deadline+30n*24n*3600n;
   const repayment=route===1?units:payout*102n/100n;
-  const agreementText=`Lockgate local TEST exit. Holding: ${holding.name}; units: ${amount}; route: ${route===1?'purchase of claim rights':'financing with claim discharge'}; firm: ${v.firm}; immediate payout: ${formatUnits(payout,6)} test USDG; ${route===1?`firm collection right at face: ${formatUnits(repayment,6)} test USDG`:`originator debt: ${formatUnits(repayment,6)} test USDG, including ${formatUnits(repayment-payout,6)} test USDG charge`}; deadline: ${new Date(Number(deadline)*1000).toISOString()}; maturity: ${new Date(Number(maturity)*1000).toISOString()}. The original investor retains ${formatUnits(onchain.remaining-units,6)} TEST units. This is a local test agreement, not a production investment.`;
+  const nonce=BigInt(`0x${randomBytes(8).toString('hex')}`),documentId=newId('EXIT-LETTER');
+  const agreementText=exitAgreementText({documentId,version:'2',createdAt:new Date().toISOString(),expiresAt:new Date(Number(deadline)*1000).toISOString(),nonce:String(nonce),profile:legalProfile(identity,account),asset:legalAsset(m),vehicle:legalVehicle(v),holdingId:holding.id,holdingName:holding.name,instrument:holding.instrument,originator:{name:m.originators[orgIndex].name,address:holding.originatorAddress},settlement:m.settlement,route,units,payout,repayment,residualUnits:onchain.remaining-units,maturity:new Date(Number(maturity)*1000).toISOString()});
   const agreementHash=keccak256(toHex(agreementText));
-  const q={holdingId:holding.id,vault:v.address,investor:account,identity:identityHash(identity.identityRef),units,payout,repayment,route,deadline,maturity,nonce:BigInt(`0x${randomBytes(8).toString('hex')}`),agreementHash};
+  const q={holdingId:holding.id,vault:v.address,investor:account,identity:identityHash(identity.identityRef),units,payout,repayment,route,deadline,maturity,nonce,agreementHash};
   const signature=await walletAt(orgIndex+1).signTypedData({domain:quoteDomain(m.settlement),types:quoteTypes,primaryType:'Quote',message:q});
   const quote=Object.fromEntries(Object.entries(q).map(([key,value])=>[key,typeof value==='bigint'?String(value):value])) as Record<string,string|number>;
-  const record:OfferRecord={id:newId('offer'),account,vehicleId:v.id,holdingId:holding.id,quote,residualUnits:formatUnits(onchain.remaining-units,6),originatorSignature:signature,createdAt:new Date().toISOString(),agreement:{id:newId('exit-terms'),version:'1',title:'TEST early exit agreement',text:agreementText,digest:agreementHash,signed:false,accepted:false}};
+  const record:OfferRecord={id:newId('offer'),account,vehicleId:v.id,holdingId:holding.id,quote,residualUnits:formatUnits(onchain.remaining-units,6),originatorSignature:signature,createdAt:new Date().toISOString(),agreement:{id:documentId,version:'2',title:route===1?'TEST purchase and assignment letter':'TEST financing and claim discharge letter',text:agreementText,digest:agreementHash,signed:false,accepted:false,signerName:identity.name}};
   created.push(record);
  }
  if(!created.length) err('No vehicle has enough available TEST liquidity','NO_LIQUIDITY',409);
  p.offers.push(...created);save();return created.map(asUiOffer);
 }
 
-export async function signExit(account:Address,offerId:string,signature:Hex) {
+export async function signExit(account:Address,offerId:string,signature:Hex,typedName:string,consent:boolean) {
  const m=manifest(),p=profile(account),r=p.offers.find(o=>o.id===offerId&&o.account.toLowerCase()===account.toLowerCase());
  if(!r) err('Offer not found','NOT_FOUND',404);
+ if(r.investorSignature||r.agreement.signed)err('This signed agreement is already recorded','AGREEMENT_ALREADY_SIGNED',409);
+ const identity=await requireBound(account);
+ requireVerifiedFullName(typedName,identity.name,consent);
+ if(r.agreement.version!=='2'||r.quote.identity!==identityHash(identity.identityRef))err('Review a fresh exact exit letter for this identity','TERMS_STALE',409);
+ requireExactDocument(r.agreement.text,r.agreement.digest,r.quote.agreementHash as Hex);
  if(!r.reserveHash) err('Reserve the selected offer first','OFFER_NOT_RESERVED',409);
  if(BigInt(r.quote.deadline)<=(await publicClient.getBlock()).timestamp) err('Offer expired','OFFER_EXPIRED',409);
  const valid=await verifyTypedData({address:account,domain:quoteDomain(m.settlement),types:quoteTypes,primaryType:'Quote',message:asQuote(r.quote),signature});
  if(!valid) err('Wallet signature does not match quote','BAD_SIGNATURE',403);
- r.investorSignature=signature;r.signedAt=new Date().toISOString();r.agreement.signed=true;r.agreement.accepted=true;save();return asUiOffer(r);
+ r.investorSignature=signature;r.signedAt=new Date().toISOString();r.agreement.signed=true;r.agreement.accepted=true;r.agreement.signerName=identity.name;r.agreement.typedName=typedName.trim().replace(/\s+/gu,' ');save();return asUiOffer(r);
 }
 
 export async function reserveOffer(account:Address,offerId:string) {
  const identity=await requireBound(account),m=manifest(),p=profile(account),offer=p.offers.find(o=>o.id===offerId&&o.account.toLowerCase()===account.toLowerCase());
  if(!offer) err('Offer not found','NOT_FOUND',404);
+ if(offer.agreement.version!=='2'&&!offer.investorSignature)err('Review a fresh exact exit letter before reserving','TERMS_STALE',409);
  if(offer.cancelled) err('Offer was cancelled; request fresh terms','OFFER_CANCELLED',409);
  if(offer.reserveHash) {
   const digest=await publicClient.readContract({address:m.settlement,abi:settlementAbi,functionName:'quoteDigest',args:[asQuote(offer.quote)]}) as Hex;
@@ -124,21 +136,24 @@ export async function reserveOffer(account:Address,offerId:string) {
 }
 
 export async function prepareSubscription(account:Address,vehicleId:string,amount:string) {
- const identity=await requireBound(account),p=profile(account),v=manifest().vaults.find(x=>x.id===vehicleId);
+ const identity=await requireBound(account),p=profile(account),m=manifest(),v=m.vaults.find(x=>x.id===vehicleId);
  if(p.role!=='provider'||!v) err('Vehicle or provider access unavailable','INELIGIBLE',403);
- const assets=parseUnits(amount,6);if(assets<parseUnits('100',6)||assets>parseUnits('100000',6)) err('Enter 100 to 100,000 test USDG','BAD_AMOUNT');
- const expiresAt=Date.now()+10*60_000;
- const nonce=newId('subscription');
- const message=`${v.termsText}\n\nWallet: ${account}\nVehicle: ${v.address}\nExact subscription amount: ${amount} test USDG\nCanonical policy hash: ${v.termsHash}\nNonce: ${nonce}\nExpires: ${new Date(expiresAt).toISOString()}`;
- p.pendingSubscriptions??={};p.pendingSubscriptions[vehicleId]={amount,message,expiresAt};save();
- return {message,digest:keccak256(toHex(message)),vault:v.address,amount,termsHash:v.termsHash};
+ const assets=parseUnits(amount,6),minimum=paxosMode?'1':'100',maximum=paxosMode?'100':'100000';
+ if(assets<parseUnits(minimum,6)||assets>parseUnits(maximum,6)) err(`Enter ${minimum} to ${maximum} test USDG`,'BAD_AMOUNT');
+ const expiresAt=Date.now()+10*60_000,fundingDeadline=(await publicClient.getBlock()).timestamp+3600n;
+ const nonce=newId('subscription-nonce'),documentId=newId('SUBSCRIPTION-LETTER');
+ const message=subscriptionAgreementText({documentId,version:'2',createdAt:new Date().toISOString(),expiresAt:new Date(expiresAt).toISOString(),fundingExpiresAt:new Date(Number(fundingDeadline)*1000).toISOString(),nonce,profile:legalProfile(identity,account),asset:legalAsset(m),vehicle:legalVehicle(v),amount:assets});
+ const digest=keccak256(toHex(message));
+ p.pendingSubscriptions??={};p.pendingSubscriptions[vehicleId]={amount,message,digest,expiresAt,fundingDeadline:String(fundingDeadline),documentId,version:'2',signerName:identity.name,termsHash:v.termsHash,vault:v.address};save();
+ return {message,digest,vault:v.address,amount,termsHash:v.termsHash,signerName:identity.name,expiresAt:new Date(expiresAt).toISOString(),documentId,version:'2'};
 }
 
-export async function acceptSubscription(account:Address,vehicleId:string,amount:string,signature:Hex) {
+export async function acceptSubscription(account:Address,vehicleId:string,amount:string,signature:Hex,typedName:string,consent:boolean,digest:Hex) {
  const identity=await requireBound(account),p=profile(account),m=manifest(),v=m.vaults.find(x=>x.id===vehicleId),pending=p.pendingSubscriptions?.[vehicleId];
- if(p.role!=='provider'||!v||!pending||pending.amount!==amount||pending.expiresAt<Date.now()) err('Prepare exact subscription terms again','TERMS_STALE',409);
- if(!(await verifyMessage({address:account,message:pending.message,signature}))) err('Wallet signature does not match exact amount','BAD_SIGNATURE',403);
- const assets=parseUnits(amount,6),deadline=(await publicClient.getBlock()).timestamp+3600n;
+ if(p.role!=='provider'||!v||!pending) err('Prepare exact subscription letter again','TERMS_STALE',409);
+ const deadline=BigInt(pending.fundingDeadline);
+ await verifySubscriptionAcceptance({pending,account,signature,typedName,consent,expectedName:identity.name,amount,digest,vault:v.address,termsHash:v.termsHash,nowMs:Date.now(),chainTimestamp:(await publicClient.getBlock()).timestamp});
+ const assets=parseUnits(amount,6);
  const [nav,totalUnits,balance]=await Promise.all([
   publicClient.readContract({address:v.address,abi:vaultAbi,functionName:'totalAssets'}) as Promise<bigint>,
   publicClient.readContract({address:v.address,abi:vaultAbi,functionName:'totalUnits'}) as Promise<bigint>,
@@ -153,7 +168,7 @@ export async function acceptSubscription(account:Address,vehicleId:string,amount
  if(!id) err('Firm acceptance event missing','CHAIN_EVENT_MISSING',500);
  const prior=p.agreements[vehicleId];
  if(prior?.subscriptionId){p.agreementHistory??=[];if(!p.agreementHistory.some(x=>x.vehicleId===vehicleId&&x.agreement.subscriptionId===prior.subscriptionId))p.agreementHistory.push({vehicleId,agreement:prior});}
- const digest=keccak256(toHex(pending.message));p.agreements[vehicleId]={digest,amount,message:pending.message,signature,signedAt:new Date().toISOString(),subscriptionId:String(id),minUnits:String(minUnits),txHash:hash};
+ p.agreements[vehicleId]={digest,amount,message:pending.message,signature,signedAt:new Date().toISOString(),subscriptionId:String(id),minUnits:String(minUnits),txHash:hash,documentId:pending.documentId,version:pending.version,signerName:identity.name,typedName:typedName.trim().replace(/\s+/gu,' ')};
  delete p.pendingSubscriptions?.[vehicleId];save();
  return {id:String(id),termsHash:v.termsHash,vault:v.address,minUnits:String(minUnits),amount,receipt:{hash,status:'confirmed'}};
 }
@@ -172,13 +187,15 @@ export async function mintPosition(account:Address):Promise<ReceiptRecord> {
  const identity=await requireBound(account),m=manifest(),p=profile(account);
  if(p.role!=='investor'||identity.fixtureCase==='mismatch') err('A matching or empty TEST investor identity is required','ROLE_REQUIRED',403);
  const id=keccak256(toHex(newId('holding')));
- const hash=await tx(1,m.registry,registryAbi,'registerHolding',[id,identityHash(identity.identityRef),parseUnits('100000',6),3,true]);
- p.minted.push({id,identityId:identity.id,name:'Alder Private Credit TEST position',originator:m.originators[0].name,originatorAddress:m.originators[0].address,units:'100000'});
- const r:ReceiptRecord={id:newId('receipt'),title:'TEST position registered',status:'confirmed',hash,amount:'100000',createdAt:new Date().toISOString(),account,detail:'Originator-authorized position issuance'};
+ const units=paxosMode?'3':'100000';
+ const hash=await tx(1,m.registry,registryAbi,'registerHolding',[id,identityHash(identity.identityRef),parseUnits(units,6),3,true]);
+ p.minted.push({id,identityId:identity.id,name:'Alder Private Credit TEST position',originator:m.originators[0].name,originatorAddress:m.originators[0].address,units});
+ const r:ReceiptRecord={id:newId('receipt'),title:'TEST position registered',status:'confirmed',hash,amount:units,createdAt:new Date().toISOString(),account,detail:'Originator-authorized position issuance'};
  p.receipts.unshift(r);save();return r;
 }
 
 export async function faucet(account:Address):Promise<ReceiptRecord> {
+ if(paxosMode)err('Request official test USDG from the Paxos faucet for this wallet','PAXOS_FAUCET_REQUIRED',409);
  const p=profile(account),m=manifest();if(p.faucetHash) err('TEST faucet already used for this wallet','FAUCET_USED',409);
  const amount=parseUnits('10000',6);
  const hash=await tx(0,m.asset,tokenAbi,'mint',[account,amount]);p.faucetHash=hash;

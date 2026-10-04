@@ -1,16 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
+import type { Receipt } from '../src/demo/types';
 // UI-only fixtures: no wallet signatures, transactions, or claims of chain verification.
-async function fixture(page:Page,connected=true,pendingAuth=false) {
+async function fixture(page:Page,connected=true,pendingAuth=false,receipts:Receipt[]=[],returningRole?:'investor'|'provider') {
  if(connected)await page.addInitScript(()=>{localStorage.setItem('lockgate.wallet.connected.v1','1');Object.assign(window,{ethereum:{request:async({method}:{method:string})=>{if(method==='eth_chainId')return '0x66eee';if(method==='eth_accounts')return ['0x1111111111111111111111111111111111111111'];throw new Error(`Unexpected wallet action: ${method}`);},on:()=>{},removeListener:()=>{}}});});
  await page.route('**/src/services/demo-gateway.ts*',route=>route.fulfill({contentType:'application/javascript',body:`
- const state={profile:{roles:[]},positions:[],positionStatus:'empty',vehicles:[],receipts:[],setup:{gas:'0',usdg:'0',canMint:false,canFund:false},deploymentReady:true};
+ const state={profile:${JSON.stringify(returningRole?{roles:[returningRole],activeRole:returningRole,identity:{id:'alex-morgan',name:'Alex Morgan',jurisdiction:'Singapore',fixtureCase:'match'}}:{roles:[]})},positions:[],positionStatus:'empty',vehicles:[],receipts:${JSON.stringify(receipts)},setup:{gas:'0',usdg:'0',canMint:false,canFund:false},deploymentReady:true};
  export function createDemoGateway(){return {
  publicOverview:async()=>({originators:0,firms:0,availableCash:'0',outstanding:'0',environment:'UI FIXTURE'}),
  authenticate:()=>${pendingAuth?"new Promise((resolve,reject)=>{window.resolveAuth=()=>resolve({...state});window.rejectAuth=()=>reject(new Error('Signature rejected'));})":"Promise.resolve({...state})"},refresh:async()=>({...state}),
- selectRole:role=>new Promise((resolve,reject)=>{window.resolveRole=()=>{state.profile.activeRole=role;resolve({...state})};window.rejectRole=()=>reject(new Error('UI fixture role failure'));}),
- selectIdentity:(id,onBound)=>new Promise(resolve=>{window.resolveBinding=()=>{state.profile.identity={id,name:'Alex Morgan',jurisdiction:'Singapore',fixtureCase:'match'};onBound?.()};window.resolveDiscovery=()=>resolve({...state});})
+ offers:async()=>[],selectRole:role=>new Promise((resolve,reject)=>{window.resolveRole=()=>{state.profile.activeRole=role;resolve({...state})};window.rejectRole=()=>reject(new Error('UI fixture role failure'));}),
+ selectIdentity:(id,onBound)=>new Promise((resolve,reject)=>{window.rejectBinding=()=>reject(new Error('Identity transaction rejected'));window.resolveBinding=()=>{state.profile.identity={id,name:'Alex Morgan',jurisdiction:'Singapore',fixtureCase:'match'};if(state.profile.activeRole==='investor'){state.positions=[{id:'position-ui',name:'Cedar Income Fund',originator:'Cedar Income Trust',instrument:'Fund interest',available:'100',faceValue:'100',partial:true}];state.positionStatus='matched';}onBound?.()};window.resolveDiscovery=()=>resolve({...state});})
  }};` }));
- await page.goto('/');if(connected)await page.getByRole('button',{name:'Sign in to Lockgate'}).click();
+ await page.goto('/');if(connected)await page.getByRole('button',{name:'Connect Wallet'}).click();
 }
 for(const role of ['Exit investor','Capital provider'])test(`${role} reflects completed operations, not elapsed time`,async({page})=>{
  await fixture(page);await page.getByRole('button',{name:`Get Started — ${role}`}).click();
@@ -26,12 +27,14 @@ for(const role of ['Exit investor','Capital provider'])test(`${role} reflects co
  await expect(page.getByRole('button',{name:'Back',exact:true})).toHaveCount(0);
  await page.getByRole('radio',{name:/Alex Morgan/}).check();await page.getByRole('button',{name:'Use selected profile'}).click();
  await expect(progress).toContainText('Linking identity…');
+ await expect(page.getByRole('dialog')).toContainText('Completing KYC…');
  await expect(progress).not.toContainText('Verified');
  await page.evaluate(()=>Reflect.get(window,'resolveBinding')());
  await expect(progress).toContainText('Verified');await expect(progress).toContainText('Checking…');
  await page.evaluate(()=>Reflect.get(window,'resolveDiscovery')());
- await expect(progress).toContainText('Ready');
+ await expect(progress).toHaveCount(0);
  await expect(page.getByRole('heading',{name:role==='Exit investor'?'Your positions.':'Choose your investment vehicle.'})).toBeVisible();
+ if(role==='Exit investor'){await page.getByRole('button',{name:'Explore an exit'}).click();await expect(progress).toHaveCount(0);await page.getByRole('textbox',{name:'Exit amount'}).fill('10');await page.getByRole('button',{name:'See eligible offers'}).click();await expect(page.getByRole('heading',{name:'Compare your net payout.'})).toBeVisible();await expect(progress).toHaveCount(0);}
 });
 test('failed role selection offers retry and cannot start identity binding',async({page})=>{
  await fixture(page);await page.getByRole('button',{name:'Get Started — Exit investor'}).click();
@@ -54,9 +57,9 @@ for(const width of [375,768,1440])test(`compact onboarding fits ${width}px`,asyn
 test('disconnected public entry has one header connection and no network control',async({page})=>{
  await fixture(page,false);
  await expect(page.getByRole('combobox',{name:'Network'})).toHaveCount(0);
- await expect(page.getByRole('button',{name:'Connect wallet',exact:true})).toHaveCount(1);
- await expect(page.locator('header').getByRole('button',{name:'Connect wallet',exact:true})).toBeVisible();
- await expect(page.getByRole('main').getByRole('button',{name:'Connect wallet',exact:true})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Connect Wallet',exact:true})).toHaveCount(1);
+ await expect(page.locator('header').getByRole('button',{name:'Connect Wallet',exact:true})).toBeVisible();
+ await expect(page.getByRole('main').getByRole('button',{name:'Connect Wallet',exact:true})).toHaveCount(0);
  await expect(page.locator('footer')).not.toContainText('USDG integration');
 });
 test('connected network menu disables Arbitrum One',async({page})=>{
@@ -73,10 +76,64 @@ test('pending wallet sign-in never displays a connected address or network menu'
  await expect(page.getByRole('combobox',{name:'Network'})).toHaveCount(0);
  await expect(page.locator('.dg-wallet-menu')).toHaveCount(0);
  await page.evaluate(()=>Reflect.get(window,'rejectAuth')());
- await expect(page.locator('header').getByRole('button',{name:'Sign in to Lockgate'})).toBeVisible();
+ await expect(page.locator('header').getByRole('button',{name:'Connect Wallet'})).toBeVisible();
  await expect(page.locator('.dg-wallet-menu')).toHaveCount(0);
- await page.locator('header').getByRole('button',{name:'Sign in to Lockgate'}).click();
+ await page.locator('header').getByRole('button',{name:'Connect Wallet'}).click();
  await page.evaluate(()=>Reflect.get(window,'resolveAuth')());
  await expect(page.locator('.dg-wallet-menu')).toBeVisible();
  await expect(page.getByRole('combobox',{name:'Network'})).toBeVisible();
+});
+
+test('KYC dialog loads, keeps rejection recoverable and uses a single selection outline',async({page})=>{
+ await fixture(page);await page.getByRole('button',{name:'Get Started — Exit investor'}).click();
+ await page.evaluate(()=>Reflect.get(window,'resolveRole')());
+ const start=page.getByRole('button',{name:'Start KYC'});await start.click();
+ await expect(page.getByRole('dialog')).toContainText('Loading test profiles…');
+ await page.getByRole('button',{name:'Close identity verification'}).click();
+ await expect(page.getByRole('dialog')).toHaveCount(0);await expect(start).toBeFocused();
+ await start.click();const choice=page.getByRole('radio',{name:'Alex Morgan',exact:true});await choice.check();
+ const card=page.locator('.dg-profile-choice.selected');
+ expect(await card.evaluate(el=>getComputedStyle(el).outlineStyle)).toBe('none');
+ expect(await card.evaluate(el=>getComputedStyle(el).boxShadow)).toBe('none');
+ await page.getByRole('button',{name:'Use selected profile'}).click();
+ await expect(page.getByRole('button',{name:'Close identity verification'})).toBeDisabled();
+ await page.evaluate(()=>Reflect.get(window,'rejectBinding')());
+ await expect(page.getByRole('dialog')).toContainText('Identity transaction rejected');
+ await expect(choice).toBeChecked();await expect(page.getByRole('button',{name:'Use selected profile'})).toBeEnabled();
+});
+test('wallet menu truncates the address without a tooltip',async({page})=>{
+ await fixture(page);await page.getByRole('button',{name:/Wallet 0x1111/}).click();
+ const copy=page.getByRole('button',{name:'Copy wallet address'});
+ await expect(page.locator('.dg-wallet-address-row code')).toHaveText('0x1111…1111');
+ await copy.hover();await expect(page.getByRole('tooltip')).toHaveCount(0);
+ await expect(copy).toBeVisible();
+});
+
+test('history adds explorer links and opens only useful transaction details',async({page})=>{
+ const account='0x1111111111111111111111111111111111111111' as const;
+ const hash=`0x${'a'.repeat(64)}` as const;
+ await fixture(page,true,false,[
+  {id:'gas',title:'Test gas funded',detail:'Test ETH for signing transactions.',status:'confirmed',account,hash,amount:'0.0005 ETH',createdAt:'2026-10-04T12:00:00Z'},
+  {id:'exit',title:'Exit settled',detail:'Payout and position update confirmed.',status:'confirmed',account,hash,amount:'1.93 USDG',residual:'1',createdAt:'2026-10-04T12:01:00Z'}
+ ]);
+ await page.getByRole('button',{name:'Get Started — Exit investor'}).click();await page.evaluate(()=>Reflect.get(window,'resolveRole')());
+ await page.getByRole('button',{name:'Start KYC'}).click();await page.getByRole('radio',{name:'Alex Morgan',exact:true}).check();
+ await page.getByRole('button',{name:'Use selected profile'}).click();await page.evaluate(()=>{Reflect.get(window,'resolveBinding')();Reflect.get(window,'resolveDiscovery')();});
+ await expect(page.getByRole('heading',{name:'Transaction History',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'View details for Test gas funded'})).toHaveCount(0);
+ const explorer=page.getByRole('link',{name:'View Test gas funded transaction in explorer'});
+ await expect(explorer).toHaveAttribute('href',`https://sepolia.arbiscan.io/tx/${hash}`);await expect(explorer).toHaveAttribute('target','_blank');
+ await page.getByRole('button',{name:'View details for Exit settled'}).click();
+ await expect(page.getByRole('dialog')).toContainText('Residual units');await expect(page.getByRole('dialog')).toContainText('0x111111…111111');await expect(page.getByRole('dialog').getByRole('link',{name:'View address in explorer'})).toHaveAttribute('href',`https://sepolia.arbiscan.io/address/${account}`);
+ await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+
+for(const role of ['investor','provider'] as const)test(`returning ${role} opens dashboard without onboarding`,async({page})=>{
+ await fixture(page,true,false,[],role);
+ await expect(page.getByRole('heading',{name:role==='investor'?'Your positions.':'Choose your investment vehicle.'})).toBeVisible();
+ await expect(page.getByRole('region',{name:'Account setup'})).toHaveCount(0);
+ await expect(page.getByRole('heading',{name:'Choose your path.'})).toHaveCount(0);
+ await expect(page.getByRole('button',{name:'Start KYC'})).toHaveCount(0);
+ await expect(page.locator('.dg-workspace-nav')).toContainText('Alex Morgan');
+ await expect(page.locator('.dg-workspace-nav')).not.toContainText('TEST identity');
 });

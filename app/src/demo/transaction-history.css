@@ -1,0 +1,17 @@
+.dg-transaction-summary{min-width:0}
+.dg-transaction-title{display:block;max-width:100%;min-height:32px;margin:-6px 0 0;padding:6px 0;background:none;border:0;color:var(--dg-ink);text-align:left;font-size:12px!important;font-weight:550!important;text-decoration:underline;text-decoration-color:#aaa;text-underline-offset:3px;overflow-wrap:anywhere}
+.dg-record-end .dg-transaction-explorer{display:grid;width:44px;height:44px;min-height:44px;place-items:center;justify-content:center;border-radius:8px}
+.dg-history-agreements{margin-top:24px;padding-top:20px;border-top:1px solid var(--dg-line)}
+.dg-transaction-dialog{width:min(640px,calc(100vw - 32px));max-height:calc(100dvh - 40px);margin:auto;padding:24px;overflow:auto;overscroll-behavior:contain;border:1px solid var(--dg-line);border-radius:16px;background:white;color:var(--dg-ink);box-shadow:0 24px 80px #17171729;font:14px/1.6 'Inter',sans-serif}
+.dg-transaction-dialog::backdrop{background:#17171766}
+.dg-transaction-dialog>header{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:20px}
+.dg-transaction-dialog>header h2{font-size:23px;padding-top:5px}
+.dg-transaction-dialog .dg-transaction-detail{white-space:pre-wrap;overflow-wrap:anywhere}
+.dg-transaction-dialog code,.dg-transaction-dialog dd{overflow-wrap:anywhere;min-width:0}
+.dg-transaction-dialog .dg-rows{margin:20px 0}
+.dg-transaction-dialog .dg-rows dd{max-width:72%}
+.dg-transaction-dialog .dg-agreement-records pre{white-space:pre-wrap;overflow-wrap:anywhere}
+@media(hover:hover) and (pointer:fine){.dg-transaction-title:hover{text-decoration-color:#171717}.dg-transaction-explorer:hover{background:#f4f4f4}}
+@media(max-width:600px){.dg-transaction-dialog{padding:20px;width:calc(100vw - 24px);max-height:calc(100dvh - 24px);border-radius:12px}.dg-transaction-dialog>header h2{font-size:20px}.dg-transaction-title{min-height:44px;margin-top:-12px;margin-bottom:-6px}}
+
+.dg-transaction-dialog>header h2:focus{outline:none}

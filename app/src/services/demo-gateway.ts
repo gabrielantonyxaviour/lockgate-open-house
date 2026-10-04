@@ -2,9 +2,9 @@ import { createPublicClient, http, keccak256, stringToHex, parseAbi, parseUnits,
 import { arbitrumSepolia } from 'viem/chains';
 import { z } from 'zod';
 import { authorizedWallet, getProvider, walletChainId } from '../chain/wallet';
-import type { DemoGateway, DemoRole, DemoState, Enquiry, EnquiryReceipt, Offer, Receipt } from '../demo/types';
+import type { DemoGateway, DemoRole, DemoState, Enquiry, EnquiryReceipt, Offer, PreparedSubscription, Receipt, WalletProgress } from '../demo/types';
 import { clearPending, pending, rememberPending } from './demo-pending';
-import { DemoTransport, configuration, identityResponse, quoteSchema, receiptSchema, stateSchema, subscriptionResponse, type Configuration, type Quote } from './demo-transport';
+import { DemoTransport, configuration, identityResponse, preparedSubscriptionResponse, quoteSchema, receiptSchema, stateSchema, subscriptionResponse, type Configuration, type Quote } from './demo-transport';
 const registryAbi=parseAbi(['function bindIdentity(bytes32 identity,uint64 validUntil,uint256 nonce,bytes signature)']);
 const assetAbi=parseAbi(['function approve(address spender,uint256 amount) returns (bool)','function allowance(address owner,address spender) view returns (uint256)']);
 const vaultAbi=parseAbi(['function deposit(uint256 id,bytes32 acceptedTerms,uint256 minUnits) returns (uint256)','function withdraw(uint256 units) returns (uint256)','function claim()','function processQueue(uint256 maxRequests)','function cancelWithdrawal(uint256 id)','function requestWithdrawal(uint256 units) returns (uint256)','function bookUnits(address) view returns (uint256)','function queuedUnits(address) view returns (uint256)','function totalUnits() view returns (uint256)','function totalAssets() view returns (uint256)','function availableCash() view returns (uint256)','function queueHead() view returns (uint256)','function queueTail() view returns (uint256)']);
@@ -19,6 +19,7 @@ class Gateway implements DemoGateway {
  private state?:DemoState;
  private signed=new Map<string,SignedOffer>();
  private subscriptions=new Map<string,{amount:string;data:z.infer<typeof subscriptionResponse>}>();
+ private preparedSubscriptions=new Map<string,PreparedSubscription>();
  private async setup() { return this.config??=configuration.parse(await this.api.request('config')); }
  private async wallet(allowPending=false) { if(this.account&&!allowPending&&pending(this.account).length) throw new Error('A submitted transaction still needs reconciliation. Refresh its status before another action.'); if(!this.account) throw new Error('Connect your wallet first.'); const config=await this.setup();const wallet=await authorizedWallet(this.account);
   const [expected,actual]=await Promise.all([this.client(config).getBlock({blockNumber:0n}),getProvider().request({method:'eth_getBlockByNumber',params:['0x0',false]})]);
@@ -44,7 +45,7 @@ class Gateway implements DemoGateway {
   clearPending(hash);if(refreshState)await this.readState(); return result as Receipt;
  }
  async authenticate(account:Address,chainId:number) {
-  this.account=account; this.api.token=undefined; this.signed.clear(); this.subscriptions.clear();
+  this.account=account; this.api.token=undefined; this.signed.clear(); this.subscriptions.clear(); this.preparedSubscriptions.clear();
   if(chainId!==421614) throw new Error('Select Arbitrum Sepolia to use the demo.');
   const challenge=z.object({message:z.string(),nonce:z.string()}).parse(await this.api.request('challenge',{account,chainId}));
   const signature=await (await this.wallet(true)).signMessage({message:challenge.message});
@@ -69,48 +70,78 @@ class Gateway implements DemoGateway {
  }
  async offers(positionId:string,amount:string) {
   const raw=z.array(z.object({id:z.string(),quote:quoteSchema}).passthrough()).parse(await this.api.request('offers',{positionId,amount}));
-  return raw.map(item=>{const offer=item as unknown as SignedOffer; this.signed.set(offer.id,offer);return offer;});
+  return raw.map(item=>{const offer=item as unknown as SignedOffer & {investorSignature?:Hex};if(offer.agreement.signed&&offer.investorSignature)offer.signature=offer.investorSignature;this.signed.set(offer.id,offer);return offer;});
  }
- async signExit(offer:Offer) {
+ async signExit(offer:Offer,typedName:string,consent:true,onProgress?:(progress:WalletProgress)=>void) {
+  if(!consent)throw new Error('Accept the exact exit letter before signing.');
+  if(!this.matchesSigner(typedName))throw new Error('Type the full name on your verified TEST identity.');
   let item=this.signed.get(offer.id); if(!item) throw new Error('Refresh this offer before signing.');
+  if(item.agreement.version!=='2'||item.agreement.text!==offer.agreement.text||item.agreement.digest!==offer.agreement.digest)throw new Error('The exit letter changed. Review a fresh offer before signing.');
+  onProgress?.({phase:'reservation-pending'});
   const reserved=z.object({id:z.string(),quote:quoteSchema}).passthrough().parse(await this.api.request('reserve-offer',{offerId:offer.id}));
   const next=reserved as unknown as SignedOffer;
   const serialize=(q:Quote)=>JSON.stringify(q,(_,v)=>typeof v==='bigint'?v.toString():v);
   if(serialize(next.quote)!==serialize(item.quote))throw new Error('The reserved terms changed. Review a fresh offer before signing.');
   item=next;this.signed.set(item.id,item);
-  if(keccak256(stringToHex(item.agreement.text))!==item.quote.agreementHash||item.agreement.digest!==item.quote.agreementHash||parseUnits(offer.payout,6)!==item.quote.payout||parseUnits(offer.amount,6)!==item.quote.units)throw new Error('The displayed agreement does not match the wallet quote. No signature was requested.');
+  if(item.agreement.text!==offer.agreement.text||keccak256(stringToHex(item.agreement.text))!==item.quote.agreementHash||item.agreement.digest!==item.quote.agreementHash||parseUnits(offer.payout,6)!==item.quote.payout||parseUnits(offer.amount,6)!==item.quote.units)throw new Error('The displayed agreement does not match the wallet quote. No signature was requested.');
   const config=await this.setup();
+  onProgress?.({phase:'signature-requested'});
   const signature=await (await this.wallet()).signTypedData({domain:{name:'LockgateTestSettlement',version:'1',chainId:421614,verifyingContract:config.settlement as Address},types:{Quote:quoteFields},primaryType:'Quote',message:item.quote});
-  const updated=await this.api.request<Offer>('exit-signature',{offerId:offer.id,signature});
+  onProgress?.({phase:'signature-collected'});
+  onProgress?.({phase:'acceptance-pending'});
+  const updated=await this.api.request<Offer>('exit-signature',{offerId:offer.id,signature,typedName,consent});
+  onProgress?.({phase:'acceptance-confirmed'});
   this.signed.set(offer.id,{...updated,quote:item.quote,signature}); return updated;
  }
- async settleExit(offer:Offer) {
+ async settleExit(offer:Offer,onProgress?:(progress:WalletProgress)=>void) {
   const item=this.signed.get(offer.id); if(!item?.signature) throw new Error('Sign this exact exit agreement first.');
   const config=await this.setup(); const wallet=await this.wallet();
+  onProgress?.({phase:'transaction-requested'});
   const hash=await wallet.writeContract({address:config.settlement as Address,abi:settlementAbi,functionName:'settle',args:[item.quote,item.signature]});
-  this.signed.delete(offer.id); return this.record(hash,'Early payout received',offer.payout);
+  onProgress?.({phase:'transaction-submitted',hash});
+  this.signed.delete(offer.id); const result=await this.record(hash,'Early payout received',offer.payout);
+  onProgress?.({phase:result.status==='confirmed'?'transaction-confirmed':'transaction-unknown',hash});return result;
  }
  async releaseReservation(digest:Hex) {const config=await this.setup();const wallet=await this.wallet();const hash=await wallet.writeContract({address:config.settlement as Address,abi:settlementAbi,functionName:'cancel',args:[digest]});return this.record(hash,'Unused exit reservation released');}
  async checkEligibility(vehicleId:string) {await this.api.request('eligibility',{vehicleId}); return this.readState();}
- async signSubscription(vehicleId:string,amount:string) {
+ private matchesSigner(typedName:string){
+  const expected=this.state?.profile.identity?.name;
+  const normalized=(value:string)=>value.normalize('NFKC').trim().replace(/\s+/gu,' ').toLocaleLowerCase('en');
+  return Boolean(expected&&normalized(typedName)===normalized(expected));
+ }
+ async prepareSubscription(vehicleId:string,amount:string) {
   parseUnits(amount,6);
-  const prepared=z.object({message:z.string(),digest:z.string(),vault:z.string(),amount:z.string()}).parse(await this.api.request('subscription',{vehicleId,amount}));
-  const current=await this.readState();const vehicle=current.vehicles.find(v=>v.id===vehicleId);
-  const policy=(vehicle as typeof vehicle & {policyText?:string})?.policyText;
-  if(keccak256(stringToHex(prepared.message))!==prepared.digest||prepared.amount!==amount||vehicle?.address?.toLowerCase()!==prepared.vault.toLowerCase()||!prepared.message.includes(this.account!)||(policy&&!prepared.message.includes(policy)))throw new Error('Subscription terms changed. Review them again before signing.');
+  const prepared=preparedSubscriptionResponse.parse(await this.api.request('subscription',{vehicleId,amount})) as PreparedSubscription;
+  const vehicle=this.state?.vehicles.find(v=>v.id===vehicleId);
+  if(keccak256(stringToHex(prepared.message))!==prepared.digest||parseUnits(prepared.amount,6)!==parseUnits(amount,6)||vehicle?.address?.toLowerCase()!==prepared.vault.toLowerCase()||vehicle.policyHash!==prepared.termsHash||!prepared.message.includes(this.account!)||!prepared.message.includes(vehicle.policyText??'')||prepared.signerName!==this.state?.profile.identity?.name||Date.parse(prepared.expiresAt)<=Date.now())throw new Error('Subscription letter does not match the reviewed wallet, amount and vehicle.');
+  this.preparedSubscriptions.set(vehicleId,prepared);return prepared;
+ }
+ async signSubscription(vehicleId:string,amount:string,prepared:PreparedSubscription,typedName:string,consent:true,onProgress?:(progress:WalletProgress)=>void) {
+  if(!consent)throw new Error('Accept the exact subscription letter before signing.');
+  if(!this.matchesSigner(typedName))throw new Error('Type the full name on your verified TEST identity.');
+  const original=this.preparedSubscriptions.get(vehicleId);
+  if(!original||JSON.stringify(original)!==JSON.stringify(prepared)||parseUnits(amount,6)!==parseUnits(prepared.amount,6)||keccak256(stringToHex(prepared.message))!==prepared.digest||Date.parse(prepared.expiresAt)<=Date.now())throw new Error('Subscription letter changed or expired. Review fresh terms.');
+  onProgress?.({phase:'signature-requested'});
   const signature=await (await this.wallet()).signMessage({message:prepared.message});
-  const data=subscriptionResponse.parse(await this.api.request('subscription',{vehicleId,amount,signature}));
+  onProgress?.({phase:'signature-collected'});
+  onProgress?.({phase:'acceptance-pending'});
+  const data=subscriptionResponse.parse(await this.api.request('subscription',{vehicleId,amount,signature,typedName,consent,digest:prepared.digest}));
+  onProgress?.({phase:'acceptance-confirmed'});
+  this.preparedSubscriptions.delete(vehicleId);
   this.subscriptions.set(vehicleId,{amount,data}); return this.readState();
  }
- async fund(vehicleId:string,amount:string) {
+ async fund(vehicleId:string,amount:string,onProgress?:(progress:WalletProgress)=>void) {
   let subscription=this.subscriptions.get(vehicleId);
   if(!subscription){const data=subscriptionResponse.parse(await this.api.request('subscription-resume',{vehicleId,amount}));subscription={amount,data};this.subscriptions.set(vehicleId,subscription);}
   if(parseUnits(subscription.amount,6)!==parseUnits(amount,6))throw new Error('Sign the subscription for this exact amount first.');
   const config=await this.setup(); const wallet=await this.wallet(); const vault=subscription.data.vault as Address; const assets=parseUnits(amount,6);
   const allowance=await this.client(config).readContract({address:config.asset as Address,abi:assetAbi,functionName:'allowance',args:[this.account!,vault]});
-  if(allowance<assets) { const approval=await wallet.writeContract({address:config.asset as Address,abi:assetAbi,functionName:'approve',args:[vault,assets]}); const approved=await this.record(approval,'USDG spending approved',amount);if(approved.status!=='confirmed')return approved; }
+  if(allowance<assets) {onProgress?.({phase:'approval-requested'});const approval=await wallet.writeContract({address:config.asset as Address,abi:assetAbi,functionName:'approve',args:[vault,assets]});onProgress?.({phase:'approval-submitted',hash:approval});const approved=await this.record(approval,'USDG spending approved',amount);if(approved.status!=='confirmed'){onProgress?.({phase:'transaction-unknown',hash:approval});return approved;}onProgress?.({phase:'approval-confirmed',hash:approval});}
+  onProgress?.({phase:'transaction-requested'});
   const hash=await wallet.writeContract({address:vault,abi:vaultAbi,functionName:'deposit',args:[subscription.data.id,subscription.data.termsHash as Hex,subscription.data.minUnits]});
-  this.subscriptions.delete(vehicleId); return this.record(hash,'Vehicle funded',amount);
+  onProgress?.({phase:'transaction-submitted',hash});
+  this.subscriptions.delete(vehicleId);const result=await this.record(hash,'Vehicle funded',amount);
+  onProgress?.({phase:result.status==='confirmed'?'transaction-confirmed':'transaction-unknown',hash});return result;
  }
  async withdraw(vehicleId:string,amount:string) {
   const state=await this.readState(); const vehicle=state.vehicles.find(v=>v.id===vehicleId); if(!vehicle?.address) throw new Error('Select an available vehicle.');

@@ -7,6 +7,10 @@ import { publicAccountAt } from './public-signers.js';
 const network=process.env.LOCKGATE_DEMO_NETWORK??'local';
 if(network!=='local'&&network!=='arbitrum-sepolia')throw new Error('Unsupported demo network');
 export const publicNetwork=network==='arbitrum-sepolia';
+export const paxosMode=publicNetwork&&process.env.LOCKGATE_DEMO_ASSET==='paxos-usdg';
+if(process.env.LOCKGATE_DEMO_ASSET&&!['mock','paxos-usdg'].includes(process.env.LOCKGATE_DEMO_ASSET))throw new Error('Unsupported demo asset mode');
+if(!publicNetwork&&process.env.LOCKGATE_DEMO_ASSET==='paxos-usdg')throw new Error('Paxos test USDG requires public Arbitrum Sepolia');
+export const paxosTestUsdG='0xFFC95faa3d63Cde504a05B567C600B78C0b41892' as Address;
 export const networkLabel=publicNetwork?'Arbitrum Sepolia TEST':'Lockgate local TEST';
 export const genesisHash='0x77194da4010e549a7028a9c3c51c3e277823be6ac7d138d0bb8a70197b5c004c' as Hex;
 const requestedRpc=process.env.LOCKGATE_DEMO_RPC_URL;
@@ -25,7 +29,7 @@ export const accountAt = (index:number) => publicNetwork?publicAccountAt(index):
 export const walletAt = (index:number) => createWalletClient({ account:accountAt(index), chain, transport:http(rpc,{timeout:15000,retryCount:2}) });
 export const identityHash = (ref:string):Hex => keccak256(toHex(ref));
 export const vehicleTermsText=(label:string)=>[
- `Lockgate ${publicNetwork?'Arbitrum Sepolia':'local'} TEST vehicle terms v1 — ${label}. This fictional firm-managed vehicle accepts only 6-decimal ${publicNetwork?'testnet':'local'} TEST USDG on chain 421614; it is not a live investment product.`,
+ `Lockgate ${publicNetwork?'Arbitrum Sepolia':'local'} TEST vehicle terms v1 — ${label}. This fictional firm-managed vehicle accepts only 6-decimal ${paxosMode?'Paxos-issued test USDG':`${publicNetwork?'testnet':'local'} TEST USDG`} on chain 421614; it is not a live investment product.`,
  'The firm accepts a wallet-bound TEST identity and an exact subscription amount before a provider deposits. Deposits receive nontransferable book units priced from the vehicle net asset value at the time of deposit.',
  'Vehicle cash may fund permitted early exits. A purchase acquires claim rights; a financing discharges the investor claim and creates a separate originator repayment obligation. Mandate limits and available cash restrict each reserve.',
  'Withdrawals are paid immediately only while there is no open queue and enough available cash. Otherwise a request enters a first-in, first-out queue. Queued units remain exposed to changes in net asset value until filled; filled amounts must be claimed.',
@@ -50,8 +54,8 @@ export const positions = [
  ['Birch Working Capital','Receivable note'],['Cedar Diversified Income','Fund interest'],
 ] as const;
 export type Manifest = { chainId:number; network?:string; deploymentBlock?:string; rpcUrl:string; asset:Address; registry:Address; settlement:Address; vaults:{id:string;name:string;firm:string;address:Address;manager:Address;termsHash:Hex;termsText:string}[]; originators:{name:string;address:Address}[]; holdings:{id:Hex;profileId:string;name:string;instrument:string;originator:string;originatorAddress:Address;units:string}[] };
-export const manifestPath = fileURLToPath(new URL(publicNetwork?'../../../scripts/demo/local/sepolia-manifest.json':'../../../app/public/demo-contracts.json',import.meta.url));
-export const fixturePath = fileURLToPath(new URL(publicNetwork?'../../../scripts/demo/local/sepolia-fixture.json':'../../../scripts/demo/local/fixture.json',import.meta.url));
+export const manifestPath = fileURLToPath(new URL(publicNetwork?`../../../scripts/demo/local/${paxosMode?'paxos-usdg-':'sepolia-'}manifest.json`:'../../../app/public/demo-contracts.json',import.meta.url));
+export const fixturePath = fileURLToPath(new URL(publicNetwork?`../../../scripts/demo/local/${paxosMode?'paxos-usdg-':'sepolia-'}fixture.json`:'../../../scripts/demo/local/fixture.json',import.meta.url));
 export function manifest():Manifest { const publicPart=JSON.parse(readFileSync(manifestPath,'utf8'));const privatePart=JSON.parse(readFileSync(fixturePath,'utf8'));return {...publicPart,...privatePart} as Manifest; }
 export function artifact(name:string):{abi:readonly unknown[];bytecode:{object:Hex}} {
  return JSON.parse(readFileSync(fileURLToPath(new URL(`../../../contracts/out/${name}.sol/${name}.json`,import.meta.url)),'utf8'));

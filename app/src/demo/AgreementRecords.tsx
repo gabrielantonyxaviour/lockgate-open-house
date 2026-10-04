@@ -1,10 +1,11 @@
 import { Download, FileText } from 'lucide-react';
+import { ChainReference, ReferenceText } from './ChainReference';
 import { Button } from './Common';
 import type { AgreementRecord } from './types';
 export function AgreementRecords({agreements}:{agreements:AgreementRecord[]}) {
  return <div className="dg-agreement-records">{agreements.map(agreement=><details key={agreement.id}>
   <summary><FileText size={16}/><span>{agreement.title}<small>Version {agreement.version} · {agreement.status}</small></span></summary>
-  <pre>{agreement.text}</pre><dl className="dg-rows"><div><dt>Agreement</dt><dd>{agreement.id}</dd></div>{agreement.signedAt&&<div><dt>Signed</dt><dd>{agreement.signedAt}</dd></div>}<div><dt>Digest</dt><dd><code>{agreement.digest}</code></dd></div></dl>
+  <pre>{agreement.text}</pre><dl className="dg-rows"><div><dt>Agreement</dt><dd><ReferenceText text={agreement.id}/></dd></div>{agreement.signedAt&&<div><dt>Signed</dt><dd>{agreement.signedAt}</dd></div>}<div><dt>Digest</dt><dd><ChainReference value={agreement.digest}/></dd></div></dl>
   <Button secondary onClick={()=>downloadAgreement(agreement)}><Download size={15}/>Download agreement</Button>
  </details>)}</div>;
 }

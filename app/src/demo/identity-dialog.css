@@ -1,0 +1,29 @@
+.dg-identity-dialog{width:min(760px,calc(100vw - 32px));max-height:calc(100dvh - 40px);margin:auto;padding:0;overflow:auto;overscroll-behavior:contain;border:1px solid var(--dg-line);border-radius:16px;background:#fff;color:var(--dg-ink);box-shadow:0 24px 80px #17171729;font:14px/1.6 'Inter',sans-serif}
+.dg-identity-dialog::backdrop{background:#17171766}
+.dg-identity-dialog-header{display:flex;justify-content:space-between;align-items:center;padding:20px 24px 0}
+.dg-identity-dialog-copy{padding:10px 24px 20px;border-bottom:1px solid var(--dg-line)}
+.dg-app .dg-identity-dialog-copy h2{font-size:26px;line-height:1.3;margin-bottom:8px}
+.dg-profile-choices{padding:20px 24px}
+.dg-profile-choices>h3{margin-bottom:14px}
+.dg-profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.dg-profile-choice{position:relative;display:flex;align-items:center;gap:12px;min-height:100px;border:1px solid var(--dg-line);border-radius:10px;padding:14px 12px;cursor:pointer;background:white}
+.dg-profile-choice.selected{border-color:#525252;background:#f4f4f4}
+:root:not([data-input=pointer]) .dg-profile-choice:has(:focus-visible){border-color:#525252;box-shadow:0 0 0 1px #525252}.dg-profile-choice input:focus-visible{outline:none}
+.dg-profile-choice input{position:absolute;width:1px;height:1px;opacity:0}
+.dg-profile-avatar{width:44px;height:44px;flex-shrink:0}
+.dg-profile-details{display:grid;gap:2px;min-width:0;flex:1}
+.dg-profile-details strong{font-size:13px;font-weight:600;line-height:1.4}
+.dg-profile-details>span{font-size:11px;color:#606060}
+.dg-profile-details small{display:flex;align-items:center;gap:4px;font-size:9px;line-height:1.5;color:#606060}
+.dg-profile-details small svg{flex-shrink:0}
+.dg-profile-indicator{width:17px;height:17px;flex-shrink:0;border:1px solid #c5c5c5;border-radius:50%;display:grid;place-items:center}
+.selected .dg-profile-indicator{color:white;background:#333;border-color:#333}
+.dg-identity-dialog-footer{position:sticky;bottom:0;padding:18px 24px 24px;border-top:1px solid var(--dg-line);background:#fff}
+.dg-identity-dialog-footer>p{font-size:11px;margin-bottom:14px}
+.dg-identity-dialog-buttons{display:flex;justify-content:flex-end;gap:10px}
+.dg-identity-progress{min-height:280px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:36px;text-align:center}
+.dg-identity-progress p{max-width:390px}
+@media(hover:hover) and (pointer:fine){.dg-profile-choice:hover{border-color:#888}}
+@media(max-width:600px){.dg-identity-dialog{width:calc(100vw - 24px);max-height:calc(100dvh - 24px);border-radius:12px}.dg-identity-dialog-header{padding:16px 16px 0}.dg-identity-dialog-copy{padding:10px 16px 18px}.dg-app .dg-identity-dialog-copy h2{font-size:23px}.dg-profile-choices{padding:18px 16px}.dg-profile-grid{grid-template-columns:1fr}.dg-profile-choice{min-height:90px}.dg-identity-dialog-footer{padding:16px}.dg-identity-dialog-buttons>.dg-button{flex:1}.dg-identity-progress{padding:28px 20px}}
+
+.dg-identity-dialog-copy h2:focus{outline:none}

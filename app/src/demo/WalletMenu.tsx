@@ -38,8 +38,7 @@ export function WalletMenu({account,gas,usdg,busy,onDisconnect}:{
    <Wallet size={16}/><span><strong>{short}</strong><small>{money(usdg)} USDG <span>·</span> {gasLabel} ETH</small></span><ChevronDown size={14}/>
   </button>
   {open&&<div ref={panel} id={id} className="dg-wallet-popover" role="dialog" aria-label="Wallet actions" onKeyDown={keys}>
-   <div className="dg-wallet-detail" role="presentation"><span className="dg-eyebrow">Connected wallet</span><code>{account}</code><dl><div><dt>USDG</dt><dd>{money(usdg)}</dd></div><div><dt>ETH</dt><dd>{gasLabel}</dd></div></dl></div>
-   <button className="dg-wallet-item" onClick={()=>void copy()}>{copied?<Check size={16}/>:<Copy size={16}/>}Copy address</button>
+   <div className="dg-wallet-detail" role="presentation"><span className="dg-eyebrow">Connected wallet</span><div className="dg-wallet-address-row"><code>{short}</code><span className="dg-wallet-copy-wrap"><button className="dg-wallet-copy-icon" aria-label="Copy wallet address" onClick={()=>void copy()}>{copied?<Check size={15}/>:<Copy size={15}/>}</button></span></div><dl><div><dt>USDG</dt><dd>{money(usdg)}</dd></div><div><dt>ETH</dt><dd>{gasLabel}</dd></div></dl></div>
    <button className="dg-wallet-item" disabled={busy} onClick={()=>{close();onDisconnect();}}><LogOut size={16}/>Disconnect wallet</button>
    <span className="dg-wallet-copy-status" role="status">{copied?'Address copied.':copyError}</span>
   </div>}

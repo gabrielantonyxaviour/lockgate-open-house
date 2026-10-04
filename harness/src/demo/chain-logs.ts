@@ -6,9 +6,14 @@ export async function chainLogs(address:Address):Promise<Log[]> {
  const from=BigInt(manifest().deploymentBlock??'0');
  const head=await publicClient.getBlockNumber({cacheTime:0});
  const logs:Log[]=[];
- for(let start=from;start<=head;start+=2000n){
-  const end=start+1999n<head?start+1999n:head;
-  logs.push(...await publicClient.getLogs({address,fromBlock:start,toBlock:end}));
+ // Bounded concurrency keeps every read fresh without serializing the entire history.
+ for(let batch=from;batch<=head;batch+=8000n){
+  const windows=[];
+  for(let start=batch;start<=head&&start<batch+8000n;start+=2000n){
+   const end=start+1999n<head?start+1999n:head;
+   windows.push(publicClient.getLogs({address,fromBlock:start,toBlock:end}));
+  }
+  for(const window of await Promise.all(windows))logs.push(...window);
  }
  return logs;
 }

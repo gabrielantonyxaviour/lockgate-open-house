@@ -29,7 +29,7 @@ function bearer(req:IncomingMessage):Address {
  return account;
 }
 function config() {
- const m=manifest();return {chainId:m.chainId,rpcUrl:m.rpcUrl,asset:m.asset,registry:m.registry,settlement:m.settlement,vaults:m.vaults,originators:m.originators,abis:{asset:artifact('MockUSDG').abi,registry:artifact('DemoRegistry').abi,settlement:artifact('DemoSettlement').abi,vault:artifact('DemoFirmVault').abi},network:process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?'Arbitrum Sepolia':'Local EVM test network',walletRpcUrl:'https://sepolia-rollup.arbitrum.io/rpc'};
+ const m=manifest();return {chainId:m.chainId,rpcUrl:m.rpcUrl,asset:m.asset,registry:m.registry,settlement:m.settlement,vaults:m.vaults,originators:m.originators,abis:{asset:(artifact('MockUSDG').abi as Abi).filter(item=>item.type!=='function'||item.name!=='mint'),registry:artifact('DemoRegistry').abi,settlement:artifact('DemoSettlement').abi,vault:artifact('DemoFirmVault').abi},network:process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?'Arbitrum Sepolia':'Local EVM test network',walletRpcUrl:'https://sepolia-rollup.arbitrum.io/rpc'};
 }
 async function handle(req:IncomingMessage,res:ServerResponse) {
  const origin=req.headers.origin;if(origin&&!allowedOrigins.has(origin)) err('Untrusted browser origin','ORIGIN_FORBIDDEN',403);
@@ -96,7 +96,7 @@ async function handle(req:IncomingMessage,res:ServerResponse) {
   const {offerId}=z.object({offerId:z.string().min(1).max(80)}).parse(await body(req));return json(res,200,await reserveOffer(account,offerId));
  }
  if(path==='/api/demo/exit-signature'&&req.method==='POST') {
-  const v=z.object({offerId:z.string().min(1).max(80),signature:hex}).parse(await body(req));return json(res,200,await signExit(account,v.offerId,v.signature));
+  const v=z.object({offerId:z.string().min(1).max(80),signature:hex,typedName:z.string().trim().min(2).max(100),consent:z.literal(true)}).parse(await body(req));return json(res,200,await signExit(account,v.offerId,v.signature,v.typedName,v.consent));
  }
  if(path==='/api/demo/eligibility'&&req.method==='POST') {
   const {vehicleId}=z.object({vehicleId:z.string().min(1).max(80)}).parse(await body(req));
@@ -104,8 +104,10 @@ async function handle(req:IncomingMessage,res:ServerResponse) {
   return json(res,200,await demoState(account));
  }
  if(path==='/api/demo/subscription'&&req.method==='POST') {
-  const v=z.object({vehicleId:z.string().min(1).max(80),amount,signature:hex.optional()}).parse(await body(req));
-  return json(res,200,v.signature?await acceptSubscription(account,v.vehicleId,v.amount,v.signature):await prepareSubscription(account,v.vehicleId,v.amount));
+  const v=z.object({vehicleId:z.string().min(1).max(80),amount,signature:hex.optional(),typedName:z.string().trim().min(2).max(100).optional(),consent:z.boolean().optional(),digest:hex.optional()}).parse(await body(req));
+  if(v.signature){if(!v.typedName||v.consent!==true||!v.digest)err('Typed full name, consent and exact document digest are required','SIGNED_PACKAGE_REQUIRED');return json(res,200,await acceptSubscription(account,v.vehicleId,v.amount,v.signature,v.typedName,v.consent,v.digest));}
+  if(v.typedName||v.digest||v.consent!==undefined)err('Prepare the exact letter before supplying acceptance fields','SIGNED_PACKAGE_REQUIRED');
+  return json(res,200,await prepareSubscription(account,v.vehicleId,v.amount));
  }
  if(path==='/api/demo/subscription-resume'&&req.method==='POST') {
   const v=z.object({vehicleId:z.string().min(1).max(80),amount}).parse(await body(req));

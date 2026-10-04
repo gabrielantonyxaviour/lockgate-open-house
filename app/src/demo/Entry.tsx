@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { ArrowUpRight, Check, ShieldCheck, Wallet } from 'lucide-react';
 import { z } from 'zod';
-import { identities, roles } from './fixtures';
+import { roles } from './fixtures';
+import { IdentityDialog } from './IdentityDialog';
 import { Button, Heading, Rows } from './Common';
 import type { DemoRole, Enquiry, EnquiryReceipt } from './types';
 export function WalletEntry({connect,busy}:{connect:()=>void;busy:boolean}) {
@@ -10,11 +11,9 @@ export function WalletEntry({connect,busy}:{connect:()=>void;busy:boolean}) {
 export function RoleEntry({choose,busy}:{choose:(role:DemoRole)=>void;busy:boolean}) {
  return <section className="dg-welcome"><Heading title="Choose your path." copy="Get started, or talk with our team."/><div className="dg-role-grid">{roles.map((role,index)=><article className="dg-role-card" key={role.id}><div className="dg-card-top"><span className="dg-entry-icon"><role.icon size={22}/></span><span className="dg-number">0{index+1}</span></div><h2>{role.title}</h2><p>{role.description}</p><button className="dg-button dg-role-cta" disabled={busy} onClick={()=>choose(role.id)} aria-label={`${role.cta} — ${role.title}`}>{role.cta}<ArrowUpRight size={16}/></button></article>)}</div><p className="dg-caption">Institutions begin with a conversation. Onboarding follows a reviewed invitation.</p></section>;
 }
-export function IdentityEntry({onSelect,busy,preparing=false}:{onSelect:(id:string)=>void;busy:boolean;preparing?:boolean}) {
+export function IdentityEntry({onSelect,busy,preparing=false,error}:{onSelect:(id:string)=>void;busy:boolean;preparing?:boolean;error?:string}) {
  const [started,setStarted]=useState(false);
- const [selected,setSelected]=useState('');
- if(!started)return <section className="dg-narrow"><Heading title="Let’s verify your identity." copy="Choose a TEST identity to continue."/><div className="dg-panel"><ShieldCheck size={26}/><h2>Identity first</h2><p>Choose one of ten preverified TEST profiles to link to your wallet.</p><div className="dg-actions"><Button busy={preparing} disabled={busy} onClick={()=>setStarted(true)}>{preparing?'Preparing identity check…':'Start KYC'} <ArrowUpRight size={16}/></Button></div></div></section>;
- return <section className="dg-narrow dg-identity"><Heading eyebrow="TEST identity verification" title="Choose a TEST profile." copy="Each fictional profile is preverified. Position ownership is checked separately."/><div className="dg-identity-grid" role="radiogroup" aria-label="TEST identity">{identities.map((p,i)=><label key={p.id} className={`dg-identity-card ${selected===p.id?'selected':''}`}><input type="radio" name="identity" value={p.id} checked={selected===p.id} onChange={()=>setSelected(p.id)} disabled={busy}/><span className="dg-card-top"><span className="dg-avatar">{p.name.split(' ').map(s=>s[0]).join('')}</span><span className="dg-number">{String(i+1).padStart(2,'0')}</span></span><strong>{p.name}</strong><span>{p.jurisdiction}</span><small><Check size={12}/>Preverified TEST profile</small>{p.fixtureCase!=='match'&&<small>{p.fixtureCase==='mismatch'?'Holding-owner mismatch case':'No supported holdings case'}</small>}</label>)}</div><div className="dg-identity-actions"><p>Confirm your selection to link this profile to your wallet.</p><Button onClick={()=>onSelect(selected)} disabled={!selected} busy={busy}>Use selected profile</Button></div></section>;
+ return <section className="dg-narrow"><Heading title="Let’s verify your identity." copy="Choose a TEST identity to continue."/><div className="dg-panel"><ShieldCheck size={26}/><h2>Identity first</h2><p>Choose one of ten preverified TEST profiles to link to your wallet.</p><div className="dg-actions"><Button busy={preparing} disabled={busy} onClick={()=>setStarted(true)}>{preparing?'Preparing identity check…':'Start KYC'} <ArrowUpRight size={16}/></Button></div></div>{started&&<IdentityDialog onClose={()=>setStarted(false)} onSelect={onSelect} busy={busy} error={error}/>}</section>;
 }
 const enquirySchema=z.object({representative:z.string().trim().min(2,'Enter your name.').max(100),email:z.email('Enter a valid work email.').max(254),organization:z.string().trim().min(2,'Enter your organization.').max(150),jurisdiction:z.string().trim().min(2,'Enter your jurisdiction.').max(100),summary:z.string().trim().min(20,'Tell us a little more (at least 20 characters).').max(1500)});
 export function EnquiryForm({role,submit,busy,back}:{role:'originator'|'manager';submit:(value:Enquiry)=>Promise<EnquiryReceipt>;busy:boolean;back:()=>void}) {

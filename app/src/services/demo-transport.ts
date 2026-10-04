@@ -20,3 +20,4 @@ export class DemoTransport {
 }
 export const identityResponse=z.object({identity:hex,validUntil:z.coerce.bigint(),nonce:z.coerce.bigint(),signature:hex,registry:address});
 export const subscriptionResponse=z.object({id:z.coerce.bigint(),termsHash:hex,vault:address,minUnits:z.coerce.bigint(),receipt:z.object({hash:hex,status:z.enum(['confirmed','submitted','unknown','reverted'])}).passthrough().optional()});
+export const preparedSubscriptionResponse=z.object({message:z.string().min(1),digest:hex,vault:address,amount:z.string(),termsHash:hex,signerName:z.string().min(2),expiresAt:z.string().datetime(),documentId:z.string().min(1),version:z.literal('2')});
