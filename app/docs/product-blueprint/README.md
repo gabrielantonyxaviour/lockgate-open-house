@@ -123,6 +123,9 @@ early exits, issuer controls, owner-funded partner liquidity and a separate inst
 
 Important gaps:
 
+- There are currently no live supported originating funds/platforms or registered commercial
+  fund integrations. Named prospects must not appear as supported funds. Four or five test
+  originators can demonstrate the intended breadth without claiming real partnerships.
 - Partner-vault deposit/withdraw is owner-only, with aggregate shares and no independent
   provider ledger. A provider model needs accounting and enforceable rights before a new button.
 - Commercial applications, KYC/KYB, agreement delivery/signing, subscription acceptance,

@@ -5,6 +5,7 @@ export const meta = {
   purpose: 'Define and validate the whole product before changing the app.',
   confirmed: [
     'Four public roles: exit investor, originating fund/platform, investment firm, and capital provider. Lockgate operations is internal.',
+    'There are currently no live supported originating funds/platforms or registered commercial fund integrations. Prospects must not appear as supported funds; test contracts are a separate environment.',
     'Visitors first see a useful public overview. Onboarding begins when their chosen task requires it.',
     'The complete product must be written and visualized before implementation. The demo scope is a separate decision.',
     'Capital providers provisionally enter through a firm-approved investment relationship, receive individual interests, and withdraw from available cash or a queue.',
@@ -16,7 +17,7 @@ export const meta = {
     ['Provider ownership', 'Current partner vaults accept only their owner’s capital. Independent provider shares, subscriptions and withdrawals need a new capital layer or a firm-administered legal/recordkeeping structure.'],
     ['Commercial onboarding', 'The existing form saves and exports a local platform plan. It does not submit an application, verify a firm, sign agreements or activate a facility.'],
     ['Testnet readiness', 'The configured token is Paxos testnet USDG, without MockUSDG.faucet. At block 315543348 the default platform rejected quotes with “window due”; partner vaults were unfunded and their mandates inactive.'],
-    ['External partners', 'Kasu is a prospective originator example. No current Kasu holdings adapter, repayment integration or verified licensed-manager partnership is established by this repository.'],
+    ['External partners', 'There are no live originating-fund integrations. Kasu is a prospect only and must not appear in a supported-fund catalogue. Every future integration needs agreed ownership data, identity matching, settlement rights and operational acceptance.'],
   ],
   decisions: [
     {id:'D-ONBOARDING',title:'Who approves and owns onboarding?',proposal:'The licensed firm owns client eligibility and subscription acceptance; originator and firm business approval have separately authorized reviewers.',why:'A wallet or selected role is not evidence of identity, licence scope or permission to invest.',options:['Firm-led review with contracted service providers','Another documented administrator/approval model'],state:'open'},
