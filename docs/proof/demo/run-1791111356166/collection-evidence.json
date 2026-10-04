@@ -1,0 +1,96 @@
+{
+  "environment": "LOCAL ANVIL TEST ONLY; six-decimal MockUSDG",
+  "phase": "originator wallet collects claim",
+  "checks": [
+    {
+      "holdingId": "0x3819673de10bed199b3e9a7692fad6535ff5f58028019c13ae7ffa5b5404b34b",
+      "digest": "0x35b1850df9fbb117ff3d452bc6fd2a4c157b1828a3120fc25c862e5e5ac8f87d",
+      "vault": "0x4c5859f0f772848b2d91f1d83e2fe57935348029",
+      "repayHash": "0x2729844c887243356394929b83a95b4f69cdde00df951bf7e7aa4c7f2adeb98b",
+      "originator": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "receiptBlock": "191",
+      "purchasedBefore": "40000",
+      "purchasedAfter": "0",
+      "collectedBefore": "0",
+      "collectedAfter": "40000",
+      "principalBefore": "39200",
+      "principalAfter": "0",
+      "assetsBefore": "39200",
+      "assetsAfter": "40000",
+      "earnedSpread": "800",
+      "providerIncomeBefore": 0,
+      "providerIncomeAfter": 800,
+      "originatorBalanceBefore": "180314",
+      "originatorBalanceAfter": "140314"
+    }
+  ],
+  "walletProof": [
+    {
+      "persona": "originator-collection",
+      "index": 1,
+      "account": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "method": "personal_sign",
+      "signature": "0x33657c8d3d35b8ef191477ffc42f69f9582c230c89aac7fc2a311d07436809da5fcbb93cc1db0777e120de16aae9ee19f5a508f6f6462cd8575e3321dae77a2c1b",
+      "messageHash": "0x62d0a7d82d1ec433ebb8c872be21a32bc60272b6c04303a465acdf0e79e5b97c"
+    },
+    {
+      "persona": "originator-collection",
+      "index": 1,
+      "account": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "method": "eth_sendTransaction",
+      "transactionHash": "0x10f48fa6eb6c3993754ed7424ee5b272a57bd6786e37114cc8f4d886919ac288",
+      "rawHash": "0x10f48fa6eb6c3993754ed7424ee5b272a57bd6786e37114cc8f4d886919ac288",
+      "receiptStatus": "success",
+      "blockNumber": "190",
+      "from": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+      "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "chainId": 421614
+    },
+    {
+      "persona": "originator-collection",
+      "index": 1,
+      "account": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
+      "method": "eth_sendTransaction",
+      "transactionHash": "0x2729844c887243356394929b83a95b4f69cdde00df951bf7e7aa4c7f2adeb98b",
+      "rawHash": "0x2729844c887243356394929b83a95b4f69cdde00df951bf7e7aa4c7f2adeb98b",
+      "receiptStatus": "success",
+      "blockNumber": "191",
+      "from": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+      "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+      "chainId": 421614
+    }
+  ],
+  "screenshots": [
+    {
+      "width": 375,
+      "file": "originator-collection-375.png",
+      "sha256": "b0a7d24c6c076823f16c2228854a0e04a0ad6bcce83a2962adefaffdca2db4c0",
+      "scrollWidth": 375,
+      "viewportWidth": 375
+    },
+    {
+      "width": 768,
+      "file": "originator-collection-768.png",
+      "sha256": "951cb1c279b2f5a677307d8b7ef0c925499219bc5174f0f027bbee9366f55bc5",
+      "scrollWidth": 768,
+      "viewportWidth": 768
+    },
+    {
+      "width": 1440,
+      "file": "originator-collection-1440.png",
+      "sha256": "fcf99e3765609b30d3aacab08a3e13f491fd37c1c17410dc7cac07fd756e23de",
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    }
+  ],
+  "videos": [
+    {
+      "file": "originator-collection.webm",
+      "sha256": "162c5ab97c88185f4dcf9a1e763a832dc780967c1d7d63e761a25254a253d966"
+    }
+  ],
+  "sourceHashes": {
+    "test": "c1f37eb26a4c30554fa0f51c8574f48b32d79e946e6b8292cb59f7adf047724c",
+    "manifest": "9787d6a259729706c306e3880ac815f20123104d5b9ed8eac2c0c4f37d57c27c"
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "environment": "LOCAL ANVIL TEST ONLY",
+  "phase": "full-claim settlement",
+  "sourceHashes": {
+    "test": "35047e092d02487bef74ea71b3cb693c68a82781ee2a89b725d262fae4e81947",
+    "wallet": "aa286899a10f069a2bbcde66259aafc7e779aab518f1d4567ae9fc59a4ab698f",
+    "manifest": "9787d6a259729706c306e3880ac815f20123104d5b9ed8eac2c0c4f37d57c27c"
+  },
+  "checks": [
+    {
+      "holding": "0x9171bd9193744e6c69de5132af2e2bbaf85024b5303dcdd150b227c53516ef73",
+      "firstDigest": "0xbee79998da06d621ab670e5eae37b1e9dd433a777e7b1f858ebf504c425dc658",
+      "secondDigest": "0xd8213b0fdce985b5ff71847dd39a948842923e99230559655936a39fd61c2541",
+      "cancelledFirst": true,
+      "fullUnits": "100000000000",
+      "payout": "97000000000",
+      "balanceBefore": "0",
+      "balanceAfter": "97000000000",
+      "settlementHash": "0x96dcace9db24add8f4c1e1bd2add895f8cdd73115bd70ff7cddd7c1c2238f546"
+    }
+  ],
+  "walletProof": [
+    {
+      "persona": "birch-full-claim",
+      "index": 14,
+      "account": "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
+      "method": "personal_sign",
+      "signature": "0x6c5e3d17ccd665a4f988a32dae772fe11829ed3269f8099a2a97e8927d9b2b705d9848e13a030ef1e18a982a5186bfac940f3604e20237a4d61bee50ec14800a1b",
+      "messageHash": "0x69e878bc4a2bab48e10a811ad1bd73f457d0435027a7d55b77bf157f173ebd06"
+    },
+    {
+      "persona": "birch-full-claim",
+      "index": 14,
+      "account": "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
+      "method": "eth_sendTransaction",
+      "transactionHash": "0xc24b69d9f3c0cec2fa712d1b41c4c16ed1e4144db453b6e9668703487e3cd7cb",
+      "rawHash": "0xc24b69d9f3c0cec2fa712d1b41c4c16ed1e4144db453b6e9668703487e3cd7cb",
+      "receiptStatus": "success",
+      "blockNumber": "192",
+      "from": "0xdf3e18d64bc6a983f673ab319ccae4f1a57c7097",
+      "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+      "chainId": 421614
+    },
+    {
+      "persona": "birch-full-claim",
+      "index": 14,
+      "account": "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
+      "method": "eth_signTypedData_v4",
+      "signature": "0x26e41d199daedac5feb6e58d688880569b1b1eb44ddfa3ce8a28fbdea1c8a6ae3f679deed9b9948682ab42ba79bbda5812bd07444b9167d3f059f1100b3a774b1b",
+      "typedDataHash": "0xbee79998da06d621ab670e5eae37b1e9dd433a777e7b1f858ebf504c425dc658"
+    },
+    {
+      "persona": "birch-full-claim",
+      "index": 14,
+      "account": "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
+      "method": "eth_signTypedData_v4",
+      "signature": "0x518c129178714c4477f2649041cc8c6f520b594e55b000ecd6bf6da59f1b9d7a3d3197581a6b813c2c269ad2ae6494aac2b8e64017a11be767618872a9376e4a1c",
+      "typedDataHash": "0xd8213b0fdce985b5ff71847dd39a948842923e99230559655936a39fd61c2541"
+    },
+    {
+      "persona": "birch-full-claim",
+      "index": 14,
+      "account": "0xdF3e18d64BC6A983f673Ab319CCaE4f1a57C7097",
+      "method": "eth_sendTransaction",
+      "transactionHash": "0x96dcace9db24add8f4c1e1bd2add895f8cdd73115bd70ff7cddd7c1c2238f546",
+      "rawHash": "0x96dcace9db24add8f4c1e1bd2add895f8cdd73115bd70ff7cddd7c1c2238f546",
+      "receiptStatus": "success",
+      "blockNumber": "196",
+      "from": "0xdf3e18d64bc6a983f673ab319ccae4f1a57c7097",
+      "to": "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+      "chainId": 421614
+    }
+  ],
+  "screenshots": [
+    {
+      "width": 375,
+      "file": "birch-full-claim-375.png",
+      "sha256": "ee4c7a0ef1b31924f395fedef07e35185a3eae4d9c5a41aea15ca108eee6e05f",
+      "scrollWidth": 375,
+      "viewportWidth": 375
+    },
+    {
+      "width": 768,
+      "file": "birch-full-claim-768.png",
+      "sha256": "0e5c3635d25994cd35e38467bc2a1ec4101a8414e1eeb42f4aad0adadf22a0df",
+      "scrollWidth": 768,
+      "viewportWidth": 768
+    },
+    {
+      "width": 1440,
+      "file": "birch-full-claim-1440.png",
+      "sha256": "a3c92608edd4d2a02e69ea3580c50968a6bb9966ed330bc13e62063f71c0fd44",
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    }
+  ],
+  "videos": [
+    {
+      "file": "birch-full-claim.webm",
+      "sha256": "fc3045b5bbe9d598dff99fc2144e6fe838ec76b87f372c2543c6e3725038b2d9"
+    }
+  ]
+}

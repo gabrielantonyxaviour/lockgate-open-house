@@ -1,0 +1,52 @@
+{
+  "environment": "LOCAL API/ANVIL TEST ONLY; no email delivery claimed",
+  "checks": [
+    {
+      "challengeReplayStatus": 401,
+      "code": "CHALLENGE_INVALID"
+    },
+    {
+      "privateLedger": {
+        "primaryAccount": "0x71bE63f3384f5fb98995898A86B02Fb2426c5788",
+        "primaryFirm1": "39200",
+        "otherAccount": "0xFABB0ac9d68B0B445fB7357272Ff202C5651694a",
+        "otherFirm1": "0",
+        "otherFirm2": "500000"
+      }
+    },
+    {
+      "receipt": {
+        "hash": "0xe6aa976af62ec4cb00f85a4eae9c1489046acb40f80037817d14ac7f218c94f1",
+        "submittedTitle": "Fabricated receipt 999999 TEST USDG",
+        "canonicalTitle": "Unfilled withdrawal cancelled",
+        "submittedAmount": "999999",
+        "status": "confirmed"
+      }
+    },
+    {
+      "mismatchInvestorPositionDenied": true,
+      "providerEligibility": true,
+      "subscriptionPrepareStatus": 200
+    },
+    {
+      "invalidEnquiryStatus": 400
+    },
+    {
+      "enquiry": {
+        "reference": "ENQ-f4c162e5ad48",
+        "firstStatus": 201,
+        "replayStatus": 200,
+        "conflictStatus": 409,
+        "sameReference": true,
+        "sameReceivedAt": true,
+        "escapedHtml": true,
+        "outboxStatus": "queued",
+        "emailStatus": "Queued — verified Lockgate email sender required"
+      }
+    }
+  ],
+  "sourceHashes": {
+    "test": "fdead0152cfe7a3515df169a36df3b818bf10492c7b656525774ea5e0281a7ae",
+    "manifest": "9787d6a259729706c306e3880ac815f20123104d5b9ed8eac2c0c4f37d57c27c"
+  }
+}

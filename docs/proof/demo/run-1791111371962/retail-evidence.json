@@ -1,0 +1,112 @@
+{
+  "environment": "LOCAL ANVIL TEST ONLY; admin faucet grants disposable gas and MockUSDG",
+  "phase": "exact wallet subscription",
+  "checks": [
+    {
+      "account": "0x8263Fce86B1b78F95Ab4dae11907d8AF88f841e7",
+      "bookBefore": "0",
+      "bookAfter": "980000000",
+      "providerCount": "2",
+      "gasBefore": "0",
+      "gasAfter": "9679586997436696",
+      "testUsdgBefore": "0",
+      "testUsdgAfter": "9000000000",
+      "identityBindingTx": "0xd1ffb083ec96d171f7eb77b8754b860ec4ee33721fd54c86b0eccc0c47e20dd5",
+      "actualWalletTransactions": [
+        "0xd1ffb083ec96d171f7eb77b8754b860ec4ee33721fd54c86b0eccc0c47e20dd5",
+        "0x8d14b6dec0b1cace5135df798491c9a57f412dd1b3ddb8e31bf176b7e4171eff",
+        "0xc2a228427cf057667ce035fd957f26a0a8676d7df262c87a87d8748604a126c5"
+      ]
+    }
+  ],
+  "walletProof": [
+    {
+      "persona": "retail-provider",
+      "index": 31,
+      "account": "0x8263Fce86B1b78F95Ab4dae11907d8AF88f841e7",
+      "method": "personal_sign",
+      "signature": "0xb3b2762869e736812067dd2ff8e6658a64ca5dd0df6380fbef990b7ea72ea9ca21f4b4e5ccc31509bf733db6b6a86314b4f62ca330d373086d4d98fb030b753d1c",
+      "messageHash": "0xce3acd31f70411e8ab03d5faa25209ed9f1ca4517e97541944ffd73547bee302"
+    },
+    {
+      "persona": "retail-provider",
+      "index": 31,
+      "account": "0x8263Fce86B1b78F95Ab4dae11907d8AF88f841e7",
+      "method": "eth_sendTransaction",
+      "transactionHash": "0xd1ffb083ec96d171f7eb77b8754b860ec4ee33721fd54c86b0eccc0c47e20dd5",
+      "rawHash": "0xd1ffb083ec96d171f7eb77b8754b860ec4ee33721fd54c86b0eccc0c47e20dd5",
+      "receiptStatus": "success",
+      "blockNumber": "198",
+      "from": "0x8263fce86b1b78f95ab4dae11907d8af88f841e7",
+      "to": "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+      "chainId": 421614
+    },
+    {
+      "persona": "retail-provider",
+      "index": 31,
+      "account": "0x8263Fce86B1b78F95Ab4dae11907d8AF88f841e7",
+      "method": "personal_sign",
+      "signature": "0xbaba580500925d4f790fcfb18385eca233e9e6482095e179a3d657ada020f45845196b5e65c14682db89e72b33f0f6f393fd9e28be87628de2e954457443a3061c",
+      "messageHash": "0x0701ce82132b65c9830dc7c6bdff7c6859793056a7970f7e80c487adf8982a07"
+    },
+    {
+      "persona": "retail-provider",
+      "index": 31,
+      "account": "0x8263Fce86B1b78F95Ab4dae11907d8AF88f841e7",
+      "method": "eth_sendTransaction",
+      "transactionHash": "0x8d14b6dec0b1cace5135df798491c9a57f412dd1b3ddb8e31bf176b7e4171eff",
+      "rawHash": "0x8d14b6dec0b1cace5135df798491c9a57f412dd1b3ddb8e31bf176b7e4171eff",
+      "receiptStatus": "success",
+      "blockNumber": "201",
+      "from": "0x8263fce86b1b78f95ab4dae11907d8af88f841e7",
+      "to": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
+      "chainId": 421614
+    },
+    {
+      "persona": "retail-provider",
+      "index": 31,
+      "account": "0x8263Fce86B1b78F95Ab4dae11907d8AF88f841e7",
+      "method": "eth_sendTransaction",
+      "transactionHash": "0xc2a228427cf057667ce035fd957f26a0a8676d7df262c87a87d8748604a126c5",
+      "rawHash": "0xc2a228427cf057667ce035fd957f26a0a8676d7df262c87a87d8748604a126c5",
+      "receiptStatus": "success",
+      "blockNumber": "202",
+      "from": "0x8263fce86b1b78f95ab4dae11907d8af88f841e7",
+      "to": "0x4c5859f0f772848b2d91f1d83e2fe57935348029",
+      "chainId": 421614
+    }
+  ],
+  "screenshots": [
+    {
+      "width": 375,
+      "file": "retail-provider-funded-375.png",
+      "sha256": "4f8cdfe9ef1ba5c21ec9edaf5bba19044b8535d5cb4a1724d039943512f5e794",
+      "scrollWidth": 375,
+      "viewportWidth": 375
+    },
+    {
+      "width": 768,
+      "file": "retail-provider-funded-768.png",
+      "sha256": "4bf1b3baed6d5ad69e8e5ca6cc2987fde721736594ec4f6c5735296eed262188",
+      "scrollWidth": 768,
+      "viewportWidth": 768
+    },
+    {
+      "width": 1440,
+      "file": "retail-provider-funded-1440.png",
+      "sha256": "5fa89392e0065ca46e73e89b28ed4941acbd58e7e06b74220c7f207b5ecafc3f",
+      "scrollWidth": 1440,
+      "viewportWidth": 1440
+    }
+  ],
+  "videos": [
+    {
+      "file": "retail-provider.webm",
+      "sha256": "c2d1a08672c392e45dabf639b3285148d78be81ed36b2d8cd7a86bcc71642cf9"
+    }
+  ],
+  "sourceHashes": {
+    "test": "c9041af4cb26c4c99a76dd2a5008f64e6120f86bbf6e5714797a30f4ca9564d4",
+    "manifest": "9787d6a259729706c306e3880ac815f20123104d5b9ed8eac2c0c4f37d57c27c"
+  }
+}

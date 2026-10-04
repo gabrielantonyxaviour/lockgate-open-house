@@ -1,0 +1,64 @@
+{
+  "originators": 5,
+  "firms": 5,
+  "platforms": [
+    {
+      "id": "platform-1",
+      "name": "Alder Credit Platform",
+      "instrument": "Term loan note",
+      "routes": [
+        "purchase",
+        "finance"
+      ],
+      "terms": "Local TEST originator; claim rights and route restrictions recorded on chain.",
+      "status": "Active TEST"
+    },
+    {
+      "id": "platform-2",
+      "name": "Birch Receivables",
+      "instrument": "Receivable note",
+      "routes": [
+        "purchase"
+      ],
+      "terms": "Local TEST originator; claim rights and route restrictions recorded on chain.",
+      "status": "Active TEST"
+    },
+    {
+      "id": "platform-3",
+      "name": "Cedar Income Trust",
+      "instrument": "Fund interest",
+      "routes": [
+        "finance"
+      ],
+      "terms": "Local TEST originator; claim rights and route restrictions recorded on chain.",
+      "status": "Active TEST"
+    },
+    {
+      "id": "platform-4",
+      "name": "Dune Asset Network",
+      "instrument": "Credit note",
+      "routes": [
+        "purchase"
+      ],
+      "terms": "Local TEST originator; claim rights and route restrictions recorded on chain.",
+      "status": "Active TEST"
+    },
+    {
+      "id": "platform-5",
+      "name": "Elm Yield Platform",
+      "instrument": "Fund interest",
+      "routes": [
+        "purchase",
+        "finance"
+      ],
+      "terms": "Local TEST originator; claim rights and route restrictions recorded on chain.",
+      "status": "Active TEST"
+    }
+  ],
+  "availableCash": "2500000",
+  "outstanding": "0",
+  "blockNumber": "167",
+  "blockTime": "2026-10-04T10:58:30.000Z",
+  "environment": "Local EVM test network",
+  "terms": "Local TEST chain with mock six-decimal USDG; no public funds or licensed firms."
+}

@@ -1,0 +1,254 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lockgate · Transaction proof</title><style>*{box-sizing:border-box}body{margin:0;background:#f4f6f2;color:#22392c;font:15px/1.5 system-ui,sans-serif}main{max-width:1120px;margin:auto;padding:40px 24px}h1{font-size:34px;margin:8px 0 14px;line-height:1.2}h2{font-size:23px;margin:0 0 12px}h3{font-size:18px;margin:0 0 10px}p{margin:10px 0}.badge{display:inline-block;background:#e8f0e1;border:1px solid #ccdac3;border-radius:8px;padding:5px 10px;font-size:12px}.stats,.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}.stat,.panel{background:white;border:1px solid #dce4d7;border-radius:12px;padding:24px}.stat strong{display:block;font-size:30px}.panel{margin:20px 0}a{color:#29583d;overflow-wrap:anywhere}table{width:100%;border-collapse:collapse}td,th{text-align:left;border-bottom:1px solid #dce4d7;padding:12px;vertical-align:top}code{font-size:12px;overflow-wrap:anywhere}pre{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;background:#f4f6f2;padding:16px;border-radius:8px;max-height:420px;overflow:auto}summary{cursor:pointer;font-weight:600}.screens{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:16px}.screens img{width:100%;height:230px;object-fit:contain;object-position:top;background:#f4f6f2;border:1px solid #dce4d7;border-radius:8px}.screens a{font-size:13px}.links{display:flex;gap:14px;flex-wrap:wrap}.muted{color:#61735e}.sources{margin:16px 0}li{margin:8px 0}@media(max-width:700px){main{padding:24px 16px}h1{font-size:28px}.stats{grid-template-columns:1fr}.screens{grid-template-columns:1fr 1fr}.panel{padding:18px}td,th{padding:8px;font-size:13px}}</style><main>
+<span class="badge">FINAL-SOURCE LOCAL QA · 5/5 PASS</span><h1>Working money movement, with inspectable proof.</h1><p class="muted">Final tests ran on one clean local fixture. The tested chain was archived, then restored to a fresh starting state for your own validation and recording. These clips are QA evidence, not your final demo footage.</p>
+<p class="links"><a href="manual-validation.html">Your visual validation walkthrough</a><a href="http://127.0.0.1:5197">Local app</a><a href="../../DEMO_TEST_REPORT.md">Reproduction report</a><a href="final-source-manifest.json">Source and media hashes</a><a href="fresh-ready-state.json">Fresh runtime state</a></p>
+<div class="stats"><div class="stat"><strong>5 + 5</strong>Active TEST originators and firms</div><div class="stat"><strong>2,500,000</strong>TEST USDG in five ready vaults</div><div class="stat"><strong>25</strong>Mined wallet-signed QA transactions</div></div>
+<section class="panel"><h2>Verified outcomes</h2><table><tr><th>Flow</th><th>Observed money and rights</th></tr><tr><td>01 Purchase</td><td>40,000 claim units → 39,200 paid → 60,000 units remain after that exit.</td></tr><tr><td>01 Finance</td><td>20,000 units → 19,300 payout; separate originator debt 19,686 → fully repaid.</td></tr><tr><td>02 Collection</td><td>40,000 face collected; principal cleared; vehicle gains 800 actual TEST USDG income.</td></tr><tr><td>04 Queue</td><td>461,700 fixed cash claimed; remaining 8,300 queued units cancelled without losing ownership.</td></tr><tr><td>04 Fresh wallet</td><td>Zero gas/book → real grants → exact 1,000 deposit; 980 units priced at the vehicle’s existing NAV.</td></tr></table><p><strong>Actor distinction:</strong> the main deep-queue test uses a provider already owning 500,000 units. The fresh retail test is a different wallet starting at zero. These are separate tests; their footage must not be combined into one actor’s story.</p></section>
+<section class="panel"><span class="badge">PASS</span><h2>Four-persona signed transactions</h2><p>18 signed wallet transactions; exact subscriptions, A/B exits, repayment, risk limits and FIFO claim/cancel.</p><p class="links"><a href="run-1791111333584/mismatch.webm">mismatch QA clip</a><a href="run-1791111333584/empty.webm">empty QA clip</a><a href="run-1791111333584/provider.webm">provider QA clip</a><a href="run-1791111333584/investor.webm">investor QA clip</a><a href="run-1791111333584/originator.webm">originator QA clip</a><a href="run-1791111333584/manager.webm">manager QA clip</a><a href="run-1791111333584/evidence.json">Receipt and assertion JSON</a></p><div class="screens"><a href="run-1791111333584/provider-workspace-1440.png"><img loading="lazy" src="run-1791111333584/provider-workspace-1440.png" alt="provider workspace">provider workspace</a><a href="run-1791111333584/investor-workspace-1440.png"><img loading="lazy" src="run-1791111333584/investor-workspace-1440.png" alt="investor workspace">investor workspace</a><a href="run-1791111333584/originator-workspace-1440.png"><img loading="lazy" src="run-1791111333584/originator-workspace-1440.png" alt="originator workspace">originator workspace</a><a href="run-1791111333584/manager-workspace-1440.png"><img loading="lazy" src="run-1791111333584/manager-workspace-1440.png" alt="manager workspace">manager workspace</a></div><details class="sources"><summary>Actual checks and balances</summary><pre>[
+  {
+    &quot;phase&quot;: &quot;five-by-five chain seed&quot;,
+    &quot;originators&quot;: [
+      {
+        &quot;name&quot;: &quot;Alder Credit Platform&quot;,
+        &quot;address&quot;: &quot;0x70997970C51812dc3A010C7d01b50e0d17dc79C8&quot;,
+        &quot;active&quot;: true
+      },
+      {
+        &quot;name&quot;: &quot;Birch Receivables&quot;,
+        &quot;address&quot;: &quot;0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC&quot;,
+        &quot;active&quot;: true
+      },
+      {
+        &quot;name&quot;: &quot;Cedar Income Trust&quot;,
+        &quot;address&quot;: &quot;0x90F79bf6EB2c4f870365E785982E1f101E93b906&quot;,
+        &quot;active&quot;: true
+      },
+      {
+        &quot;name&quot;: &quot;Dune Asset Network&quot;,
+        &quot;address&quot;: &quot;0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65&quot;,
+        &quot;active&quot;: true
+      },
+      {
+        &quot;name&quot;: &quot;Elm Yield Platform&quot;,
+        &quot;address&quot;: &quot;0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc&quot;,
+        &quot;active&quot;: true
+      }
+    ],
+    &quot;fundedFirms&quot;: [
+      {
+        &quot;id&quot;: &quot;firm-1&quot;,
+        &quot;name&quot;: &quot;Northstar Investment Firm Liquidity Vehicle&quot;,
+        &quot;vault&quot;: &quot;0x4c5859f0f772848b2d91f1d83e2fe57935348029&quot;,
+        &quot;manager&quot;: &quot;0x976EA74026E726554dB657fA54763abd0C3a0aa9&quot;,
+        &quot;active&quot;: true,
+        &quot;providers&quot;: &quot;1&quot;,
+        &quot;cash&quot;: &quot;500000&quot;
+      },
+      {
+        &quot;id&quot;: &quot;firm-2&quot;,
+        &quot;name&quot;: &quot;Meridian Investment Firm Liquidity Vehicle&quot;,
+        &quot;vault&quot;: &quot;0x5f3f1dbd7b74c6b46e8c44f98792a1daf8d69154&quot;,
+        &quot;manager&quot;: &quot;0x14dC79964da2C08b23698B3D3cc7Ca32193d9955&quot;,
+        &quot;active&quot;: true,
+        &quot;providers&quot;: &quot;1&quot;,
+        &quot;cash&quot;: &quot;500000&quot;
+      },
+      {
+        &quot;id&quot;: &quot;firm-3&quot;,
+        &quot;name&quot;: &quot;Anchor Capital Firm Liquidity Vehicle&quot;,
+        &quot;vault&quot;: &quot;0xcd8a1c3ba11cf5ecfa6267617243239504a98d90&quot;,
+        &quot;manager&quot;: &quot;0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f&quot;,
+        &quot;active&quot;: true,
+        &quot;providers&quot;: &quot;1&quot;,
+        &quot;cash&quot;: &quot;500000&quot;
+      },
+      {
+        &quot;id&quot;: &quot;firm-4&quot;,
+        &quot;name&quot;: &quot;Bluewater Investment Firm Liquidity Vehicle&quot;,
+        &quot;vault&quot;: &quot;0x2bdcc0de6be1f7d2ee689a0342d76f52e8efaba3&quot;,
+        &quot;manager&quot;: &quot;0xa0Ee7A142d267C1f36714E4a8F75612F20a79720&quot;,
+        &quot;active&quot;: true,
+        &quot;providers&quot;: &quot;1&quot;,
+        &quot;cash&quot;: &quot;500000&quot;
+      },
+      {
+        &quot;id&quot;: &quot;firm-5&quot;,
+        &quot;name&quot;: &quot;Pioneer Securities Firm Liquidity Vehicle&quot;,
+        &quot;vault&quot;: &quot;0x7bc06c482dead17c0e297afbc32f6e63d3846650&quot;,
+        &quot;manager&quot;: &quot;0xBcd4042DE499D14e55001CcbB24a551F3b954096&quot;,
+        &quot;active&quot;: true,
+        &quot;providers&quot;: &quot;1&quot;,
+        &quot;cash&quot;: &quot;500000&quot;
+      }
+    ]
+  },
+  {
+    &quot;phase&quot;: &quot;wrong owner and empty profile&quot;,
+    &quot;offerHttpStatus&quot;: 403,
+    &quot;response&quot;: {
+      &quot;error&quot;: &quot;A matching investor TEST identity is required&quot;,
+      &quot;code&quot;: &quot;INELIGIBLE&quot;
+    }
+  },
+  {
+    &quot;phase&quot;: &quot;empty profile&quot;,
+    &quot;positions&quot;: 0
+  },
+  {
+    &quot;phase&quot;: &quot;capital provider exact subscription&quot;,
+    &quot;amount&quot;: &quot;1000&quot;,
+    &quot;reloadResumedFunding&quot;: true,
+    &quot;fundedAmountRequiresNewSignature&quot;: true,
+    &quot;bookUnitsBefore&quot;: &quot;500000000000&quot;,
+    &quot;bookUnitsAfter&quot;: &quot;501000000000&quot;,
+    &quot;eligibilityHttpStatus&quot;: 200
+  },
+  {
+    &quot;phase&quot;: &quot;investor quote and purchase&quot;,
+    &quot;offers&quot;: 5,
+    &quot;balanceBefore&quot;: &quot;200000&quot;,
+    &quot;balanceAfter&quot;: &quot;239200&quot;,
+    &quot;holdingBefore&quot;: &quot;100000&quot;,
+    &quot;holdingAfter&quot;: &quot;60000&quot;
+  },
+  {
+    &quot;phase&quot;: &quot;investor financing route and originator debt&quot;,
+    &quot;digest&quot;: &quot;0xb58329b684a2ae958c79c1a11b68cc0d0c9c8b53d1bcac5c309879cb867bde01&quot;,
+    &quot;payout&quot;: &quot;19300&quot;,
+    &quot;repayment&quot;: &quot;19686&quot;
+  },
+  {
+    &quot;phase&quot;: &quot;provider withdrawal and queue&quot;,
+    &quot;queuedUnits&quot;: &quot;470000000000&quot;
+  },
+  {
+    &quot;phase&quot;: &quot;organization wallet dashboards&quot;,
+    &quot;registeredHolding&quot;: &quot;0x58687f87cdb15183154782de04d70409e3dd98470608d3d03f1bc49cbf5dc078&quot;,
+    &quot;repayDigest&quot;: &quot;0xb58329b684a2ae958c79c1a11b68cc0d0c9c8b53d1bcac5c309879cb867bde01&quot;,
+    &quot;originatorBalanceBefore&quot;: &quot;200000&quot;,
+    &quot;originatorBalanceAfter&quot;: &quot;180314&quot;
+  },
+  {
+    &quot;phase&quot;: &quot;firm mandate and queue&quot;,
+    &quot;mandateLimit&quot;: &quot;100180000000&quot;,
+    &quot;dealLimit&quot;: &quot;10000000000&quot;,
+    &quot;queueBefore&quot;: &quot;470000000000&quot;,
+    &quot;queueAfter&quot;: &quot;8300000000&quot;,
+    &quot;claimable&quot;: &quot;461700000000&quot;,
+    &quot;otherVehicleQueue&quot;: &quot;0&quot;
+  },
+  {
+    &quot;phase&quot;: &quot;provider claim and cancel remaining queue&quot;,
+    &quot;balanceBefore&quot;: &quot;9100&quot;,
+    &quot;balanceAfter&quot;: &quot;470800&quot;,
+    &quot;claimed&quot;: &quot;461700&quot;,
+    &quot;bookAfterCancel&quot;: &quot;39200000000&quot;,
+    &quot;queuedAfterCancel&quot;: &quot;0&quot;
+  },
+  {
+    &quot;phase&quot;: &quot;forged session, network, account and reload&quot;,
+    &quot;badRole&quot;: 400,
+    &quot;forgedManager&quot;: 403,
+    &quot;forgedIdentity&quot;: 403,
+    &quot;noAuth&quot;: 401,
+    &quot;crossReceipt&quot;: 403,
+    &quot;walletTransactionsAfterChange&quot;: 18
+  }
+]</pre></details><details><summary>Proof SHA-256</summary><code>ee34fb090cb9546b28d6c7cdf127d8cb5629b861f446f21762ec194890bf6234</code></details></section><section class="panel"><span class="badge">PASS</span><h2>Purchase collection</h2><p>40,000 claim units collected; 39,200 principal cleared; 800 actual vehicle income.</p><p class="links"><a href="run-1791111356166/originator-collection.webm">originator-collection QA clip</a><a href="run-1791111356166/collection-evidence.json">Receipt and assertion JSON</a></p><div class="screens"><a href="run-1791111356166/originator-collection-1440.png"><img loading="lazy" src="run-1791111356166/originator-collection-1440.png" alt="originator collection">originator collection</a></div><details class="sources"><summary>Actual checks and balances</summary><pre>[
+  {
+    &quot;holdingId&quot;: &quot;0x3819673de10bed199b3e9a7692fad6535ff5f58028019c13ae7ffa5b5404b34b&quot;,
+    &quot;digest&quot;: &quot;0x35b1850df9fbb117ff3d452bc6fd2a4c157b1828a3120fc25c862e5e5ac8f87d&quot;,
+    &quot;vault&quot;: &quot;0x4c5859f0f772848b2d91f1d83e2fe57935348029&quot;,
+    &quot;repayHash&quot;: &quot;0x2729844c887243356394929b83a95b4f69cdde00df951bf7e7aa4c7f2adeb98b&quot;,
+    &quot;originator&quot;: &quot;0x70997970C51812dc3A010C7d01b50e0d17dc79C8&quot;,
+    &quot;receiptBlock&quot;: &quot;191&quot;,
+    &quot;purchasedBefore&quot;: &quot;40000&quot;,
+    &quot;purchasedAfter&quot;: &quot;0&quot;,
+    &quot;collectedBefore&quot;: &quot;0&quot;,
+    &quot;collectedAfter&quot;: &quot;40000&quot;,
+    &quot;principalBefore&quot;: &quot;39200&quot;,
+    &quot;principalAfter&quot;: &quot;0&quot;,
+    &quot;assetsBefore&quot;: &quot;39200&quot;,
+    &quot;assetsAfter&quot;: &quot;40000&quot;,
+    &quot;earnedSpread&quot;: &quot;800&quot;,
+    &quot;providerIncomeBefore&quot;: 0,
+    &quot;providerIncomeAfter&quot;: 800,
+    &quot;originatorBalanceBefore&quot;: &quot;180314&quot;,
+    &quot;originatorBalanceAfter&quot;: &quot;140314&quot;
+  }
+]</pre></details><details><summary>Proof SHA-256</summary><code>003a0515a9c14fbf24df3382f69ea8a4d24887a9e4fc7ecf8982946394a78668</code></details></section><section class="panel"><span class="badge">PASS</span><h2>Full-claim offer recovery</h2><p>First reservation cancelled; second firm settled the indivisible 100,000-unit claim for 97,000.</p><p class="links"><a href="run-1791111364083/birch-full-claim.webm">birch-full-claim QA clip</a><a href="run-1791111364083/birch-evidence.json">Receipt and assertion JSON</a></p><div class="screens"><a href="run-1791111364083/birch-full-claim-1440.png"><img loading="lazy" src="run-1791111364083/birch-full-claim-1440.png" alt="birch full claim">birch full claim</a></div><details class="sources"><summary>Actual checks and balances</summary><pre>[
+  {
+    &quot;holding&quot;: &quot;0x9171bd9193744e6c69de5132af2e2bbaf85024b5303dcdd150b227c53516ef73&quot;,
+    &quot;firstDigest&quot;: &quot;0xbee79998da06d621ab670e5eae37b1e9dd433a777e7b1f858ebf504c425dc658&quot;,
+    &quot;secondDigest&quot;: &quot;0xd8213b0fdce985b5ff71847dd39a948842923e99230559655936a39fd61c2541&quot;,
+    &quot;cancelledFirst&quot;: true,
+    &quot;fullUnits&quot;: &quot;100000000000&quot;,
+    &quot;payout&quot;: &quot;97000000000&quot;,
+    &quot;balanceBefore&quot;: &quot;0&quot;,
+    &quot;balanceAfter&quot;: &quot;97000000000&quot;,
+    &quot;settlementHash&quot;: &quot;0x96dcace9db24add8f4c1e1bd2add895f8cdd73115bd70ff7cddd7c1c2238f546&quot;
+  }
+]</pre></details><details><summary>Proof SHA-256</summary><code>df3b7247b221398bf80bc66f5c59c70c68e1303f17b658c680d8c1e3f7f9bbe3</code></details></section><section class="panel"><span class="badge">PASS</span><h2>Fresh capital-provider wallet</h2><p>Started with zero ETH and zero book units. Real gas grant, TEST USDG faucet, identity and 1,000 deposit issued 980 NAV-priced units.</p><p class="links"><a href="run-1791111371962/retail-provider.webm">retail-provider QA clip</a><a href="run-1791111371962/retail-evidence.json">Receipt and assertion JSON</a></p><div class="screens"><a href="run-1791111371962/retail-provider-funded-1440.png"><img loading="lazy" src="run-1791111371962/retail-provider-funded-1440.png" alt="retail provider funded">retail provider funded</a></div><details class="sources"><summary>Actual checks and balances</summary><pre>[
+  {
+    &quot;account&quot;: &quot;0x8263Fce86B1b78F95Ab4dae11907d8AF88f841e7&quot;,
+    &quot;bookBefore&quot;: &quot;0&quot;,
+    &quot;bookAfter&quot;: &quot;980000000&quot;,
+    &quot;providerCount&quot;: &quot;2&quot;,
+    &quot;gasBefore&quot;: &quot;0&quot;,
+    &quot;gasAfter&quot;: &quot;9679586997436696&quot;,
+    &quot;testUsdgBefore&quot;: &quot;0&quot;,
+    &quot;testUsdgAfter&quot;: &quot;9000000000&quot;,
+    &quot;identityBindingTx&quot;: &quot;0xd1ffb083ec96d171f7eb77b8754b860ec4ee33721fd54c86b0eccc0c47e20dd5&quot;,
+    &quot;actualWalletTransactions&quot;: [
+      &quot;0xd1ffb083ec96d171f7eb77b8754b860ec4ee33721fd54c86b0eccc0c47e20dd5&quot;,
+      &quot;0x8d14b6dec0b1cace5135df798491c9a57f412dd1b3ddb8e31bf176b7e4171eff&quot;,
+      &quot;0xc2a228427cf057667ce035fd957f26a0a8676d7df262c87a87d8748604a126c5&quot;
+    ]
+  }
+]</pre></details><details><summary>Proof SHA-256</summary><code>b44a2f933ba06b2c6b195531ffd7b5d1281e57c38a6c4f3e56bbbde37b686c59</code></details></section><section class="panel"><span class="badge">PASS</span><h2>Permissions and durable enquiry</h2><p>Sign-in replay, separate provider books, canonical receipt amounts, wrong-owner denial and eligible-provider preparation; escaped idempotent outbox.</p><p class="links"><a href="run-1791111379343/api-boundary-evidence.json">Receipt and assertion JSON</a></p><div class="screens"></div><details class="sources"><summary>Actual checks and balances</summary><pre>[
+  {
+    &quot;challengeReplayStatus&quot;: 401,
+    &quot;code&quot;: &quot;CHALLENGE_INVALID&quot;
+  },
+  {
+    &quot;privateLedger&quot;: {
+      &quot;primaryAccount&quot;: &quot;0x71bE63f3384f5fb98995898A86B02Fb2426c5788&quot;,
+      &quot;primaryFirm1&quot;: &quot;39200&quot;,
+      &quot;otherAccount&quot;: &quot;0xFABB0ac9d68B0B445fB7357272Ff202C5651694a&quot;,
+      &quot;otherFirm1&quot;: &quot;0&quot;,
+      &quot;otherFirm2&quot;: &quot;500000&quot;
+    }
+  },
+  {
+    &quot;receipt&quot;: {
+      &quot;hash&quot;: &quot;0xe6aa976af62ec4cb00f85a4eae9c1489046acb40f80037817d14ac7f218c94f1&quot;,
+      &quot;submittedTitle&quot;: &quot;Fabricated receipt 999999 TEST USDG&quot;,
+      &quot;canonicalTitle&quot;: &quot;Unfilled withdrawal cancelled&quot;,
+      &quot;submittedAmount&quot;: &quot;999999&quot;,
+      &quot;status&quot;: &quot;confirmed&quot;
+    }
+  },
+  {
+    &quot;mismatchInvestorPositionDenied&quot;: true,
+    &quot;providerEligibility&quot;: true,
+    &quot;subscriptionPrepareStatus&quot;: 200
+  },
+  {
+    &quot;invalidEnquiryStatus&quot;: 400
+  },
+  {
+    &quot;enquiry&quot;: {
+      &quot;reference&quot;: &quot;ENQ-f4c162e5ad48&quot;,
+      &quot;firstStatus&quot;: 201,
+      &quot;replayStatus&quot;: 200,
+      &quot;conflictStatus&quot;: 409,
+      &quot;sameReference&quot;: true,
+      &quot;sameReceivedAt&quot;: true,
+      &quot;escapedHtml&quot;: true,
+      &quot;outboxStatus&quot;: &quot;queued&quot;,
+      &quot;emailStatus&quot;: &quot;Queued \u2014 verified Lockgate email sender required&quot;
+    }
+  }
+]</pre></details><details><summary>Proof SHA-256</summary><code>d98fb8598b75e7009ee380f1ca0e9146463a84bf90713e5ad23d01f9927ee57c</code></details></section>
+<section class="panel"><h2>Responsive and contract checks</h2><p>21 screenshots at 375, 768 and 1440 pixels: no horizontal overflow. Nine deduplicated QA clips total 5.75 MB. Media SHA-256 values were independently checked.</p><p>38 new demo contract tests passed, including 256 fuzz cases for cash/right conservation. The complete existing Solidity suite also passed. App build, typecheck, lint and 157 existing app regression tests passed; harness typecheck passed.</p><p>Final code checkpoint: <code>516edfdc46d932eaf5ac2409f9c8b8ae7e140b2e</code>. Full file hashes are in the source manifest. Local tested-chain dump hash: <code>2e3c50f1a88214c48fedeeb01cfac3c6e45952de35c7b1a3efc9675ae6e61e5f</code>; its archive stays private under scripts/demo/archive-final-proof-20261004.</p></section>
+<section class="panel"><h2>Ready for your review</h2><p>The current fixture is fresh: each vault has 500,000 TEST USDG, zero outstanding exposure, and all ten selectable identities are unbound. The local app and API remain running. Source is saved on the feature branch; no production deployment occurred.</p><p>This is a local EVM test using fictional institutions and a local TEST ERC20. It is not public Sepolia or Paxos-issued USDG. Real cryptographic wallet signatures and raw transactions were tested through an injected EIP1193 wallet adapter; browser extension popup behavior has not been independently verified.</p><p>Branded enquiry acknowledgements are durable and idempotent. Actual email delivery remains pending a verified Lockgate sender. Real KYC, legal eligibility, institutional integrations, audits, public deployment and production accounting are outside this local proof. Fixed fixture discounts are not evidence of a live competitive auction.</p><p>Your review → your app recordings → approved Remotion production → submission.</p></section>
+</main></html>

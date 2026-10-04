@@ -1,0 +1,93 @@
+{
+  "verifiedAt": "2026-10-04T11:00:56.125223+00:00",
+  "sourceCheckpoint": "516edfdc46d932eaf5ac2409f9c8b8ae7e140b2e",
+  "environment": "Local Anvil chain 421614; local TEST ERC20, not public Arbitrum Sepolia or Paxos-issued USDG",
+  "files": {
+    "app/public/demo-contracts.json": "9787d6a259729706c306e3880ac815f20123104d5b9ed8eac2c0c4f37d57c27c",
+    "app/src/App.tsx": "96d00511f28f8fb07736b64b95753d0b0f5c36b0f607c24fc1e1e2214bdd7fc7",
+    "app/src/demo/AgreementRecords.tsx": "6c683c108dc64a0e2058d943a12b43069eee285e86b8d28b025c63a3ebe99358",
+    "app/src/demo/Common.tsx": "7e6a3fca5a1ddf6968f882a6da49bf66b786acba825faf4e892c772579213211",
+    "app/src/demo/DemoApp.tsx": "cb13f654eeb1937e17bb3aa59b53626e9b0bfe31a297434d39a7d0f75e7c6ee1",
+    "app/src/demo/DemoSheet.tsx": "e5d6935ca4e62cc5424666b8654d1f032d5d1214da1b07ea4d25335149fce8af",
+    "app/src/demo/Entry.tsx": "dbe008c8bd58715a24100e4ecb203d52397bf99d6abc29695b938a50a10c65d5",
+    "app/src/demo/Institution.tsx": "6c8953ac33589c5a4e03a875ecf9414d68740664a565dfd97c10635afa7cf2a6",
+    "app/src/demo/Investor.tsx": "7e43e3df974c090c66ecb7bed2e9ef309ae4f442f764c71b7ca082912cfd9760",
+    "app/src/demo/Provider.tsx": "17a3d89cacea3109a1753ef3a188c0ed591d39e7595f8eb9ff22ab7f90450b43",
+    "app/src/demo/Public.tsx": "e7927e371c4dd0ebb9ddba3d878b8d8b8fb2b0cfaccd2be49a7336b34971bd7c",
+    "app/src/demo/Reservations.tsx": "5513abc554098e32a425e3bab1d43d2e7954d506ff21954c2f00942f21b455e7",
+    "app/src/demo/WalletMenu.tsx": "fc467a8825e79b6acc697a2c96287ec649b42deecdb9ffb934c9bbcb8c5e0458",
+    "app/src/demo/demo.css": "2596bdd4d9a017c1d5a69a96b27ff9158a7b2365357b3278698ceacad73db3c0",
+    "app/src/demo/fixtures.ts": "4df7299250e3a0238b6c185b232c0977378283e76d9646eda24a1415373d07b5",
+    "app/src/demo/types.ts": "e1c5558ee7d7ef7dafcb859455ea36875813e0e75f8691175a03e770b9ee93fe",
+    "app/src/services/demo-gateway.ts": "36682bd40b737d6d7bd0312dea4a445fbe121d8c880bcf47c5fea1c1cb46fa60",
+    "app/src/services/demo-pending.ts": "d1242db2ef234f83762c3f75aee5951ef789edcd8b930db41c8f95d595ba3e17",
+    "app/src/services/demo-transport.ts": "c14124b6f187520b8a22e064b0275e6a862b7891dcf24cc972ff106f361edb54",
+    "app/test/demo-api.spec.ts": "fdead0152cfe7a3515df169a36df3b818bf10492c7b656525774ea5e0281a7ae",
+    "app/test/demo-birch.spec.ts": "35047e092d02487bef74ea71b3cb693c68a82781ee2a89b725d262fae4e81947",
+    "app/test/demo-collection.spec.ts": "c1f37eb26a4c30554fa0f51c8574f48b32d79e946e6b8292cb59f7adf047724c",
+    "app/test/demo-proof.ts": "4971fa79d1f4edc0c9c930fb7d4667c3a8f3d6ac5a0a069955dc0aac4b059566",
+    "app/test/demo-retail.spec.ts": "c9041af4cb26c4c99a76dd2a5008f64e6120f86bbf6e5714797a30f4ca9564d4",
+    "app/test/demo-signed-flow.spec.ts": "53befed453a125ff105390095966fc9b74f21cbcf836f5cf9aeb870e4dd1aaea",
+    "app/test/demo-wallet.ts": "aa286899a10f069a2bbcde66259aafc7e779aab518f1d4567ae9fc59a4ab698f",
+    "app/vite.config.ts": "32b8968f51f2c864e4385e5d533f9c7aaa8bf2b62165b20d00c45413372b2e11",
+    "contracts/src/demo/DemoFirmVault.sol": "a468c418cfc10183d233ddd902bef62510b881321dbb197a131d75fffc723983",
+    "contracts/src/demo/DemoRegistry.sol": "cd19c1b811e93d1130bfc51ec8e6703fd20713926dc080e5c739c2a32fea69d4",
+    "contracts/src/demo/DemoSettlement.sol": "c45d9be675656696a8e5f1da8d621d249d857e855bc8308f12ee7e7be15845fe",
+    "contracts/src/demo/DemoTypes.sol": "0a2910ba19d9eaa3ad84819d2a3e223503bb42042d23496ec43176b122ecbe74",
+    "contracts/test/demo/DemoBoundaries.t.sol": "32863536f959e4d7bdabb17aa98b5843a44a92fa79039fcfa43e6e1b533f8830",
+    "contracts/test/demo/DemoExposureCaps.t.sol": "17658cd7044f6946e193657b6ac709ad958b5fedfea25da2e2bb6b563fc7782a",
+    "contracts/test/demo/DemoFixture.sol": "bda806c3931ec9edf2b98e18c26b73edcfd85902849ce9162c38fd31baf3a81c",
+    "contracts/test/demo/DemoFlows.t.sol": "c559fd3052ed4c48f3b32204fbedf7447d4ecbf80b39f7975d15781fd554e30c",
+    "harness/src/demo/actions.ts": "7e6e6e3bbffefc46226bc07408b4ae4a36d9cabe424a65623c61ace2ee319f41",
+    "harness/src/demo/email.ts": "424ae2ff02eb28bfa392bf17267d9249e7d504d0fee7d188c1f565bc3c22bd04",
+    "harness/src/demo/holdings.ts": "d02b547b666cab65ce8e18cae369e09c270dae20189c93abf1f310f3cfdf9717",
+    "harness/src/demo/provider-ledger.ts": "4004e32bb2e8b439228f4ed14e3adf39e8a1d161731d2cd61fd1636fd4947489",
+    "harness/src/demo/receipt-classifier.ts": "e5e8dc5eced70a05f89b1ea0bf0f2755bc3ebb07f23c6ab229c0a8e9f93b2483",
+    "harness/src/demo/seed.ts": "13df988c3c244211f963564246a52dd134630a37050a8466c32950094bb2facc",
+    "harness/src/demo/server.ts": "b92f0aef23f109af56f2df0c99a151679b8091bb27ed21e4013081d75f9adf62",
+    "harness/src/demo/shared.ts": "ed050872204ad317510f12ca991d5219f96bd3e69017db81a2554c818ee89807",
+    "harness/src/demo/state.ts": "44ef64c04d033f892135a464447703deaaed1069171034b457f51024729b4e5f",
+    "harness/src/demo/store.ts": "be2ae801949c00112adce9608742248e8d12691d3715756ff960e799135b128e",
+    "harness/src/demo/workspace.ts": "10427decfa8f05935c55d33832f77326ed6d672ad4ede2e0655c9ba60fbdff5b",
+    "scripts/demo/.gitignore": "c5f60f5e8ca730997c400787dd616f571f8f854c226d43beb5080f94d033efa9",
+    "scripts/demo/seed.sh": "f2004e23a0eda965e52f3da6da190e85985f9ea078568b3c95db03ce2cf1d562",
+    "scripts/demo/serve.sh": "a58e9be3aae43541d991a89007ab3b47be509b53ac480b948f560bc92e649923",
+    "scripts/demo/start-anvil.sh": "f7d59e593f0bcaf4d0797c4d7f6cd7281ffa5667f9491530ef64acfabc5525d1"
+  },
+  "proofs": [
+    {
+      "key": "main",
+      "folder": "run-1791111333584",
+      "file": "evidence.json",
+      "sha256": "ee34fb090cb9546b28d6c7cdf127d8cb5629b861f446f21762ec194890bf6234"
+    },
+    {
+      "key": "collection",
+      "folder": "run-1791111356166",
+      "file": "collection-evidence.json",
+      "sha256": "003a0515a9c14fbf24df3382f69ea8a4d24887a9e4fc7ecf8982946394a78668"
+    },
+    {
+      "key": "birch",
+      "folder": "run-1791111364083",
+      "file": "birch-evidence.json",
+      "sha256": "df3b7247b221398bf80bc66f5c59c70c68e1303f17b658c680d8c1e3f7f9bbe3"
+    },
+    {
+      "key": "retail",
+      "folder": "run-1791111371962",
+      "file": "retail-evidence.json",
+      "sha256": "b44a2f933ba06b2c6b195531ffd7b5d1281e57c38a6c4f3e56bbbde37b686c59"
+    },
+    {
+      "key": "api",
+      "folder": "run-1791111379343",
+      "file": "api-boundary-evidence.json",
+      "sha256": "d98fb8598b75e7009ee380f1ca0e9146463a84bf90713e5ad23d01f9927ee57c"
+    }
+  ],
+  "mediaVerified": 30,
+  "mediaBytes": 8744715,
+  "testedChainSnapshotHash": "2e3c50f1a88214c48fedeeb01cfac3c6e45952de35c7b1a3efc9675ae6e61e5f",
+  "freshReadyState": "fresh-ready-state.json"
+}
