@@ -1,4 +1,5 @@
 import { randomBytes } from 'node:crypto';
+import { contractTransaction, knownContractTransaction, gasTransaction } from './transactions.js';
 import { formatUnits, keccak256, parseEther, parseEventLogs, parseUnits, toHex, verifyTypedData, type Abi, type Address, type Hex } from 'viem';
 import { accountAt, artifact, chain, err, identities, identityHash, manifest, paxosMode, publicClient, publicNetwork, terms, walletAt } from './shared.js';
 import { demoState, requireBound } from './state.js';
@@ -21,12 +22,7 @@ const quoteTypes={Quote:[
  {name:'maturity',type:'uint64'},{name:'nonce',type:'uint256'},{name:'agreementHash',type:'bytes32'}
 ]} as const;
 const quoteDomain=(settlement:Address)=>({name:'LockgateTestSettlement',version:'1',chainId:chain.id,verifyingContract:settlement} as const);
-const tx=async(index:number,address:Address,abi:Abi,functionName:string,args:readonly unknown[])=>{
- const hash=await walletAt(index).writeContract({address,abi,functionName,args});
- const receipt=await publicClient.waitForTransactionReceipt({hash,confirmations:process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?3:1});
- if(receipt.status!=='success') err(`${functionName} transaction reverted`,'CHAIN_REVERT',409);
- return hash;
-};
+const tx=contractTransaction;
 const asQuote=(q:Record<string,string|number>)=>({holdingId:q.holdingId as Hex,vault:q.vault as Address,investor:q.investor as Address,identity:q.identity as Hex,units:BigInt(q.units),payout:BigInt(q.payout),repayment:BigInt(q.repayment),route:Number(q.route),deadline:BigInt(q.deadline),maturity:BigInt(q.maturity),nonce:BigInt(q.nonce),agreementHash:q.agreementHash as Hex});
 const asUiOffer=(r:OfferRecord)=>({id:r.id,vehicleId:r.vehicleId,firm:manifest().vaults.find(v=>v.id===r.vehicleId)?.firm??'',vehicle:manifest().vaults.find(v=>v.id===r.vehicleId)?.name??'',route:Number(r.quote.route)===1?'purchase':'finance',amount:formatUnits(BigInt(r.quote.units),6),payout:formatUnits(BigInt(r.quote.payout),6),fee:formatUnits(BigInt(r.quote.units)-BigInt(r.quote.payout),6),borrowerCharge:Number(r.quote.route)===2?formatUnits(BigInt(r.quote.repayment)-BigInt(r.quote.payout),6):undefined,borrowerDebt:Number(r.quote.route)===2?formatUnits(BigInt(r.quote.repayment),6):undefined,residual:r.residualUnits,expiresAt:new Date(Number(r.quote.deadline)*1000).toISOString(),agreement:r.agreement,quote:r.quote,originatorSignature:r.originatorSignature,investorSignature:r.investorSignature,reserveHash:r.reserveHash});
 async function firmReadiness(vault:Address,originator:Address) {
@@ -129,7 +125,7 @@ export async function reserveOffer(account:Address,offerId:string) {
   save();
  }
  const h=await publicClient.readContract({address:m.registry,abi:registryAbi,functionName:'holding',args:[offer.holdingId]}) as {remaining:bigint;locked:bigint};
- if(h.remaining-h.locked<BigInt(offer.quote.units)) err('Position is no longer available','POSITION_CHANGED',409);
+ if(h.remaining-h.locked<BigInt(offer.quote.units)&&!knownContractTransaction(m.vaults.findIndex(v=>v.id===offer.vehicleId)+6,m.settlement,settlementAbi,'reserve',[asQuote(offer.quote),offer.originatorSignature])) err('Position is no longer available','POSITION_CHANGED',409);
  const v=m.vaults.find(x=>x.id===offer.vehicleId);if(!v) err('Firm vehicle missing','FIXTURE_ERROR',500);
  offer.reserveHash=await tx(m.vaults.indexOf(v)+6,m.settlement,settlementAbi,'reserve',[asQuote(offer.quote),offer.originatorSignature]);
  save();return asUiOffer(offer);
@@ -186,12 +182,14 @@ export async function resumeSubscription(account:Address,vehicleId:string,amount
 export async function mintPosition(account:Address):Promise<ReceiptRecord> {
  const identity=await requireBound(account),m=manifest(),p=profile(account);
  if(p.role!=='investor'||identity.fixtureCase==='mismatch') err('A matching or empty TEST investor identity is required','ROLE_REQUIRED',403);
- const id=keccak256(toHex(newId('holding')));
+ if(p.pendingMint&&p.pendingMint.identityId!==identity.id)err('Resume the pending holding with its original identity','IDENTITY_CHANGED',409);
+ const id=p.pendingMint?.id??keccak256(toHex(newId('holding')));
+ p.pendingMint={id,identityId:identity.id};save();
  const units=paxosMode?'3':'100000';
  const hash=await tx(1,m.registry,registryAbi,'registerHolding',[id,identityHash(identity.identityRef),parseUnits(units,6),3,true]);
  p.minted.push({id,identityId:identity.id,name:'Alder Private Credit TEST position',originator:m.originators[0].name,originatorAddress:m.originators[0].address,units});
  const r:ReceiptRecord={id:newId('receipt'),title:'TEST position registered',status:'confirmed',hash,amount:units,createdAt:new Date().toISOString(),account,detail:'Originator-authorized position issuance'};
- p.receipts.unshift(r);save();return r;
+ p.receipts.unshift(r);delete p.pendingMint;save();return r;
 }
 
 export async function faucet(account:Address):Promise<ReceiptRecord> {
@@ -205,8 +203,7 @@ export async function faucet(account:Address):Promise<ReceiptRecord> {
 
 export async function gasGrant(account:Address):Promise<ReceiptRecord> {
  const p=profile(account);if(p.gasHash) err('Test gas grant already used for this wallet','GAS_USED',409);
- const hash=await walletAt(0).sendTransaction({to:account,value:parseEther(process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?'0.0005':'0.01')});
- const mined=await publicClient.waitForTransactionReceipt({hash,confirmations:process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?3:1});if(mined.status!=='success')err('Gas transfer reverted','CHAIN_REVERT',409);
+ const hash=await gasTransaction(0,account,parseEther(process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?'0.0005':'0.01'));
  p.gasHash=hash;
  const r:ReceiptRecord={id:newId('receipt'),title:'Test gas funded',status:'confirmed',hash,amount:`${process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia'?'0.0005':'0.01'} ETH`,createdAt:new Date().toISOString(),account,detail:'Test ETH for signing transactions'};
  p.receipts.unshift(r);save();return r;

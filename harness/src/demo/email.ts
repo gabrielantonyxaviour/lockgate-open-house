@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from './filesystem.js';
+import { fileURLToPath, URL } from 'node:url';
 import { z } from 'zod';
 const fieldsSchema=z.object({representative:z.string().min(2).max(100),email:z.string().email().max(254),organization:z.string().min(2).max(150),role:z.enum(['originator','manager'])});
 type Fields=z.infer<typeof fieldsSchema>;
@@ -22,9 +22,6 @@ export async function enqueueAcknowledgement(input:Fields,reference:string):Prom
  const key=process.env.LOCKGATE_RESEND_API_KEY,from=process.env.LOCKGATE_EMAIL_FROM;
  if(!key||!from||!/@lockgate\.finance>?$/i.test(from))return {emailStatus:'Queued — verified Lockgate email sender required'};
  try {
-  const domainResponse=await fetch('https://api.resend.com/domains',{headers:{Authorization:`Bearer ${key}`},signal:AbortSignal.timeout(10_000)});
-  const domains=z.object({data:z.array(z.object({name:z.string(),status:z.string()}))}).safeParse(await domainResponse.json());
-  if(!domainResponse.ok||!domains.success||!domains.data.data.some(d=>d.name==='lockgate.finance'&&d.status==='verified'))throw new Error('Sender not verified');
   const response=await fetch('https://api.resend.com/emails',{method:'POST',headers:{Authorization:`Bearer ${key}`,'Content-Type':'application/json','Idempotency-Key':`lockgate-enquiry-${reference}`},body:JSON.stringify({from,to:[item.to],reply_to:'gabriel@lockgate.finance',subject:item.subject,html:item.html,text:item.text}),signal:AbortSignal.timeout(15_000)});
   const result=z.object({id:z.string()}).safeParse(await response.json());
   if(!response.ok||!result.success)throw new Error('Email provider rejected the acknowledgement');

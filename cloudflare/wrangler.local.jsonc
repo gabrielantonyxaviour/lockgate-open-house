@@ -1,0 +1,10 @@
+{
+ "name":"lockgate-api-local-test",
+ "main":"./build/worker.js",
+ "compatibility_date":"2026-10-01",
+ "compatibility_flags":["nodejs_compat"],
+ "assets":{"directory":"../app/dist","binding":"ASSETS","run_worker_first":true,"not_found_handling":"single-page-application"},
+ "vars":{"LOCKGATE_RUNTIME":"cloudflare","LOCKGATE_DEMO_NETWORK":"arbitrum-sepolia","LOCKGATE_DEMO_ASSET":"mock","LOCKGATE_PUBLIC_ORIGIN":"https://openhouse.lockgate.finance"},
+ "durable_objects":{"bindings":[{"name":"LOCKGATE_API","class_name":"LockgateApi"}]},
+ "migrations":[{"tag":"v1","new_sqlite_classes":["LockgateApi"]}]
+}

@@ -13,8 +13,9 @@ import { proxyRpc } from './rpc-proxy.js';
 const address=z.string().refine(isAddress,'Invalid wallet address').transform(x=>getAddress(x));
 const hex=z.string().regex(/^0x[0-9a-fA-F]+$/).transform(x=>x as Hex);
 const amount=z.string().regex(/^(0|[1-9]\d{0,8})(\.\d{1,6})?$/,'Invalid 6-decimal amount');
-const challenges=new Map<string,{account:Address;chainId:number;message:string;expiresAt:number}>();
-const allowedOrigins=new Set(['http://localhost:5197','http://127.0.0.1:5197']);
+export const challenges=new Map<string,{account:Address;chainId:number;message:string;expiresAt:number}>();
+const allowedOrigins=new Set(['https://openhouse.lockgate.finance','http://localhost:5197','http://127.0.0.1:5197']);
+const knownRoutes=new Set(['rpc/421614','config','public','challenge','authenticate','state','role','identity','enquiries','offers','reserve-offer','exit-signature','eligibility','subscription','subscription-resume','mint-position','faucet','gas','receipts','workspace-action']);
 const enquiry=z.object({role:z.enum(['originator','manager']),representative:z.string().trim().min(2).max(100),email:z.string().trim().email().max(254),organization:z.string().trim().min(2).max(150),jurisdiction:z.string().trim().min(2).max(100),summary:z.string().trim().min(20).max(1500),requestId:z.string().regex(/^0x[0-9a-fA-F]{64}$/).optional()});
 
 function json(res:ServerResponse,status:number,value:unknown) {res.writeHead(status,{'content-type':'application/json; charset=utf-8','cache-control':'no-store'});res.end(JSON.stringify(value));}
@@ -37,7 +38,7 @@ async function handle(req:IncomingMessage,res:ServerResponse) {
  if(req.method==='OPTIONS'){res.writeHead(204);res.end();return;}
  if(req.method==='POST'&&!req.headers['content-type']?.startsWith('application/json')) err('Use application/json','CONTENT_TYPE_REQUIRED',415);
  const path=new URL(req.url??'/',`http://127.0.0.1:8788`).pathname;
- if(!path.startsWith('/api/demo/')) err('Route not found','NOT_FOUND',404);
+ if(!path.startsWith('/api/demo/')||!knownRoutes.has(path.slice('/api/demo/'.length))) err('Route not found','NOT_FOUND',404);
  if(path==='/api/demo/rpc/421614'&&req.method==='POST')return json(res,200,await proxyRpc(await body(req)));
  if(await publicClient.getChainId()!==chain.id) err('Arbitrum Sepolia is unavailable or the RPC uses another chain','CHAIN_UNAVAILABLE',503);
  if(path==='/api/demo/config'&&req.method==='GET') return json(res,200,config());
@@ -48,7 +49,7 @@ async function handle(req:IncomingMessage,res:ServerResponse) {
   const nonce=randomBytes(16).toString('hex');
   for(const [key,item] of challenges)if(item.expiresAt<Date.now())challenges.delete(key);
   if(challenges.size>=1000) err('Too many pending challenges','RATE_LIMITED',429);
-  const message=`Lockgate wallet sign-in\nAccount: ${v.account}\nNetwork: Arbitrum Sepolia (${chain.id})\nOrigin: ${origin??'http://127.0.0.1:5197'}\nNonce: ${nonce}\nExpires: ${new Date(Date.now()+5*60_000).toISOString()}\nThis signature signs you in. It does not move funds.`;
+  const message=`Lockgate wallet sign-in\nAccount: ${v.account}\nNetwork: Arbitrum Sepolia (${chain.id})\nOrigin: ${origin??process.env.LOCKGATE_PUBLIC_ORIGIN??'http://127.0.0.1:5197'}\nNonce: ${nonce}\nExpires: ${new Date(Date.now()+5*60_000).toISOString()}\nThis signature signs you in. It does not move funds.`;
   challenges.set(nonce,{account:v.account,chainId:v.chainId,message,expiresAt:Date.now()+5*60_000});
   return json(res,200,{message,nonce});
  }
@@ -127,11 +128,14 @@ async function handle(req:IncomingMessage,res:ServerResponse) {
  err('Route not found','NOT_FOUND',404);
 }
 
-const server=createServer((req,res)=>{handle(req,res).catch(e=>{
+export async function handleRequest(req:IncomingMessage,res:ServerResponse){return handle(req,res).catch(e=>{
  const known=typeof e?.status==='number'&&typeof e?.code==='string'&&/^[A-Z_]+$/.test(e.code);
  const status=e instanceof z.ZodError?400:known?e.status:500;
  const code=e instanceof z.ZodError?'INVALID_INPUT':known?e.code:'INTERNAL_ERROR';
- const error=status>=500?'Demo service could not complete the request':e instanceof z.ZodError?e.issues[0]?.message??'Invalid input':e?.message??'Request failed';
+ const error=status>=500?'The service could not complete the request':e instanceof z.ZodError?e.issues[0]?.message??'Invalid input':e?.message??'Request failed';
  json(res,status,{error,code});
-});});
-server.listen(8788,'127.0.0.1',()=>process.stdout.write('Lockgate local TEST API ready at http://127.0.0.1:8788\n'));
+});}
+if(process.env.LOCKGATE_RUNTIME!=='cloudflare'){
+ const server=createServer(handleRequest);
+ server.listen(8788,'127.0.0.1',()=>process.stdout.write('Lockgate local TEST API ready at http://127.0.0.1:8788\n'));
+}

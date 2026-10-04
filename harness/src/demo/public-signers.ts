@@ -1,5 +1,5 @@
-import { mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { mkdirSync, readFileSync, statSync, writeFileSync } from './filesystem.js';
+import { fileURLToPath, URL } from 'node:url';
 import { generatePrivateKey, nonceManager, privateKeyToAccount } from 'viem/accounts';
 import { getAddress, isAddress, type Address, type Hex } from 'viem';
 import { z } from 'zod';

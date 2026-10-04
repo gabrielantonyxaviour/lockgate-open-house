@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from './filesystem.js';
+import { fileURLToPath, URL } from 'node:url';
 import { createPublicClient, createWalletClient, http, keccak256, toHex, type Address, type Hex } from 'viem';
 import { mnemonicToAccount } from 'viem/accounts';
 import { publicAccountAt } from './public-signers.js';
@@ -20,7 +20,7 @@ if(publicNetwork){
  if(url.protocol!=='https:'||!url.hostname.endsWith('.quiknode.pro'))throw new Error('Sepolia RPC must be an HTTPS QuickNode endpoint');
 }
 export const rpc=publicNetwork?requestedRpc!:'http://127.0.0.1:8545';
-export const clientRpcUrl=publicNetwork?'http://127.0.0.1:5197/api/demo/rpc/421614':rpc;
+export const clientRpcUrl=publicNetwork?`${process.env.LOCKGATE_PUBLIC_ORIGIN??'http://127.0.0.1:5197'}/api/demo/rpc/421614`:rpc;
 export const chain = { id: 421614, name: networkLabel, nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: [rpc] } } } as const;
 export const publicClient = createPublicClient({ chain, pollingInterval:publicNetwork?1000:4000, transport: http(rpc,{batch:{wait:10,batchSize:50},timeout:15000,retryCount:2}) });
 // Anvil's documented local-only mnemonic. Never use these accounts on a public network.
@@ -56,7 +56,7 @@ export const positions = [
 export type Manifest = { chainId:number; network?:string; deploymentBlock?:string; rpcUrl:string; asset:Address; registry:Address; settlement:Address; vaults:{id:string;name:string;firm:string;address:Address;manager:Address;termsHash:Hex;termsText:string}[]; originators:{name:string;address:Address}[]; holdings:{id:Hex;profileId:string;name:string;instrument:string;originator:string;originatorAddress:Address;units:string}[] };
 export const manifestPath = fileURLToPath(new URL(publicNetwork?`../../../scripts/demo/local/${paxosMode?'paxos-usdg-':'sepolia-'}manifest.json`:'../../../app/public/demo-contracts.json',import.meta.url));
 export const fixturePath = fileURLToPath(new URL(publicNetwork?`../../../scripts/demo/local/${paxosMode?'paxos-usdg-':'sepolia-'}fixture.json`:'../../../scripts/demo/local/fixture.json',import.meta.url));
-export function manifest():Manifest { const publicPart=JSON.parse(readFileSync(manifestPath,'utf8'));const privatePart=JSON.parse(readFileSync(fixturePath,'utf8'));return {...publicPart,...privatePart} as Manifest; }
+export function manifest():Manifest { const publicPart=JSON.parse(readFileSync(manifestPath,'utf8'));const privatePart=JSON.parse(readFileSync(fixturePath,'utf8'));return {...publicPart,...privatePart,rpcUrl:clientRpcUrl} as Manifest; }
 export function artifact(name:string):{abi:readonly unknown[];bytecode:{object:Hex}} {
  return JSON.parse(readFileSync(fileURLToPath(new URL(`../../../contracts/out/${name}.sol/${name}.json`,import.meta.url)),'utf8'));
 }
