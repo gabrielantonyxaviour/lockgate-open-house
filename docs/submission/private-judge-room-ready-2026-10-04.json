@@ -1,0 +1,32 @@
+{
+  "asOf": "2026-10-04",
+  "repository": {
+    "url": "https://github.com/gabrielantonyxaviour/lockgate-open-house",
+    "visibility": "PUBLIC",
+    "anonymousApiStatus": 200
+  },
+  "judgeRoom": {
+    "url": "https://open-house.lockgate.finance/judges",
+    "worker": "lockgate-private-judges",
+    "version": "f5b985dd-5115-4bfd-82f7-0b7d793f7d1c",
+    "evidenceSha256": "7f1ee3063d7e61264d6607e0c47f184a017a01824c6285c0620ad6e912315c2a",
+    "passwordLocation": "Private local file outside Git; distributed separately",
+    "evidenceAndCredentialsCommitted": false
+  },
+  "verification": [
+    "Four security suites pass",
+    "Live anonymous dataset denied",
+    "Browser password login succeeds",
+    "Authenticated page and data download succeed",
+    "Logout removes browser access",
+    "Live repeated failed logins return 429",
+    "No layout overflow at 375, 768 and 1440 pixels",
+    "Public product root returns 200",
+    "HackQuest saved public copy links to private room and public repository"
+  ],
+  "remaining": [
+    "Attach demo and pitch videos",
+    "Select Lockgate and submit the prepared event form once video eligibility is satisfied"
+  ],
+  "ownedBranch": "feat/private-judge-room"
+}
