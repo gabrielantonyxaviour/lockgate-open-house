@@ -1,9 +1,50 @@
 {
   "name": "lockgate-open-house",
   "compatibility_date": "2026-10-01",
-  "assets": { "directory": "./dist", "not_found_handling": "single-page-application" },
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
   "routes": [
-    { "pattern": "openhouse.lockgate.finance", "custom_domain": true },
-    { "pattern": "open-house.lockgate.finance", "custom_domain": true }
-  ]
+    {
+      "pattern": "openhouse.lockgate.finance",
+      "custom_domain": true
+    },
+    {
+      "pattern": "open-house.lockgate.finance",
+      "custom_domain": true
+    }
+  ],
+  "main": "../cloudflare/build/worker.js",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "vars": {
+    "LOCKGATE_RUNTIME": "cloudflare",
+    "LOCKGATE_DEMO_NETWORK": "arbitrum-sepolia",
+    "LOCKGATE_DEMO_ASSET": "mock",
+    "LOCKGATE_PUBLIC_ORIGIN": "https://openhouse.lockgate.finance",
+    "LOCKGATE_EMAIL_FROM": "Lockgate <hello@lockgate.finance>"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "LOCKGATE_API",
+        "class_name": "LockgateApi"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "lockgate-api-v1",
+      "new_sqlite_classes": [
+        "LockgateApi"
+      ]
+    }
+  ],
+  "observability": {
+    "enabled": true
+  }
 }

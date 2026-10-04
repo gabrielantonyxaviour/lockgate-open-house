@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-04T13:42:47.654Z",
+  "chainId": 421614,
+  "account": "0x6ae9ec7cf89266652373a9831ec5f8ca84f96e05",
+  "asset": "0x8384cc8a4c0882fac0949c205b444bdc1ed24437",
+  "confirmedExit": {
+    "hash": "0x39b98ea5a34ad146ad431350c472994613cc50917b34ae812441b3f6bdf25a97",
+    "status": "success",
+    "blockNumber": "315678477",
+    "explorer": "https://sepolia.arbiscan.io/tx/0x39b98ea5a34ad146ad431350c472994613cc50917b34ae812441b3f6bdf25a97"
+  },
+  "walletTestUsdGBalance": "96030",
+  "verification": "Read-only production RPC; existing transaction, no new financial action"
+}
