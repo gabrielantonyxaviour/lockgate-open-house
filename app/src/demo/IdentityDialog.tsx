@@ -44,7 +44,7 @@ export function IdentityDialog({ onClose, onSelect, busy, error }: {
         event.clientY < bounds.top || event.clientY > bounds.bottom) onClose();
     }}>
     <div className="dg-identity-dialog-header">
-      <span className="dg-badge">TEST identity</span>
+      <span className="dg-badge">identity</span>
       <button className="dg-icon-button" aria-label="Close identity verification" disabled={busy} onClick={onClose}><X size={19}/></button>
     </div>
     <div className="dg-identity-dialog-copy">
@@ -54,21 +54,21 @@ export function IdentityDialog({ onClose, onSelect, busy, error }: {
     {busy ? <div className="dg-identity-progress" role="status" aria-live="polite">
       <LoaderCircle size={28} className="dg-spin"/>
       <h3>Completing KYC…</h3>
-      <p>Linking your selected TEST profile to your wallet. Confirm the transaction in your wallet and wait for confirmation.</p>
+      <p>Linking your selected profile to your wallet. Confirm the transaction in your wallet and wait for confirmation.</p>
     </div> : loading ? <div className="dg-identity-progress" role="status" aria-live="polite">
       <LoaderCircle size={28} className="dg-spin"/>
       <h3>Loading test profiles…</h3>
-      <p>Preparing the ten preverified TEST profiles.</p>
+      <p>Preparing the ten preverified profiles.</p>
     </div> : <>
       <div className="dg-profile-choices">
         <h3>Choose a profile.</h3>
-        <div className="dg-profile-grid" role="radiogroup" aria-label="TEST identity">
+        <div className="dg-profile-grid" role="radiogroup" aria-label="identity">
           {identities.map((profile, index) => <label key={profile.id} className={`dg-profile-choice ${selected === profile.id ? 'selected' : ''}`}>
             <input type="radio" name="identity" value={profile.id} aria-label={profile.name}
               checked={selected === profile.id} onChange={() => setSelected(profile.id)}/>
             <ProfileAvatar index={index}/>
             <span className="dg-profile-details"><strong>{profile.name}</strong><span>{profile.jurisdiction}</span>
-              <small><ShieldCheck size={12}/>Preverified TEST profile</small>
+              <small><ShieldCheck size={12}/>Preverified profile</small>
               {profile.fixtureCase !== 'match' && <small>{profile.fixtureCase === 'mismatch' ? 'Holding-owner mismatch case' : 'No supported holdings case'}</small>}
             </span>
             <span className="dg-profile-indicator" aria-hidden="true">{selected === profile.id && <Check size={12}/>}</span>

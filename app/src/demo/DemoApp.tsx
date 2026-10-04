@@ -21,16 +21,17 @@ import type { DemoGateway, DemoRole, DemoState, PublicOverview } from './types';
 import { PublicHome, PublicTerms } from './Public';
 import { useRoute, go } from '../ui/router';
 import './demo.css';
+import { presentationState, displayText } from './presentation';
 const connectionKey='lockgate.wallet.connected.v1';
 function remember(value:boolean){try{if(value)localStorage.setItem(connectionKey,'1');else localStorage.removeItem(connectionKey);}catch{/* Storage is optional. */}}
 export function DemoApp({gateway}:{gateway:DemoGateway}) {
  useInputModality();
  const route=useRoute();
  const terms=route.split("?")[0].startsWith("/terms");
- const readPublic=()=>void gateway.publicOverview().then(data=>{setOverview(data);setPublicError('');}).catch(e=>setPublicError(errorMessage(e)));
+ const readPublic=()=>void gateway.publicOverview().then(data=>{setOverview({...data,platforms:data.platforms?.map(p=>({...p,status:displayText(p.status),instrument:displayText(p.instrument),terms:displayText(p.terms)}))});setPublicError('');}).catch(e=>setPublicError(errorMessage(e)));
  const [overview,setOverview]=useState<PublicOverview>();
  const [publicError,setPublicError]=useState('');
- useEffect(()=>{let active=true;void gateway.publicOverview().then(data=>{if(active)setOverview(data);}).catch(e=>{if(active)setPublicError(errorMessage(e));});return()=>{active=false;};},[gateway]);
+ useEffect(()=>{let active=true;void gateway.publicOverview().then(data=>{if(active)setOverview({...data,platforms:data.platforms?.map(p=>({...p,status:displayText(p.status),instrument:displayText(p.instrument),terms:displayText(p.terms)}))});}).catch(e=>{if(active)setPublicError(errorMessage(e));});return()=>{active=false;};},[gateway]);
  const [account,setAccount]=useState<Address>();
  const [chainId,setChainId]=useState<number>();
  const [state,setState]=useState<DemoState>();
@@ -49,7 +50,7 @@ export function DemoApp({gateway}:{gateway:DemoGateway}) {
  const liveAccount=useRef<Address|undefined>(undefined);
  liveAccount.current=account;
  const invalidate=useCallback(()=>{epoch.current++;setState(undefined);setRole(undefined);setOnboarding(undefined);setRolePending(false);setRoleFailed(false);setIdentity(false);setDemo(false);setChoose(false);setError('');},[]);
- const apply=useCallback((next:DemoState)=>{setState(next);setRole(next.profile.activeRole||next.profile.roles[0]);},[]);
+ const apply=useCallback((next:DemoState)=>{setState(presentationState(next));setRole(next.profile.activeRole||next.profile.roles[0]);},[]);
  const run=useCallback(async<T,>(task:()=>Promise<T>):Promise<T>=>{
   if(operation.current)throw new Error('A wallet operation is already in progress.');
   operation.current=true;const revision=epoch.current;setBusy(true);setError('');
@@ -101,6 +102,6 @@ export function DemoApp({gateway}:{gateway:DemoGateway}) {
   return <Institution {...shared}/>;
  };
  return <div className="dg-app"><header className="dg-topbar"><button className="dg-brand" onClick={()=>{go("/");if(state&&!state.profile.identity)setChoose(true);}} aria-label="Lockgate home"><img src="/mark.svg" width="25" height="28" alt=""/>Lockgate<span>.</span></button><div className="dg-top-actions">{account&&state?<Select className="dg-network-select" value={chainId===42161?'42161':'421614'} onValueChange={v=>switchTo(Number(v))} options={[{value:'421614',label:'Arbitrum Sepolia',icon:<ArbitrumMark size={20} decorative/>},{value:'42161',label:'Arbitrum One · Soon',disabled:true,icon:<ArbitrumMark size={20} decorative/>}]} label="Network" disabled={busy}/>:<Button onClick={account?()=>void run(()=>authenticate()).catch(()=>{}):connect} busy={busy}><Wallet size={17}/>{busy?'Connecting wallet…':'Connect Wallet'}</Button>}{state&&!unsupported&&<Button secondary disabled={busy} onClick={()=>setDemo(true)}>Demo</Button>}{account&&state&&<WalletMenu key={account} account={account} gas={state?.setup.gas} usdg={state?.setup.usdg} busy={busy} onDisconnect={disconnect}/>}</div></header>
- <div className="dg-body">{onboardingVisible&&retailRole&&!unsupported&&!terms&&<OnboardingProgress role={retailRole} phase={onboarding||'identity'} preparing={rolePending} unavailable={retailRole==='investor'&&state?.positionStatus==='unavailable'}/>}{state&&!choose&&role&&!dashboardVisible&&!onboardingVisible&&!unsupported&&!terms&&<nav className="dg-workspace-nav" aria-label="Workspace"><div><span className="dg-eyebrow">Account</span><strong>{roleInfo?.title}</strong>{state.profile.identity&&<small>{state.profile.identity.name}</small>}</div><div className="dg-nav-actions"><button className="dg-icon-button" disabled={busy} aria-label={refreshing?"Refreshing account":"Refresh account"} aria-busy={refreshing} onClick={()=>void run(refresh).catch(()=>{})}><RefreshCw size={17} className={refreshing?'dg-spin':undefined}/></button></div></nav>}{error&&<Notice error>{error}</Notice>}<main key={`${account||'guest'}:${chainId}:${role||'entry'}`} aria-busy={busy}>{dashboardVisible&&state&&retailRole?<Dashboard state={state} role={retailRole} account={account} busy={busy} refreshing={refreshing} switchProfile={next=>selectRole(next,'switch')} addProfile={addProfile} refresh={()=>void run(refresh).catch(()=>{})}>{content()}</Dashboard>:content()}</main></div>
+ <div className="dg-body">{onboardingVisible&&retailRole&&!unsupported&&!terms&&<OnboardingProgress role={retailRole} phase={onboarding||'identity'} preparing={rolePending} unavailable={retailRole==='investor'&&state?.positionStatus==='unavailable'}/>}{state&&!choose&&role&&!dashboardVisible&&!state.workspace&&!onboardingVisible&&!unsupported&&!terms&&<nav className="dg-workspace-nav" aria-label="Workspace"><div><span className="dg-eyebrow">Account</span><strong>{roleInfo?.title}</strong>{state.profile.identity&&<small>{state.profile.identity.name}</small>}</div><div className="dg-nav-actions"><button className="dg-icon-button" disabled={busy} aria-label={refreshing?"Refreshing account":"Refresh account"} aria-busy={refreshing} onClick={()=>void run(refresh).catch(()=>{})}><RefreshCw size={17} className={refreshing?'dg-spin':undefined}/></button></div></nav>}{error&&<Notice error>{error}</Notice>}<main key={`${account||'guest'}:${chainId}:${role||'entry'}`} aria-busy={busy}>{dashboardVisible&&state&&retailRole?<Dashboard state={state} role={retailRole} account={account} busy={busy} refreshing={refreshing} switchProfile={next=>selectRole(next,'switch')} addProfile={addProfile} refresh={()=>void run(refresh).catch(()=>{})}>{content()}</Dashboard>:content()}</main></div>
  <AppFooter/>{demo&&state&&!unsupported&&<DemoSheet state={state} gateway={gateway} busy={busy} run={run} refresh={refresh} close={()=>setDemo(false)}/>}</div>;
 }

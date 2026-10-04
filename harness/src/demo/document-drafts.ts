@@ -29,7 +29,7 @@ export function subscriptionDraft(account:Address,identity:Hex,vehicleId:string,
  if(!textField(p.message,'Document reference',p.documentId)||!textField(p.message,'Version',p.version)||!textField(p.message,'Acceptance expires at',expiresAt)||!textField(p.message,'Identity commitment',identity)||!textField(p.message,'Capital provider wallet',account)||!textField(p.message,'Vehicle contract',p.vault)||!p.message.split('\n').some(line=>line.startsWith('Exact subscription: ')&&line.endsWith(`(${parseUnits(p.amount,6)} base units)`)))err('The subscription letter differs from its saved terms','DOCUMENT_MISMATCH',409);
  const preparedAt=p.message.match(/^Prepared at: (.+)$/m)?.[1];
  if(!preparedAt||!Number.isFinite(deadline(preparedAt)))err('The subscription preparation time is missing','DOCUMENT_MISMATCH',409);
- return {id:p.documentId,kind:'subscription',title:`${firm} TEST subscription terms`,text:p.message,digest:p.digest,version:p.version,createdAt:preparedAt,expiresAt,vehicleId,amount:p.amount,account,identityHash:identity};
+ return {id:p.documentId,kind:'subscription',title:`${firm} subscription terms`,text:p.message,digest:p.digest,version:p.version,createdAt:preparedAt,expiresAt,vehicleId,amount:p.amount,account,identityHash:identity};
 }
 
 function publicDraft(draft:StoredDocumentDraft):DocumentDraft {

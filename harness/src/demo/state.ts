@@ -9,6 +9,7 @@ import { classifyReceipt } from './receipt-classifier.js';
 import { visibleDocumentDrafts } from './document-drafts.js';
 import { institutionScope } from './institution-representatives.js';
 import { pendingInstitutionActions } from './workspace-authorizations.js';
+import { institutionAgreements } from './institution-agreements.js';
 
 const publicNetwork=process.env.LOCKGATE_DEMO_NETWORK==='arbitrum-sepolia';
 const environment=publicNetwork?'Arbitrum Sepolia':'Local EVM test network';
@@ -39,13 +40,13 @@ export async function demoState(account:Address) {
  }
  const binding=identity?await read(m.registry,registryAbi,'matches',[account,identityHash(identity.identityRef)]):false;
  if(institution&&(p.role==='originator'||p.role==='manager')){
-  const [workspace,gas,usdg]=await Promise.all([
-   workspaceState(account),publicClient.getBalance({address:account}),read(m.asset,tokenAbi,'balanceOf',[account])
+  const [workspace,institutionAgreementsList,gas,usdg]=await Promise.all([
+   workspaceState(account),institutionAgreements(account),publicClient.getBalance({address:account}),read(m.asset,tokenAbi,'balanceOf',[account])
   ]);
   if(workspace&&institution.delegated)Object.assign(workspace,{pendingActions:pendingInstitutionActions(account)});
   return {profile:{identity:binding?identity:undefined,roles:completedRoles(p,Boolean(binding)),activeRole:p.role,
     organization:institution.organization},positions:[],positionStatus:'unavailable',vehicles:[],withdrawals:[],reservations:[],
-   agreements:[],documentDrafts:[],receipts:p.receipts,workspace,
+   agreements:[],institutionAgreements:institutionAgreementsList,documentDrafts:[],receipts:p.receipts,workspace,
    setup:{gas:formatEther(gas),usdg:money(usdg),canGetGas:!p.gasHash,canGetUsdg:false,
     canMint:false,canFund:false,message:publicNetwork?'Transactions settle on Arbitrum Sepolia.':'Local EVM test network.'},
    deploymentReady:true,environment};

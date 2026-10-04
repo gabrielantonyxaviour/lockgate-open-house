@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, Copy, ExternalLink } from 'lucide-react';
 import './chain-reference.css';
+import { displayText } from './presentation';
 const addressPattern = /^0x[0-9a-f]{40}$/i;
 const hashPattern = /^0x[0-9a-f]{64}$/i;
 export function ChainReference({value,transaction=false}:{value:string;transaction?:boolean}) {
@@ -14,5 +15,5 @@ export function ChainReference({value,transaction=false}:{value:string;transacti
 }
 /** Presentation only: canonical documents and clipboard values retain full identifiers. */
 export function ReferenceText({text}:{text:string}) {
- return <>{text.split(/(0x[0-9a-f]{64}|0x[0-9a-f]{40})(?![0-9a-f])/gi).map((part,index)=>addressPattern.test(part)||hashPattern.test(part)?<ChainReference key={index} value={part}/>:part)}</>;
+ return <>{displayText(text).split(/(0x[0-9a-f]{64}|0x[0-9a-f]{40})(?![0-9a-f])/gi).map((part,index)=>addressPattern.test(part)||hashPattern.test(part)?<ChainReference key={index} value={part}/>:part)}</>;
 }

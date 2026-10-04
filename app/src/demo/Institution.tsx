@@ -4,11 +4,13 @@ import { Select, type SelectOption } from '../ui/Select';
 import { ChainReference } from './ChainReference';
 import { Button, Heading, money, Notice, Records, Rows } from './Common';
 import { identities } from './fixtures';
+import { InstitutionShell, type InstitutionPage } from './InstitutionShell';
+import { AgreementRecords } from './AgreementRecords';
 import type { DemoGateway, DemoState, InstitutionProgress, Receipt, WorkspaceAction } from './types';
 import './institution.css';
 type Field=WorkspaceAction['fields'][number];
 type Step={label:string;status:'waiting'|'pending'|'confirmed';hash?:Receipt['hash']};
-const labels:Record<string,string>={profileId:'TEST profile',routeMask:'Permitted routes',divisible:'Exit policy',originatorAddress:'Originator'};
+const labels:Record<string,string>={profileId:'Profile',routeMask:'Permitted routes',divisible:'Exit policy',originatorAddress:'Originator'};
 function optionsFor(field:Field):SelectOption[]|undefined {
  if(field.options)return field.options;
  if(field.key==='profileId')return identities.map(profile=>({value:profile.id,label:`${profile.name} · ${profile.jurisdiction}`}));
@@ -28,7 +30,7 @@ function validField(field:Field,value:string){
 const stepLabels=(action:WorkspaceAction)=>action.kind==='repay'?['Approve USDG','Repay obligation']:action.kind==='mandate'?['Set mandate','Set exposure cap']:action.kind==='register'?['Register holding']:['Process withdrawal queue'];
 const actionIcon=(action:WorkspaceAction)=>action.kind==='register'?<FilePlus2 size={21}/>:action.kind==='mandate'?<ShieldCheck size={21}/>:<Wallet size={21}/>;
 export function Institution({state,gateway,run,busy,refresh}:{state:DemoState;gateway:DemoGateway;run:<T>(task:()=>Promise<T>)=>Promise<T>;busy:boolean;refresh:()=>Promise<void>}) {
- const [tab,setTab]=useState<'overview'|'actions'|'transactions'>('overview');
+ const [tab,setTab]=useState<InstitutionPage>('overview');
  const [action,setAction]=useState<WorkspaceAction>();
  const [fields,setFields]=useState<Record<string,string>>({});
  const [review,setReview]=useState(false);
@@ -43,7 +45,7 @@ export function Institution({state,gateway,run,busy,refresh}:{state:DemoState;ga
  if(!workspace)return <section><Heading title="Your institution account." copy="Our team coordinates review, agreements and activation."/><Notice>Your wallet has no approved organization account. Submit an enquiry to discuss access.</Notice></section>;
  const delegated=Boolean(workspace.authorization);
  const openAction=(next:WorkspaceAction,inputs?:Record<string,string>,alreadyAuthorized=false)=>{
-  setAction(next);setFields(inputs||Object.fromEntries(next.fields.map(field=>[field.key,field.value||''])));setReview(Boolean(inputs));
+  setTab('actions');setAction(next);setFields(inputs||Object.fromEntries(next.fields.map(field=>[field.key,field.value||''])));setReview(Boolean(inputs));
   setProgress(undefined);setSteps(stepLabels(next).map(label=>({label,status:'waiting'})));setAuthorized(alreadyAuthorized);setStarted(Boolean(inputs));setReceipt(undefined);setError('');setRefreshError(false);
  };
  const onProgress=(next:InstitutionProgress)=>{
@@ -68,15 +70,15 @@ export function Institution({state,gateway,run,busy,refresh}:{state:DemoState;ga
    }catch(cause){setError(cause instanceof Error?cause.message:'This action could not complete. Your confirmed steps remain recorded.');}
   }).catch(()=>{});
  };
- const changeTab=(next:typeof tab)=>{setTab(next);setAction(undefined);setReceipt(undefined);};
- const nav=<nav className="dg-institution-tabs" aria-label="Institution pages">{(['overview','actions','transactions'] as const).map(item=><button key={item} disabled={busy} aria-current={tab===item?'page':undefined} onClick={()=>changeTab(item)}>{item==='overview'?'Overview':item==='actions'?'Actions':'Transaction history'}</button>)}</nav>;
+ const changeTab=(next:typeof tab)=>{setTab(next);setAction(undefined);setReceipt(undefined);window.scrollTo({top:0,left:0,behavior:'instant'});};
+ const shellProps={workspace,page:tab,onPage:changeTab,busy,refresh:()=>run(refresh)};
  if(action){
   const valid=action.fields.every(field=>validField(field,fields[field.key]||''));
   const complete=receipt?.status==='confirmed';
   const execution=progress?.executionAccount||workspace.authorization?.executionWallet;
   const authorizationPending=progress?.phase==='authorization-requested';
   const waitingText=progress?.phase==='preparing'?'Preparing the exact action…':authorizationPending?'Sign this action in your wallet':progress?.phase==='authorized'?'Authorization received. Preparing transaction…':progress?.phase==='submitted'?`Waiting for ${progress.label||'transaction'} confirmation…`:progress?.phase==='confirmed'?'Transaction confirmed. Updating records…':'Processing your action…';
-  return <section className="dg-institution"><Heading eyebrow={workspace.organization} title={receipt?'Action recorded.':review?'Review this action.':action.label} copy={action.description} back={busy?undefined:()=>{if(review&&!started)setReview(false);else{setAction(undefined);setReceipt(undefined);}}}/>
+  return <InstitutionShell {...shellProps}><section className="dg-institution"><Heading title={receipt?'Action recorded.':review?'Review this action.':action.label} copy={action.description} back={busy?undefined:()=>{if(review&&!started)setReview(false);else{setAction(undefined);setReceipt(undefined);}}}/>
    <div className="dg-institution-action-layout"><form className="dg-panel dg-form" onSubmit={event=>{event.preventDefault();if(!valid)return;if(!review){setReview(true);return;}submit();}}>
     <span className="dg-institution-icon">{actionIcon(action)}</span><h2>{action.label}</h2>
     {review?<Rows items={action.fields.map(field=>[labelFor(field),displayValue(field,fields[field.key]||'')])}/>:action.fields.map(field=>{
@@ -98,19 +100,19 @@ export function Institution({state,gateway,run,busy,refresh}:{state:DemoState;ga
     {busy&&<p className="dg-institution-live" role="status">{waitingText}</p>}
     {execution&&<div className="dg-institution-execution"><span>Institution execution wallet</span><ChainReference value={execution}/></div>}
    </aside></div>
-  </section>;
+  </section></InstitutionShell>;
  }
  const records=workspace.records;
  const mandates=records.filter(record=>record.id.startsWith('mandate-'));
  const metrics=records.filter(record=>['nav','cash','principal'].includes(record.id));
  const operating=records.filter(record=>!record.id.startsWith('mandate-')&&!['nav','cash','principal'].includes(record.id));
- return <section className="dg-institution"><Heading eyebrow={workspace.organization} title={workspace.title} copy="Manage your approved institutional account."/><div className="dg-institution-status"><span className="dg-badge">{workspace.status}</span>{delegated&&<span>Authorized team representative</span>}</div>{nav}
+ return <InstitutionShell {...shellProps}><section className="dg-institution"><Heading title={tab==='overview'?'Overview':tab==='actions'?'Actions':tab==='agreements'?'Agreements':'Transaction history'} copy={tab==='overview'?'Your institutional account at a glance.':tab==='actions'?'Review every action before authorizing it.':tab==='agreements'?'Signed documents relevant to your institution.':'Your activity and transaction references.'}/>{tab==='overview'&&<div className="dg-institution-status"><span className="dg-badge">{workspace.status}</span>{delegated&&<span>Authorized team representative</span>}</div>}
   {tab==='overview'&&Boolean(workspace.pendingActions?.length)&&<Notice><strong>An institution action is unfinished.</strong><p>Resume its saved transaction plan before starting a new action.</p><Button secondary disabled={busy} onClick={()=>setTab('actions')}>Review unfinished actions</Button></Notice>}
-  {tab==='transactions'?<Records receipts={state.receipts}/>:tab==='actions'?<><Heading title="Institution actions" copy="Review every action before authorizing it."/>{workspace.pendingActions?.map(pending=>{const found=workspace.actions?.find(item=>item.id===pending.actionId);return found&&<div className="dg-panel dg-institution-pending" key={pending.id}><div><h2>Continue {found.label.toLowerCase()}</h2><p>This saved action has not completed. Resume its existing transaction plan.</p></div><Button disabled={busy} onClick={()=>openAction(found,pending.inputs,pending.authorized)}>Resume action</Button></div>;})}<div className="dg-institution-actions">{workspace.actions?.map(item=><article className="dg-panel" key={item.id}><span className="dg-institution-icon">{actionIcon(item)}</span><h2>{item.label}</h2><p>{item.description}</p>{item.disabledReason&&<p className="dg-caption">{item.disabledReason}</p>}<Button disabled={Boolean(item.disabledReason)||busy} onClick={()=>openAction(item)}>{item.label}<ChevronRight size={15}/></Button></article>)}</div></>:<>
-   {metrics.length>0&&<div className="dg-institution-metrics">{metrics.map(item=><article className="dg-panel" key={item.id}><span>{item.label}</span><strong>{money(item.value.replace(/test USDG/i,'').trim())}</strong><small>TEST USDG</small></article>)}</div>}
+  {tab==='agreements'?(state.institutionAgreements?.length?<AgreementRecords agreements={state.institutionAgreements}/>:<div className="dg-panel dg-dashboard-empty"><h2>No signed agreements yet</h2><p>Relevant signed exit and capital subscription documents will appear here.</p></div>):tab==='transactions'?<div className="dg-institution-history"><Records receipts={state.receipts}/></div>:tab==='actions'?<>{workspace.pendingActions?.map(pending=>{const found=workspace.actions?.find(item=>item.id===pending.actionId);return found&&<div className="dg-panel dg-institution-pending" key={pending.id}><div><h2>Continue {found.label.toLowerCase()}</h2><p>This saved action has not completed. Resume its existing transaction plan.</p></div><Button disabled={busy} onClick={()=>openAction(found,pending.inputs,pending.authorized)}>Resume action</Button></div>;})}<div className="dg-institution-actions">{workspace.actions?.map(item=><article className="dg-panel" key={item.id}><span className="dg-institution-icon">{actionIcon(item)}</span><h2>{item.label}</h2><p>{item.description}</p>{item.disabledReason&&<p className="dg-caption">{item.disabledReason}</p>}<Button disabled={Boolean(item.disabledReason)||busy} onClick={()=>openAction(item)}>{item.label}<ChevronRight size={15}/></Button></article>)}</div></>:<>
+   {metrics.length>0&&<div className="dg-institution-metrics">{metrics.map(item=><article className="dg-panel" key={item.id}><span>{item.label}</span><strong>{money(item.value.replace(/(?:test\s+)?USDG/i,'').trim())}</strong><small>USDG</small></article>)}</div>}
    <div className="dg-institution-overview"><section className="dg-panel"><h2>Operating records</h2>{operating.length?<Rows items={operating.map(item=>[item.label,item.value])}/>:<p>No holdings or obligations have been recorded yet.</p>}<div className="dg-actions"><Button secondary onClick={()=>setTab('actions')}>Manage actions<ChevronRight size={15}/></Button></div></section><section className="dg-panel"><h2>Readiness & authority</h2><Rows items={workspace.checks.map(check=>[check.label,check.status])}/>{workspace.authorization&&<details className="dg-institution-authority"><summary>Wallet authority</summary><p>Connected representative</p><ChainReference value={workspace.authorization.representativeWallet}/><p>Institution execution wallet</p><ChainReference value={workspace.authorization.executionWallet}/><p className="dg-caption">Your signed authorization permits the exact reviewed operation. Confirmed transactions identify the execution wallet on the explorer.</p></details>}</section></div>
    {mandates.length>0&&<section className="dg-panel dg-institution-mandates"><h2>Originator mandates</h2><Rows items={mandates.map(item=>[item.label,item.value])}/></section>}
    <div className="dg-institution-quick">{workspace.actions?.map(item=><Button key={item.id} secondary disabled={Boolean(item.disabledReason)||busy} onClick={()=>openAction(item)}>{item.label}</Button>)}</div>
   </>}
- </section>;
+ </section></InstitutionShell>;
 }

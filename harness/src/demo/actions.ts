@@ -12,7 +12,7 @@ const registryAbi=artifact('DemoRegistry').abi as Abi;
 const vaultAbi=artifact('DemoFirmVault').abi as Abi;
 const settlementAbi=artifact('DemoSettlement').abi as Abi;
 const tokenAbi=artifact('MockUSDG').abi as Abi;
-const legalAsset=(m:ReturnType<typeof manifest>):LegalAsset=>({name:paxosMode?'Paxos-issued test USDG':'Lockgate custom TEST USDG',symbol:'USDG',address:m.asset,chainId:chain.id,chainName:publicNetwork?'Arbitrum Sepolia':'Local EVM test network',decimals:6,kind:paxosMode?'paxos-test-usdg':'custom-test-usdg'});
+const legalAsset=(m:ReturnType<typeof manifest>):LegalAsset=>({name:paxosMode?'Paxos-issued test USDG':'Lockgate custom USDG',symbol:'USDG',address:m.asset,chainId:chain.id,chainName:publicNetwork?'Arbitrum Sepolia':'Local EVM test network',decimals:6,kind:paxosMode?'paxos-test-usdg':'custom-test-usdg'});
 const legalProfile=(identity:typeof identities[number],wallet:Address):LegalProfile=>({id:identity.id,name:identity.name,jurisdiction:identity.jurisdiction,identityRef:identity.identityRef,identityHash:identityHash(identity.identityRef),wallet});
 const legalVehicle=(v:ReturnType<typeof manifest>['vaults'][number]):LegalVehicle=>({id:v.id,name:v.name,firm:v.firm,address:v.address,manager:v.manager,termsHash:v.termsHash,termsText:v.termsText});
 const quoteTypes={Quote:[
@@ -80,7 +80,7 @@ export async function createOffers(account:Address,positionId:string,amount:stri
   const q={holdingId:holding.id,vault:v.address,investor:account,identity:identityHash(identity.identityRef),units,payout,repayment,route,deadline,maturity,nonce,agreementHash};
   const signature=await walletAt(orgIndex+1).signTypedData({domain:quoteDomain(m.settlement),types:quoteTypes,primaryType:'Quote',message:q});
   const quote=Object.fromEntries(Object.entries(q).map(([key,value])=>[key,typeof value==='bigint'?String(value):value])) as Record<string,string|number>;
-  const record:OfferRecord={id:newId('offer'),account,vehicleId:v.id,holdingId:holding.id,quote,residualUnits:formatUnits(onchain.remaining-units,6),originatorSignature:signature,createdAt:new Date().toISOString(),agreement:{id:documentId,version:'2',title:route===1?'TEST purchase and assignment letter':'TEST financing and claim discharge letter',text:agreementText,digest:agreementHash,signed:false,accepted:false,signerName:identity.name}};
+  const record:OfferRecord={id:newId('offer'),account,vehicleId:v.id,holdingId:holding.id,quote,residualUnits:formatUnits(onchain.remaining-units,6),originatorSignature:signature,createdAt:new Date().toISOString(),agreement:{id:documentId,version:'2',title:route===1?'Purchase and assignment letter':'Financing and claim discharge letter',text:agreementText,digest:agreementHash,signed:false,accepted:false,signerName:identity.name}};
   created.push(record);
  }
  if(!created.length) err('No vehicle has enough available TEST liquidity','NO_LIQUIDITY',409);

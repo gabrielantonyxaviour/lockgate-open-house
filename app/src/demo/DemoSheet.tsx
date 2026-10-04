@@ -72,24 +72,24 @@ export function DemoSheet({state,gateway,busy,run,refresh,close}:Props) {
   try {
    await run(async()=>{
     receipt=await gateway.getTestUsdg();
-    if(receipt.status==='reverted')throw new Error('The token mint reverted. No test USDG was issued.');
+    if(receipt.status==='reverted')throw new Error('The token mint reverted. No USDG was issued.');
     setUsdgMinted(true);
     try {await refresh();} catch {refreshFailed=true;}
    });
-   setFeedback({title:receipt?.status==='confirmed'?'Test USDG minted':'Test USDG confirmation pending',detail:receipt?.status==='confirmed'?`${money(receipt.amount||state.setup.fundingAmount)} custom test USDG was minted to your connected wallet. ${refreshFailed?'Use Check setup to refresh your balance.':'Your balance is up to date.'}`:'Use Check setup to check this transaction before trying again.',confirmed:receipt?.status==='confirmed',hash:receipt?.hash});
-  } catch(error) {setFeedback({title:'Couldn’t confirm test USDG mint',detail:errorMessage(error),error:true,hash:receipt?.hash});}
+   setFeedback({title:receipt?.status==='confirmed'?'Test USDG minted':'Test USDG confirmation pending',detail:receipt?.status==='confirmed'?`${money(receipt.amount||state.setup.fundingAmount)} custom USDG was minted to your connected wallet. ${refreshFailed?'Use Check setup to refresh your balance.':'Your balance is up to date.'}`:'Use Check setup to check this transaction before trying again.',confirmed:receipt?.status==='confirmed',hash:receipt?.hash});
+  } catch(error) {setFeedback({title:'Couldn’t confirm USDG mint',detail:errorMessage(error),error:true,hash:receipt?.hash});}
   finally {setAction(undefined);inFlight.current=false;}
  };
  return <div className="dg-overlay" onMouseDown={event=>{if(event.target===event.currentTarget&&!locked)close();}}>
   <section ref={ref} className="dg-sheet" role="dialog" aria-modal="true" aria-labelledby="demo-title" tabIndex={-1}>
-   <div className="dg-card-top"><span className="dg-badge">{state.environment||'TEST setup · chain 421614'}</span><button className="dg-icon-button" aria-label="Close Demo" disabled={locked} onClick={close}><X size={20}/></button></div>
-   <h2 id="demo-title">Demo setup</h2><p>Prepare this wallet with supported TEST assets.</p>
+   <div className="dg-card-top"><span className="dg-badge">{state.environment||'setup · chain 421614'}</span><button className="dg-icon-button" aria-label="Close Demo" disabled={locked} onClick={close}><X size={20}/></button></div>
+   <h2 id="demo-title">Demo setup</h2><p>Prepare this wallet with supported assets.</p>
    <Rows items={[["Test gas",`${state.setup.gas} ETH`],["Test USDG",`${money(state.setup.usdg)} USDG`]]}/>
    {state.setup.message&&<Notice>{state.setup.message}</Notice>}
-   {state.setup.canGetGas!==undefined&&<div className="dg-setup-item"><h3>Get test gas</h3><p>Open the Arbitrum Sepolia faucet to request test ETH.</p><a className="dg-button dg-secondary" href="https://www.alchemy.com/faucets/arbitrum-sepolia" target="_blank" rel="noopener noreferrer">Get test gas</a></div>}
-   <div className="dg-setup-item"><h3>Get test USDG</h3>{state.setup.fundingAmount?<><p>Mint {money(state.setup.fundingAmount)} custom test USDG to this wallet. Once per wallet; accepted by the current demo vaults.</p><Button disabled={locked||usdgMinted||state.setup.canGetUsdg===false} busy={action==='usdg'} onClick={()=>void mintUsdg()}>{action==='usdg'?'Minting test USDG…':usdgMinted||state.setup.canGetUsdg===false?'Test USDG claimed':'Mint test USDG'}</Button></>:<><p>Open the Paxos faucet and select USDG on Arbitrum Sepolia.</p><a className="dg-button dg-secondary" href="https://faucet.paxos.com/" target="_blank" rel="noopener noreferrer">Get test USDG</a></>}</div>
-   <div className="dg-setup-item"><h3>Mint test position</h3><p>{state.setup.mintDescription||'Complete TEST identity verification to check supported issuance.'}</p>
-    <Button disabled={locked||minted||Boolean(pendingReceipt)||!state.setup.canMint||!state.setup.mintDescription} busy={action==='mint'} onClick={()=>void execute('mint')}>{action==='mint'?'Minting test position…':minted?'Position minted':'Mint test position'}</Button>
+   {state.setup.canGetGas!==undefined&&<div className="dg-setup-item"><h3>Get gas</h3><p>Open the Arbitrum Sepolia faucet to request ETH.</p><a className="dg-button dg-secondary" href="https://www.alchemy.com/faucets/arbitrum-sepolia" target="_blank" rel="noopener noreferrer">Get gas</a></div>}
+   <div className="dg-setup-item"><h3>Get USDG</h3>{state.setup.fundingAmount?<><p>Mint {money(state.setup.fundingAmount)} custom USDG to this wallet. Once per wallet; accepted by the current demo vaults.</p><Button disabled={locked||usdgMinted||state.setup.canGetUsdg===false} busy={action==='usdg'} onClick={()=>void mintUsdg()}>{action==='usdg'?'Minting USDG…':usdgMinted||state.setup.canGetUsdg===false?'Test USDG claimed':'Mint USDG'}</Button></>:<><p>Open the Paxos faucet and select USDG on Arbitrum Sepolia.</p><a className="dg-button dg-secondary" href="https://faucet.paxos.com/" target="_blank" rel="noopener noreferrer">Get USDG</a></>}</div>
+   <div className="dg-setup-item"><h3>Mint position</h3><p>{state.setup.mintDescription||'Complete identity verification to check supported issuance.'}</p>
+    <Button disabled={locked||minted||Boolean(pendingReceipt)||!state.setup.canMint||!state.setup.mintDescription} busy={action==='mint'} onClick={()=>void execute('mint')}>{action==='mint'?'Minting position…':minted?'Position minted':'Mint position'}</Button>
 
    </div>
     {feedback&&!action&&<div className={`dg-setup-feedback${feedback.error?' dg-error':''}`} role={feedback.error?'alert':'status'} aria-live="polite" aria-atomic="true">

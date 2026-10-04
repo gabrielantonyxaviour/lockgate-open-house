@@ -26,6 +26,8 @@ export const tokenHash=(token:string)=>createHash('sha256').update(token).digest
 export function newSession(account:Address) { const token=randomBytes(32).toString('hex');const now=Date.now();for(const [key,value] of Object.entries(data.sessions))if(now-Date.parse(value.createdAt)>24*3600_000)delete data.sessions[key];data.sessions[tokenHash(token)]={account,createdAt:new Date(now).toISOString()};persist();return token; }
 export function session(token:string) {const item=data.sessions[tokenHash(token)];return item&&Date.now()-Date.parse(item.createdAt)<=24*3600_000?item.account:undefined; }
 export function profile(account:Address):ProfileRecord {const key=account.toLowerCase(); return data.profiles[key]??={agreements:{},receipts:[],offers:[],minted:[]};}
+/** Internal read-only iteration for server-side counterparty record selection. */
+export function storedProfiles(){return Object.entries(data.profiles).map(([account,profile])=>({account:account as Address,profile}));}
 export function save(){persist();}
 export function saveEnquiry(entry:Stored['enquiries'][number]) {data.enquiries.push(entry);persist();}
 export function findEnquiry(account:Address,requestId:string){return data.enquiries.find(x=>x.account.toLowerCase()===account.toLowerCase()&&x.requestId===requestId);}
