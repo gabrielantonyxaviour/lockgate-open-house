@@ -9,6 +9,7 @@ import { findEnquiry, newId, newSession, profile, save, saveEnquiry, session, se
 import { workspaceAction } from './workspace.js';
 import { enqueueAcknowledgement } from './email.js';
 import { proxyRpc } from './rpc-proxy.js';
+import { changeProfileRole } from './profile-roles.js';
 
 const address=z.string().refine(isAddress,'Invalid wallet address').transform(x=>getAddress(x));
 const hex=z.string().regex(/^0x[0-9a-fA-F]+$/).transform(x=>x as Hex);
@@ -63,8 +64,11 @@ async function handle(req:IncomingMessage,res:ServerResponse) {
  const account=bearer(req);
  if(path==='/api/demo/state'&&req.method==='GET') return json(res,200,await demoState(account));
  if(path==='/api/demo/role'&&req.method==='POST') {
-  const {role}=z.object({role:z.enum(['investor','originator','manager','provider'])}).parse(await body(req));
-  const p=profile(account);p.role=role;save();return json(res,200,await demoState(account));
+  const {role,intent}=z.object({role:z.enum(['investor','originator','manager','provider']),intent:z.enum(['create','switch']).default('create')}).parse(await body(req));
+  const p=profile(account),m=manifest(),identity=identities.find(i=>i.id===p.identityId);
+  const bound=identity?Boolean(await publicClient.readContract({address:m.registry,abi:artifact('DemoRegistry').abi as Abi,functionName:'matches',args:[account,identityHash(identity.identityRef)]})):false;
+  const approved=role==='originator'?m.originators.some(o=>o.address.toLowerCase()===account.toLowerCase()):role==='manager'&&m.vaults.some(v=>v.manager.toLowerCase()===account.toLowerCase());
+  changeProfileRole(p,role,intent,bound,approved);save();return json(res,200,await demoState(account));
  }
  if(path==='/api/demo/identity'&&req.method==='POST') {
   const {profileId}=z.object({profileId:z.string().min(1).max(80)}).parse(await body(req));

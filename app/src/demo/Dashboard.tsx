@@ -5,14 +5,15 @@ import { AgreementRecords } from './AgreementRecords';
 import { ChainReference } from './ChainReference';
 import { Button, Heading, money, Rows } from './Common';
 import { TransactionHistory } from './TransactionHistory';
-import type { DemoState } from './types';
+import { ProfileMenu } from './ProfileMenu';
+import type { DemoRole, DemoState } from './types';
 import './dashboard.css';
 
-type Props = { state: DemoState; role: 'investor' | 'provider'; children: ReactNode; refresh: () => void | Promise<void>; busy: boolean; refreshing?: boolean; account?: string };
+type Props = { state: DemoState; role: 'investor' | 'provider'; children: ReactNode; refresh: () => void | Promise<void>; busy: boolean; refreshing?: boolean; account?: string; switchProfile: (role: DemoRole) => void; addProfile: () => void };
 const numeric = (value?: string) => { const number = Number(value?.replace(/\s+USDG$/, '')); return Number.isFinite(number) ? number : 0; };
 const total = (values: (string | undefined)[]) => String(values.reduce<number>((sum, value) => sum + numeric(value), 0));
 
-export function Dashboard({ state, role, children, refresh, busy, refreshing, account }: Props) {
+export function Dashboard({ state, role, children, refresh, busy, refreshing, account, switchProfile, addProfile }: Props) {
   const route = useRoute().split('?')[0];
   const mobile = useRef<HTMLDetailsElement>(null);
   const title = useRef<HTMLDivElement>(null);
@@ -38,7 +39,7 @@ export function Dashboard({ state, role, children, refresh, busy, refreshing, ac
   const renderContent = () => {
     if (route === '/positions' || route === '/vehicles') return children;
     if (route === '/records') return <><Heading title="Transaction history" copy="Your activity and transaction references."/><TransactionHistory receipts={state.receipts}/></>;
-    if (route === '/agreements') return <><Heading title="Agreements" copy="Review and download your recorded documents."/><div className="dg-panel">{agreements.length ? <AgreementRecords agreements={agreements}/> : <div className="dg-dashboard-empty"><FileText size={23}/><h2>No agreements yet</h2><p>Your agreements will appear here after you sign.</p></div>}</div></>;
+    if (route === '/agreements') return <><Heading title="Agreements" copy="Review and download your recorded documents."/>{agreements.length ? <AgreementRecords agreements={agreements}/> : <div className="dg-panel dg-dashboard-empty"><FileText size={23}/><h2>No agreements yet</h2><p>Your agreements will appear here after you sign.</p></div>}</>;
     if (route === '/account') return <><Heading title="Account" copy="Your linked identity and wallet."/><div className="dg-panel"><h2>Account details</h2><Rows items={[
       ['Full name', state.profile.identity?.name || 'Not available'],
       ['Jurisdiction', state.profile.identity?.jurisdiction || 'Not available'],
@@ -48,8 +49,9 @@ export function Dashboard({ state, role, children, refresh, busy, refreshing, ac
     return <Overview state={state} role={role} busy={busy}/>;
   };
   return <div className="dg-dashboard">
-    <aside className="dg-dashboard-sidebar"><div className="dg-dashboard-identity"><span>{investor ? 'Exit investor' : 'Capital provider'}</span><strong>{state.profile.identity?.name || 'Your account'}</strong></div>{links()}</aside>
+    <aside className="dg-dashboard-sidebar"><div className="dg-dashboard-identity"><ProfileMenu profile={state.profile} role={role} busy={busy} switchProfile={switchProfile} addProfile={addProfile}/></div>{links()}</aside>
     <div className="dg-dashboard-main" ref={title}>
+      <div className="dg-profile-mobile"><ProfileMenu profile={state.profile} role={role} busy={busy} switchProfile={switchProfile} addProfile={addProfile}/></div>
       <details className="dg-dashboard-mobile" ref={mobile} onKeyDown={event => { if (event.key === 'Escape' && mobile.current?.open) { mobile.current.open = false; mobile.current.querySelector('summary')?.focus(); } }}>
         <summary aria-label="Navigation"><span>{current.label}</span><ChevronDown size={16}/></summary>{links(true)}
       </details>

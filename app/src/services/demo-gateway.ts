@@ -58,7 +58,7 @@ class Gateway implements DemoGateway {
   if(await walletChainId()!==421614) throw new Error('Your wallet network changed. Select Arbitrum Sepolia.');
   return this.readState();
  }
- async selectRole(role:DemoRole) {this.state=stateSchema.parse(await this.api.request('role',{role})) as DemoState;if(this.account)this.state.receipts=[...pending(this.account),...this.state.receipts];return this.state;}
+ async selectRole(role:DemoRole,intent:'create'|'switch'='create') {this.state=stateSchema.parse(await this.api.request('role',{role,intent})) as DemoState;if(this.account)this.state.receipts=[...pending(this.account),...this.state.receipts];return this.state;}
  async selectIdentity(profileId:string,onBound?:()=>void) {
   const data=identityResponse.parse(await this.api.request('identity',{profileId}));
   const wallet=await this.wallet();

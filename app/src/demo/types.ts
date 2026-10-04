@@ -22,7 +22,7 @@ export interface DemoGateway {
  publicOverview():Promise<PublicOverview>;
  authenticate(account:Address, chainId:number):Promise<DemoState>;
  refresh(account:Address, chainId:number):Promise<DemoState>;
- selectRole(role:DemoRole):Promise<DemoState>;
+ selectRole(role:DemoRole,intent?:'create'|'switch'):Promise<DemoState>;
  selectIdentity(profileId:string,onBound?:()=>void):Promise<DemoState>;
  enquire(enquiry:Enquiry):Promise<EnquiryReceipt>;
  offers(positionId:string, amount:string):Promise<Offer[]>;

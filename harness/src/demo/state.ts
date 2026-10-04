@@ -1,6 +1,7 @@
 import { formatEther, formatUnits, parseUnits, type Abi, type Address, type Hex } from 'viem';
 import { artifact, identities, identityHash, manifest, publicClient, err, paxosMode } from './shared.js';
 import { profile, type ReceiptRecord } from './store.js';
+import { completedRoles } from './profile-roles.js';
 import { workspaceState } from './workspace.js';
 import { allHoldings } from './holdings.js';
 import { providerLedger } from './provider-ledger.js';
@@ -31,7 +32,7 @@ export async function demoState(account:Address) {
  const institution=m.originators.some(o=>o.address.toLowerCase()===account.toLowerCase())||m.vaults.some(v=>v.manager.toLowerCase()===account.toLowerCase());
  if(!binding&&!institution){
   const [gas,usdg]=await Promise.all([publicClient.getBalance({address:account}),read(m.asset,tokenAbi,'balanceOf',[account])]);
-  return {profile:{identity:undefined,roles:p.role?[p.role]:[],activeRole:p.role,onboarding:p.role?'Select and bind a TEST identity':undefined},positions:[],positionStatus:'unavailable',vehicles:[],withdrawals:[],reservations:[],agreements:[],receipts:p.receipts,workspace:undefined,setup:{gas:formatEther(gas),usdg:money(usdg),canGetGas:!p.gasHash,gasAmount,canMint:false,canFund:false,mintDescription:`${paxosMode?'3':'100,000'} TEST units in Alder Private Credit, recorded to your bound identity`,fundingAmount:paxosMode?undefined:'10000',message:publicNetwork?'Transactions settle on Arbitrum Sepolia.':'Local EVM test network.'},deploymentReady:true,environment};
+  return {profile:{identity:undefined,roles:completedRoles(p,Boolean(binding)),activeRole:p.role,onboarding:p.role?'Select and bind a TEST identity':undefined},positions:[],positionStatus:'unavailable',vehicles:[],withdrawals:[],reservations:[],agreements:[],receipts:p.receipts,workspace:undefined,setup:{gas:formatEther(gas),usdg:money(usdg),canGetGas:!p.gasHash,gasAmount,canMint:false,canFund:false,mintDescription:`${paxosMode?'3':'100,000'} TEST units in Alder Private Credit, recorded to your bound identity`,fundingAmount:paxosMode?undefined:'10000',message:publicNetwork?'Transactions settle on Arbitrum Sepolia.':'Local EVM test network.'},deploymentReady:true,environment};
  }
  const heldIdentity=identity?.fixtureCase!=='mismatch'&&identity&&binding?identityHash(identity.identityRef):undefined;
  const holdings=heldIdentity?(await allHoldings()).filter(h=>h.identity===heldIdentity):[];
@@ -89,7 +90,7 @@ export async function demoState(account:Address) {
   return {id:v.id,name:v.name,firm:v.firm,cash:money(cash),nav:money(totalAssets),policy:'TEST firm mandate · both exit routes',policyText:v.termsText,policyHash:v.termsHash,policyVersion:'1',minimum:paxosMode?'1':'100',eligible,eligibilityStatus:eligible?'TEST identity bound; firm acceptance is amount-specific.':'Connect and bind an eligible TEST identity.',agreement:{id:accepted?.documentId??`agreement-${v.id}`,version:accepted?.version??'1',title:`${v.firm} TEST subscription terms`,text:accepted?.message??v.termsText,digest:accepted?.digest??v.termsHash,signed:Boolean(accepted),accepted:Boolean(accepted?.subscriptionId),funded,amount:accepted?.amount,signerName:accepted?.signerName},providerPrincipal:money(ledger.principal),providerNav:money(ledger.nav),income:money(ledger.income),loss:money(ledger.loss),withdrawable:money(withdrawable<cashAvailable?withdrawable:cashAvailable),queued:money(all?BigInt(queuedUnits as bigint)*nav/all:0n),address:v.address,claimable:money(claimable),queuedRequests,withdrawals:queuedRequests.map(q=>({id:q.id,amount:withdrawals.find(x=>x.vehicleId===v.id&&x.requestId===q.id)?.amount??'0',cancelable:true})),queueOpen};
  }));
  const [gas,usdg]=await Promise.all([publicClient.getBalance({address:account}),read(m.asset,tokenAbi,'balanceOf',[account])]);
- const profileView={identity:binding?identity:undefined,roles:p.role?[p.role]:[],activeRole:p.role,onboarding:binding?'TEST identity bound':p.role?'Select and bind a TEST identity':undefined};
+ const profileView={identity:binding?identity:undefined,roles:completedRoles(p,Boolean(binding)),activeRole:p.role,onboarding:binding?'TEST identity bound':p.role?'Select and bind a TEST identity':undefined};
  const status=!binding?'unavailable':identity?.fixtureCase==='mismatch'?'mismatch':positions.length?'matched':'empty';
  const workspace=await workspaceState(account);
  return {profile:profileView,positions,positionStatus:status,vehicles,withdrawals,reservations,agreements,receipts:p.receipts,workspace,setup:{gas:formatEther(gas),usdg:money(usdg),canGetGas:!p.gasHash,gasAmount,canMint:Boolean(binding&&p.role==='investor'&&identity?.fixtureCase!=='mismatch'),canFund:Boolean(binding&&p.role==='provider'),mintDescription:`${paxosMode?'3':'100,000'} TEST units in Alder Private Credit, recorded to your bound identity`,fundingAmount:paxosMode?undefined:'10000',message:publicNetwork?'Transactions settle on Arbitrum Sepolia.':'Local EVM test network.'},deploymentReady:true,environment};

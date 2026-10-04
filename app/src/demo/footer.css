@@ -1,0 +1,20 @@
+.dg-app-footer { border-top:1px solid var(--dg-line,#dedede); background:#fff; padding:14px 32px; color:#666; font-size:12px; }
+.dg-app-footer-inner { width:100%; max-width:1280px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; gap:20px; min-height:36px; }
+.dg-footer-signoff { line-height:1.5; }
+.dg-footer-signoff > span { margin:0 3px; }
+.dg-footer-partners { display:flex; align-items:center; gap:18px; white-space:nowrap; }
+.dg-footer-partner { display:inline-flex; align-items:center; gap:7px; height:28px; }
+.dg-footer-support { position:relative; flex:none; }
+.dg-footer-contact,.dg-footer-close,.dg-footer-contact-actions button,.dg-footer-contact-actions a { display:inline-flex; justify-content:center; align-items:center; gap:8px; font:inherit; color:#292929; background:#fff; cursor:pointer; text-decoration:none; border:1px solid #dedede; border-radius:8px; min-height:36px; padding:8px 12px; }
+.dg-footer-contact { border-color:transparent; }
+.dg-footer-contact:hover,.dg-footer-close:hover,.dg-footer-contact-actions button:hover,.dg-footer-contact-actions a:hover { background:#f4f4f4; }
+.dg-footer-contact:focus-visible,.dg-footer-close:focus-visible,.dg-footer-contact-actions button:focus-visible,.dg-footer-contact-actions a:focus-visible { outline:2px solid #555; outline-offset:3px; }
+.dg-footer-contact-panel { position:absolute; z-index:60; bottom:calc(100% + 10px); right:0; width:320px; padding:18px; background:#fff; border:1px solid #dedede; border-radius:12px; box-shadow:0 8px 28px #00000010; color:#555; text-align:left; }
+.dg-footer-contact-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; color:#222; font-size:14px; }
+.dg-footer-close { padding:4px; min-height:28px; width:28px; border-color:transparent; }
+.dg-footer-contact-panel p { font-size:12px; line-height:1.5; margin:8px 0 12px; }
+.dg-footer-email { display:block; color:#292929; font-size:13px; user-select:all; overflow-wrap:anywhere; }
+.dg-footer-contact-actions { display:flex; gap:8px; margin-top:16px; }
+.dg-footer-contact-panel .dg-footer-copy-result { margin:12px 0 0; }
+@media(max-width:800px) { .dg-app-footer { padding:16px 24px; } .dg-app-footer-inner { flex-wrap:wrap; gap:12px 20px; } .dg-footer-signoff { flex-basis:100%; } .dg-footer-partners { gap:14px; } }
+@media(max-width:440px) { .dg-app-footer { padding:16px 20px; } .dg-footer-partners { gap:10px; font-size:11px; } .dg-footer-partner { gap:5px; } .dg-footer-contact { padding:8px; } .dg-footer-contact-panel { width:min(320px,calc(100vw - 40px)); } }
