@@ -28,7 +28,7 @@ Provider A/B amounts must be unequal; cross a valuation change, partial withdraw
 
 | ID | Execute | Pass condition / evidence |
 |---|---|---|
-| J-U1 | Browse disconnected; deliberately connect before choosing each of four tasks | Compact wallet-first entry; optional public terms; no unsolicited wallet prompt; no commercial supported-fund claim; four choices only after connection/profile lookup |
+| J-U1 | Browse disconnected; deliberately connect before choosing each of four tasks | Compact wallet-first entry; 01/04 Get Started enter in-app onboarding, 02/03 Talk to us enter team-led contact/invitation; equal card/action geometry; no role choice or invitation creates approval; optional public terms; no unsolicited wallet prompt or commercial supported-fund claim |
 | J-U3 | Return with completed, incomplete and new authenticated wallet profiles; change accounts; fail profile lookup | Dashboard, saved step and four-choice routing respectively; no repeated completed onboarding; lookup failure offers Retry rather than new-profile fallback; private profile and permissions remain scoped |
 | J-U2 | Traverse all role screens at 375/768/1440 widths and by keyboard | Compact headings; visible primary action/focus; labels/status readable; long identifiers and partial/error data fit; save/Back never accidentally submit |
 | J-I1 | Bind TEST fixture, then change account, chain, role and expiry | Dependent unsigned reviews invalidate; unauthorized new action blocked; fixture cannot grant contract permission; submitted receipts/history survive in correct identity scope |

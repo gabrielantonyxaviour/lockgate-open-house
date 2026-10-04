@@ -20,7 +20,7 @@ const roleName = id => personas.find(p => p.id === id)?.name || (id === 'interna
 export const decisions = [...economics.decisions, ...meta.decisions, ...compliance.decisions];
 
 export function renderSections() {
-  document.querySelector('#overview').innerHTML = heading('01','One product, four customer journeys','Start with the purpose and ownership of each role. Public browsing comes before task-specific onboarding.') +
+  document.querySelector('#overview').innerHTML = heading('01','One product, four customer journeys','Review each role’s purpose. New app profiles choose a task after connecting; institutional partnerships begin with our team.') +
     `<div class="grid four">${personas.map((p,i) => `<a class="card overview-role" href="#journey-${e(p.id)}"><span class="eyebrow">0${i+1} · Public role</span><strong>${e(p.name)}</strong><p>${e(p.job)}</p><span class="arrow">Review full journey ↗</span></a>`).join('')}</div>` +
     `<div class="notice">Lockgate operations is internal. Choosing a role changes navigation; permissions, eligibility and economic ownership come from separate authoritative records.</div>` +
     detail('confirmed-direction','What you have already directed',list(meta.confirmed),'confirmed',true) +
@@ -30,11 +30,11 @@ export function renderSections() {
 
   document.querySelector('#experience').innerHTML = heading('02','What a visitor sees and how the app behaves','A review sketch of public arrival, followed by the shared experience contract. This defines proposed layouts and states; it is not an app implementation.') +
     `<div class="entry-sketch"><div class="sketch-header"><strong>lockgate.</strong><span>Connect wallet · Check profile</span></div><div class="sketch-body"><span class="eyebrow">Current entry · review sketch only</span><h3>Connect your wallet.</h3><p>Completed profile → dashboard. Incomplete → resume. New profile → choose a task.</p><p><a href="./journey-specs/entry-and-build-order.md">Review wallet-first routing ↗</a></p><details><summary>Four choices · connected new profiles only</summary><div class="grid">${[
-      ['investor','Get an earlier exit','Find my position and compare earlier payouts.'],
-      ['originator','Enable exits for my fund','Review support requirements and integration.'],
-      ['manager','Manage my firm’s vault','Review mandates, proposals and obligations.'],
-      ['provider','Provide capital through a firm','Explore eligible vaults and their terms.'],
-    ].map(([id,title,body]) => `<a class="card overview-role" href="#journey-${id}"><strong>${e(title)}</strong><p>${e(body)}</p><span class="arrow">Review this proposed journey ↗</span></a>`).join('')}</div></details><p class="fine">This diagram reviews routing. It does not connect a wallet or retrieve a profile.</p></div></div>` +
+      ['investor','Exit an investment','Find your supported positions and review an earlier payout.','Get Started','./preview/?role=investor'],
+      ['originator','Enable investor exits','Discuss support for your fund or platform with our team.','Talk to us','mailto:gabriel@lockgate.finance?subject=Lockgate%20originating%20platform%20partnership'],
+      ['manager','Manage exit capital','Discuss your firm’s vehicle, mandate and integration.','Talk to us','mailto:gabriel@lockgate.finance?subject=Lockgate%20investment%20firm%20partnership'],
+      ['provider','Invest through a firm','Explore eligible vehicles and begin investor onboarding.','Get Started','./preview/?role=provider'],
+    ].map(([id,title,body,cta,href],i) => `<article class="card entry-role-card"><span class="eyebrow">0${i+1} / ${e(roleName(id))}</span><strong>${e(title)}</strong><p>${e(body)}</p><a class="entry-card-cta" href="${e(href)}" aria-label="${e(cta)}: ${e(roleName(id))}">${e(cta)} <span aria-hidden="true">↗</span></a></article>`).join('')}</div></details><p class="fine">Get Started opens the design walkthrough. Talk to us opens an email draft. This sketch does not connect a wallet or retrieve a profile.</p></div></div>` +
     detail('arrival-behavior','Arrival, connection and return behavior',experience.arrival.map(a => `<article class="step"><h3>${e(a.title)}</h3><p>${e(a.body)}</p></article>`).join(''),'proposed') +
     detail('ux-patterns',`${experience.patterns.length} screen and component patterns`,experience.patterns.map(p => detail(`pattern-${p.id}`,p.title,fields([['Screen',p.screen],['Layout',p.layout],['Components',p.components],['Reachable states',p.states],['Reference and adaptation',p.reference]])+review(`pattern-${p.id}`,p.title),'proposed')).join('')) +
     detail('ux-principles','Shared product and design rules',list(experience.principles),'proposed');

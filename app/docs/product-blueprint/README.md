@@ -9,6 +9,9 @@ It uses the existing local app server and adds no production app routes.
 Current entry and build order: [wallet first, investment firms first](journey-specs/entry-and-build-order.md).
 Completed wallet profiles open their dashboard; new profiles choose a role after connection.
 The top-bar Demo sheet and five funded TEST firm vaults are specified, not implemented.
+Entry cards use **Get Started** for exit investors/capital providers and **Talk to us**
+for originating platforms/investment firms. Institutional onboarding is team-led;
+invited users complete assigned tasks online before governed activation.
 
 Explore the [earlier four-persona screen walkthrough](http://127.0.0.1:5197/docs/product-blueprint/preview/index.html)
 and the [complete journey contracts](journey-specs/README.md). The walkthrough is a local

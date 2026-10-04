@@ -1,5 +1,5 @@
 export const meta = {
-  id: 'lockgate-four-persona-blueprint', version: '0.1', revision: 3, date: '4 October 2026',
+  id: 'lockgate-four-persona-blueprint', version: '0.1', revision: 4, date: '4 October 2026',
   source: 'f16c4d4a60914860b5b2386374710b1b998ff7c7', branch: 'feat/reui-onboarding-local',
   title: 'Lockgate product blueprint',
   purpose: 'Define and validate the whole product before changing the app.',
@@ -7,6 +7,7 @@ export const meta = {
     'Four public roles: exit investor, originating fund/platform, investment firm, and capital provider. Lockgate operations is internal.',
     'There are currently no live supported originating funds/platforms or registered commercial fund integrations. Prospects must not appear as supported funds; test contracts are a separate environment.',
     'Connect wallet before the four task choices. An authenticated completed wallet profile opens its dashboard; incomplete onboarding resumes; a new profile sees four concise choices.',
+    'Entry card CTAs: 01 exit investor and 04 capital provider use Get Started for in-app journeys; 02 originating fund/platform and 03 investment firm use Talk to us for team-led onboarding. Invited institutional users complete assigned tasks online; approved users open their scoped dashboard.',
     'Exit-investor onboarding immediately finds supported tokenized positions/debentures through approved adapters. Empty copy: No supported positions found for this wallet. Private off-chain holdings require an authenticated originator link.',
     'Keep onboarding compact. Move test setup to a top-bar Demo sheet on Sepolia; mint/setup success requires actual authorized transactions, confirmed receipts and refreshed holdings.',
     'Define and build the investment-firm journey first, then seed five fictional TEST firm-managed USDG vaults with real funding, active mandates and approved instrument/route scope before investor/originator demo runs.',

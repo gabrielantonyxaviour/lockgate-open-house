@@ -1,5 +1,22 @@
 # Blueprint review verification
 
+## Entry card correction · revision 4
+
+The local four-card review and wallet-first sketch now use **Get Started** for
+01/04 and **Talk to us** for 02/03. Cards use consistent descriptions, geometry,
+spacing and CTAs; the review heading is compact. Institutional cards open managed
+contact entries, with the established public mailbox and role-specific email drafts.
+Reviewer controls separately retain access to the proposed institutional journeys.
+
+Final card/contact clicks, Back, keyboard focus, investor/provider query links,
+unknown-query fallback and blueprint card destinations passed at 375/768/1440.
+The review cards have equal heights and 144 × 44 px CTA buttons. No overflow,
+runtime errors, failed local resources, API calls or write requests were observed.
+Final screenshots were inspected; card descriptions and numbers meet 4.5:1 contrast.
+These checks cover the local review artifact only. Wallet/profile routing remains
+specified; no real profile lookup, onboarding approval or enquiry submission occurred.
+Application source and financial contracts remain unchanged; nothing was deployed.
+
 ## Wallet-first correction · revision 3
 
 The latest [entry/build-order contract](journey-specs/entry-and-build-order.md)

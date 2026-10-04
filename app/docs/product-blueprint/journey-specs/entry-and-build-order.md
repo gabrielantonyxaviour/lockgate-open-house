@@ -18,8 +18,11 @@ flowchart TD
   B -->|Complete profile| C[Dashboard]
   B -->|Incomplete profile| D[Resume onboarding]
   B -->|New profile| E[Four short task choices]
-  E --> F[Role-specific onboarding]
+  E -->|01 and 04: Get Started| F[In-app onboarding]
+  E -->|02 and 03: Talk to us| G[Team-led partnership onboarding]
   F --> C
+  G --> H[Invited setup and governed activation]
+  H --> C
 ```
 
 - One compact heading and primary action. No four-path choice before connection.
@@ -33,6 +36,29 @@ flowchart TD
 - Public information/standalone terms may remain readable; app actions use this entry.
 - Keep full explanations in terms, agreements and reviewer documentation, outside
   the onboarding introduction. Required information still appears before consent.
+
+## Four entry cards
+
+| Role | Primary CTA | Destination |
+|---|---|---|
+| 01 · Exit investor | **Get Started** | Supported position discovery and in-app eligibility/exit journey |
+| 02 · Originating fund/platform | **Talk to us** | Team-led partnership review, agreements and integration |
+| 03 · Licensed investment firm | **Talk to us** | Team-led firm/vehicle review, agreements, vault setup and activation |
+| 04 · Capital provider | **Get Started** | In-app eligibility, agreements, firm subscription acceptance and funding |
+
+Use equal-height cards with one short description and matching CTA placement,
+control height and radius. Wide layouts use two columns; phones stack the cards.
+Institutional onboarding is invitation/approval based. Our team coordinates review
+and negotiation; invited users provide evidence, sign and complete assigned tasks
+in a private workspace. A contact request or invitation alone cannot activate a vehicle.
+Approved authenticated users in every role open their assigned dashboard directly.
+Capital-provider approval remains separate from the firm's own approval.
+
+The public website can offer Talk to us without a wallet. The app's four-card choice
+still follows connection/profile lookup. Institutional entry also offers Accept an
+invitation when supported. Current review card links are not application submission:
+Get Started opens the design walkthrough; Talk to us uses the established public
+mailbox, gabriel@lockgate.finance, and opens an unsent email draft.
 
 ## Exit investor
 

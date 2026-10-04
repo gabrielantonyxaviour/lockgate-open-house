@@ -162,6 +162,12 @@ footer{font-size:9px}
 .sketch-metrics span,.sketch-metrics small{display:block;font-size:10px;color:var(--muted)}
 .sketch-metrics strong{display:block;font-size:13px;margin:8px 0}
 .sketch-body .grid{margin-bottom:16px}
+.entry-role-card{display:flex;flex-direction:column;gap:12px}
+.entry-role-card .eyebrow{margin:0}
+.entry-role-card>strong{font-size:18px;font-weight:600;letter-spacing:-.3px}
+.entry-role-card>p{margin:0 0 8px;color:var(--muted)}
+.entry-card-cta{display:inline-flex;align-items:center;justify-content:space-between;gap:16px;margin-top:auto;padding:11px 14px;border:1px solid var(--ink);border-radius:var(--radius);background:var(--ink);color:white;text-decoration:none;font-size:13px;font-weight:500;min-height:44px}
+.entry-card-cta:hover{background:#35353b;border-color:#35353b}
 
 @media(max-width:600px){.onboarding-flow,.journey-map{grid-template-columns:1fr}
 .sketch-body{padding:20px}
