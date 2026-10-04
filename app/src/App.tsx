@@ -194,7 +194,7 @@ export default function App() {
     history.replaceState(null, "", url);
   };
   const path = route.split("?")[0];
-  const Frame = (!account && !preview) || (path === "/" || path === "/choose") || path.startsWith("/start/") || path === "/judge" ? EntryFrame : Shell;
+  const Frame = (!account && !preview) || (path === "/" || path === "/choose") || path.startsWith("/start/") || path.startsWith("/terms") || path === "/onboarding" || path === "/judge" ? EntryFrame : Shell;
   return (
     <AppContext.Provider value={{ snapshot, account, walletChainId: chainId, preview, loading, error, refresh: () => refresh(), refreshAfterTransaction: () => refresh(true), connect, disconnect, review: openReview }}>
       <Frame

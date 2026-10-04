@@ -27,10 +27,10 @@ for (const role of ['investor', 'issuer'] as const) {
   test(`${role} learns the benefit before connecting a wallet`, async ({ page }) => {
     await page.goto(`/?preview=1#/start/${role}`);
     await expect(page).toHaveURL(new RegExp(`#/start/${role}$`));
-    await expect(page.getByRole('heading', { name: role === 'investor' ? 'Choose when your capital comes back.' : 'Give your investors another option.' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: role === 'investor' ? 'Find your early exit.' : 'Manage your platform facility.' })).toBeVisible();
     await expect(page.getByRole('button', { name: role === 'investor' ? 'Connect my wallet' : 'Connect issuer wallet', exact: true })).toBeVisible();
     await expect(page.getByRole('navigation', { name: 'Main navigation' })).toHaveCount(0);
-    if (role === 'issuer') await expect(page.getByRole('link', { name: /Prepare a local facility draft/ })).toHaveAttribute('href', '#/onboarding');
+    if (role === 'issuer') await expect(page.getByRole('link', { name: /Prepare a local facility draft/ })).toHaveCount(0);
 
   });
 }

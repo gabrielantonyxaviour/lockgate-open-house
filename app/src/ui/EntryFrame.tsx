@@ -5,6 +5,7 @@ import { NETWORKS, type NetworkId } from "../chain/networks";
 import { ArbitrumMark, UsdgMark, PaxosBrand } from "./Brand";
 import { WalletButton } from "./WalletButton";
 import { ArrowLeft } from "lucide-react";
+import "./entry-focus.css";
 export function EntryFrame({
   children,
   route,
@@ -18,8 +19,10 @@ export function EntryFrame({
   onPreview,
   chainId,
 }: ComponentProps<typeof Shell>) {
+  const focused = route === "/choose" || route.startsWith("/start/") || route.startsWith("/terms") || route === "/onboarding";
+  const onboarding = route === "/onboarding";
   return (
-    <div className="entry-frame">
+    <div className={`entry-frame ${focused ? "entry-focused" : ""}`}>
       <a
         className="skip-link"
         href="#main"
@@ -67,9 +70,9 @@ export function EntryFrame({
         </div>
       )}
       <main id="main" tabIndex={-1} className="entry-main">
-        {route !== "/" && (
-          <a className="inline-link entry-back" href={account ? "#/choose" : "#/"}>
-            <ArrowLeft size={14} /> {account ? "Change journey" : "Back to overview"}
+        {route !== "/" && !route.startsWith("/terms") && (
+          <a className="inline-link entry-back" href={onboarding ? "#/start/issuer" : account ? "#/choose" : "#/"}>
+            <ArrowLeft size={14} /> {onboarding ? "Back to issuer journey" : account ? "Change journey" : "Back to overview"}
           </a>
         )}
         {children}

@@ -30,23 +30,12 @@ export default function JourneyStart({ role }: { role: "investor" | "issuer" }) 
     <div className="journey-content">
       <div className="entry-intro journey-intro">
         <span className="eyebrow">{investor ? "YOUR EARLY EXIT" : "YOUR PLATFORM FACILITY"}</span>
-        <h1>{investor ? "Choose when your capital comes back." : "Give your investors another option."}</h1>
+        <h1>{investor ? "Find your early exit." : "Manage your platform facility."}</h1>
         <p>
           {investor
             ? "Find your positions and compare waiting with an earlier payout. Review the fee before you sign."
             : "Manage earlier exits, settlement cash, and repayment through your platform’s credit line."}
         </p>
-      </div>
-      <div className="journey-benefits">
-        {(investor
-          ? ["Find your position", "Compare a live quote", "Confirm your minimum payout"]
-          : ["Inspect your facility", "Manage settlement cash", "Repay at the window"]
-        ).map((text, index) => (
-          <div key={text}>
-            <span>0{index + 1}</span>
-            <p>{text}</p>
-          </div>
-        ))}
       </div>
       {!account ? (
         <section className="journey-connect">
@@ -75,6 +64,7 @@ export default function JourneyStart({ role }: { role: "investor" | "issuer" }) 
             </p>
           )}
           {loading && !currentSnapshot && <p role="status">Reading this wallet’s platform access…</p>}
+          {!investor && !currentSnapshot && <a className="button" href="#/onboarding">Start platform onboarding <ArrowRight size={14} /></a>}
           {currentSnapshot &&
             (investor ? (
               owned.length ? (
@@ -131,7 +121,7 @@ export default function JourneyStart({ role }: { role: "investor" | "issuer" }) 
                 <div className="journey-empty">
                   <h3>No positions found for this wallet.</h3>
                   <p>Explore the supported platforms, or connect the wallet holding your platform shares.</p>
-                  <a className="button secondary" href="#/platforms">
+                  <a className="button secondary" href={`#/terms?from=${role}`}>
                     Explore platforms <ArrowRight size={14} />
                   </a>
                 </div>
@@ -155,11 +145,11 @@ export default function JourneyStart({ role }: { role: "investor" | "issuer" }) 
               <div className="journey-empty">
                 <h3>This wallet has no issuer access.</h3>
                 <p>
-                  Use your platform’s designated issuer wallet to manage its facility. You can still inspect deployed platforms.
+                  Start onboarding for a new platform, or switch to your platform’s designated issuer wallet.
                 </p>
-                <button className="button secondary" onClick={() => void connect()}>
-                  Connect issuer wallet
-                </button>
+                <a className="button" href="#/onboarding">
+                  Start platform onboarding <ArrowRight size={14} />
+                </a>
               </div>
             ))}
         </section>
@@ -173,20 +163,10 @@ export default function JourneyStart({ role }: { role: "investor" | "issuer" }) 
         </div>
       )}
       <div className="journey-links">
-        <a className="inline-link" href="#/platforms">
+        <a className="inline-link" href={`#/terms?from=${role}`}>
           Explore platform terms <ArrowRight size={13} />
         </a>
-        {!investor && (
-          <a className="inline-link" href="#/onboarding">
-            Prepare a local facility draft <ArrowRight size={13} />
-          </a>
-        )}
       </div>
-      {!investor && (
-        <p className="entry-footnote">
-          A facility draft is stored locally. It does not submit an application or activate credit.
-        </p>
-      )}
     </div>
   );
 }

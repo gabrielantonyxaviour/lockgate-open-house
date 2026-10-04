@@ -20,6 +20,7 @@ import PublicHome from "../pages/PublicHome";
 import Welcome from "../pages/Welcome";
 import JourneyStart from "../pages/JourneyStart";
 import Judge from "../pages/Judge";
+import PlatformTerms from "../pages/PlatformTerms";
 export function AppRoutes({
   route,
   account,
@@ -42,6 +43,7 @@ export function AppRoutes({
   if (path === "/start/investor" || path === "/start/issuer")
     return <JourneyStart role={path.endsWith("issuer") ? "issuer" : "investor"} />;
   if (path === "/judge") return <Judge />;
+  if (segments[0] === "terms") return <PlatformTerms address={segments[1]} origin={new URLSearchParams(query).get("from")} />;
   const utility = ["/onboarding", "/integration", "/settings", "/approvals"].includes(path);
   if (!snapshot && !utility)
     return loading ? (

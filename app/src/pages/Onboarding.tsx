@@ -1,5 +1,6 @@
 import { Select } from "../ui/Select";
 import { useState } from "react";
+import { useApp } from "../ui/context";
 import { Badge, PageHead, Panel } from "../ui/primitives";
 import { clearDraft, emptyDraft, loadDraft, readyDraft, saveDraft, type DraftFields } from "../ui/drafts";
 
@@ -24,6 +25,7 @@ function canVisit(fields: DraftFields, destination: number) {
   );
 }
 export function Onboarding() {
+  const { account, connect, preview, snapshot } = useApp();
   const [initial] = useState(() => {
     try {
       return loadDraft(window.localStorage);
@@ -109,17 +111,23 @@ export function Onboarding() {
       setMessage("Could not remove the saved draft.");
     }
   };
+  if (!account && !preview) return (
+    <div className="onboarding-content stack">
+      <PageHead eyebrow="PLATFORM ONBOARDING" title="Start with your issuer wallet." description="Connect to prepare a local facility plan for your platform." />
+      <section className="journey-connect"><div><h2>Your plan stays on this device.</h2><p>Connecting identifies your wallet. It does not submit an application or activate a facility.</p></div>
+        <button className="button" onClick={() => void connect()}>Connect issuer wallet</button>
+      </section>
+    </div>
+  );
   return (
     <div className="stack onboarding-content">
       <PageHead
         eyebrow="PLATFORM ONBOARDING"
-        title="Plan your exit facility."
-        description="Prepare the commercial and integration details for a platform facility."
-        action={<Badge>Local draft</Badge>}
+        title="Prepare your facility draft."
+        description="Add your platform details, planned terms, and integration approach."
       />
-      <a className="inline-link" href="#/create">Operator? Register an approved platform.</a>
       <div className="notice">
-        Saved on this device until you export. This draft does not submit an application or activate a facility.
+        Save this draft on your device or export it. No application is submitted or facility activated.
       </div>
       <nav className="stepper" aria-label="Application steps">
         {steps.map((label, index) => (
@@ -272,6 +280,7 @@ export function Onboarding() {
             <p>
               Activation requires agreed terms, funded reserves, a tested integration, and owner-authorized deployment.
             </p>
+            {snapshot?.roles.operator && <a className="inline-link" href="#/create">Register an approved platform</a>}
             <button className="button secondary" onClick={discard}>
               Clear local draft
             </button>
